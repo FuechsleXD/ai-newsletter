@@ -1,0 +1,46 @@
+# Dependency updates (docs/11-deployment-cicd.md). npm, Dockerfile and Terraform are added
+# once their directories exist (steps 22, 10, 11).
+version: 2
+
+updates:
+  - package-ecosystem: maven
+    directory: /ai-news-digest
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "build"
+    groups:
+      maven-minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # ADR-012: stay on the Spring Boot line CIB seven supports (4.1.x). Remove once a CIB seven
+      # release for a newer Spring Boot line is available.
+      - dependency-name: org.springframework.boot:spring-boot-starter-parent
+        update-types: [version-update:semver-major, version-update:semver-minor]
+      # ADR-012: CIB seven 3.0 is tested with Jackson 3.1.x, 3.2 is not supported.
+      - dependency-name: tools.jackson*
+        update-types: [version-update:semver-major, version-update:semver-minor]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: "ci"
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  - package-ecosystem: docker-compose
+    directory: /ai-news-digest
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: "build"
+    groups:
+      compose-images:
+        patterns: ["*"]

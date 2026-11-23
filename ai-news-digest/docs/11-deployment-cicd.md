@@ -40,7 +40,11 @@
 - Tags: Git-SHA, bei Releases zusätzlich Version; nie `latest`
 
 ## GitHub Actions (`.github/workflows/`)
+Workflows und `dependabot.yml` liegen im Repo-Root (`.github/`), weil GitHub sie nur dort liest; das Projekt selbst liegt im Unterordner `ai-news-digest/`, die Jobs arbeiten mit `working-directory: ai-news-digest`.
+
 ### `ci.yml` – bei Pull Requests und Push auf `main`
+Stand nach Roadmap-Schritt 2: Job `backend` (Punkt 1 und 5, Formatierung über Spotless in `verify`, Coverage-Tabelle in der Job-Zusammenfassung, Berichte als Artefakt `backend-reports`) und Job `dependency-review` (Punkt 4, nur bei Pull Requests, schlägt ab Schweregrad `high` fehl). Frontend (Punkt 2) folgt in Schritt 22, Images und Trivy (Punkt 3) in Schritt 10, CodeQL vorerst nicht.
+
 1. Backend: JDK 21 mit Maven-Cache, `./mvnw -B clean verify`, JaCoCo-Prüfung, Berichte als Artefakt
 2. Frontend: Node laut `.nvmrc`, `npm ci`, Lint, Typecheck, Tests mit Coverage, Build
 3. Images bauen (ohne Push), Trivy-Scan; kritische Funde -> rot
@@ -49,6 +53,8 @@
 
 ### Abhängigkeiten aktuell halten
 - `.github/dependabot.yml` für Maven, npm, Docker-Images (Dockerfile und Compose), GitHub Actions und Terraform-Provider, wöchentlich, gruppiert
+- Eingerichtet sind bisher Maven, GitHub Actions und Compose; npm, Dockerfile und Terraform kommen dazu, sobald es die Ordner gibt (Schritte 22, 10, 11)
+- Ignoriert werden (ADR-012): Spring-Boot-Sprünge über 4.1.x hinaus, solange CIB seven keine neuere Linie unterstützt, und Jackson 3.2+
 
 ### `cd.yml` – nach grüner CI auf `main` bzw. bei Release-Tag
 1. Images bauen und nach Amazon ECR pushen
