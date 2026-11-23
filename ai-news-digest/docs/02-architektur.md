@@ -31,6 +31,7 @@ Hosting ohne Load Balancer, Details in `11-deployment-cicd.md`.
 | `metrics` | Micrometer-Metriken |
 | `repository` | Spring-Data-Repositories |
 | `domain` | JPA-Entities |
+| `migration` | Flyway-Java-Migrationen (offizielle CIB-seven-Skripte im Schema `bpm`, siehe `03-datenmodell.md`) |
 
 ## Schichten
 - Controller -> Service -> Repository; keine Logik und kein try/catch im Controller

@@ -18,8 +18,8 @@ Ursprünglich war Spring Boot 3.5 vorgesehen. Die kostenlosen Sicherheitsupdates
 ## Festgeschriebene Versionen (Roadmap-Schritt 1, geprüft am 2026-11-23 gegen Maven Central)
 | Komponente | Version | Begründung |
 |---|---|---|
-| Spring Boot | 4.1.2 | CIB seven 3.0.0 ist gegen 4.1.2 gebaut; die CIB-Kompatibilitätstabelle nennt für 3.0.x Spring Boot 4.1.x |
-| CIB seven | 3.0.0 (veröffentlicht 2026-11-20) | Erste Linie für Spring Boot 4.1; ab 3.0 sind die Artefakte ohne Suffix die Spring-Boot-4-Variante, die Artefakte mit `-4` (z. B. `org.cibseven.bpm.springboot:cibseven-bpm-spring-boot-starter-4`) sind Relocations darauf |
+| Spring Boot | 4.1.2, seit Dependabot-PR #3 4.1.3 | CIB seven 3.0.0 ist gegen 4.1.2 gebaut; die CIB-Kompatibilitätstabelle nennt für 3.0.x Spring Boot 4.1.x, Patch-Updates innerhalb 4.1.x sind erlaubt |
+| CIB seven | 3.0.0 (veröffentlicht 2026-11-20) | Erste Linie für Spring Boot 4.1; ab 3.0 sind die Artefakte ohne Suffix die Spring-Boot-4-Variante, die Artefakte mit `-4` (z. B. `org.cibseven.bpm.springboot:cibseven-bpm-spring-boot-starter-4`) sind Relocations darauf. Eingebunden wird deshalb `cibseven-bpm-spring-boot-starter` ohne Suffix; die Konfiguration heißt weiterhin `camunda.bpm.*` |
 | Jackson 3 | von Spring Boot verwaltet, muss 3.1.x bleiben | CIB seven 3.0 ist mit 3.1.7 getestet, 3.2 wird nicht unterstützt |
 | Spring AI | 2.0.3 | 2.0.x unterstützt Spring Boot 4.0.x und 4.1.x |
 | springdoc-openapi | 3.1.1 | 3.1.x ist die Linie für Spring Boot 4.1 (3.2.x setzt 4.2 voraus) |

@@ -57,7 +57,9 @@ Siehe `entscheidungen/ADR-006-engine-schema-per-flyway.md`.
 - Die Engine legt keine Tabellen selbst an und ändert keine (Schema-Update der Engine abgeschaltet, z. B. `database-schema-update=false`)
 - Die Engine nutzt das Schema `bpm` (Schema-Name und Tabellen-Präfix in der Engine-Konfiguration)
 - Die Tabellen entstehen aus den offiziellen Create-Skripten für PostgreSQL aus der CIB-seven-Distribution der verwendeten Version, unverändert als Flyway-Migration übernommen; Herkunft (Version, Dateiname) steht als Kommentar in der Migration
-- Versionswechsel von CIB seven: die offiziellen Upgrade-Skripte von alter zu neuer Version als neue Migrationen im selben Pull Request wie die Versionsänderung
+- Umsetzung (Schritt 4): Die 8 Skripte `activiti.postgres.create.*.sql` aus `cibseven-engine-3.0.0.jar` liegen unverändert in `src/main/resources/db/migration/bpm/cibseven-3.0.0/` (Herkunft im `README.md` dort). Weil sie ihre Tabellen ohne Schema-Präfix anlegen, führt die Java-Migration `V3__bpm_create_engine_3_0` (Package `migration`, Basisklasse `BpmScriptMigration`) sie mit `SET LOCAL search_path TO bpm` aus; vorher legt sie das Schema an und vergibt dem App-Benutzer nur Datenrechte. Ihre Flyway-Prüfsumme wird aus dem Inhalt der Skripte berechnet, eine Änderung an einer Kopie fällt also bei `validate-on-migrate` auf
+- Java-Migrationen sind Spring-Beans; Spring Boot übergibt sie an Flyway. Version und Beschreibung kommen wie bei SQL-Migrationen aus dem Klassennamen
+- Versionswechsel von CIB seven: die offiziellen Upgrade-Skripte von alter zu neuer Version (`org/cibseven/bpm/engine/db/upgrade/postgres_*_<alt>_to_<neu>.sql`) unverändert in einen neuen Ordner unter `db/migration/bpm/` kopieren und mit einer neuen `BpmScriptMigration` ausführen, im selben Pull Request wie die Versionsänderung
 - Engine-Migrationen werden nie von Hand angepasst; eigene Indizes oder Änderungen an Engine-Tabellen sind verboten
 - Genaue Konfigurationsnamen und Skriptpfade in der CIB-seven-Doku prüfen, nicht raten
 - Ein Test startet die Engine gegen das per Flyway erzeugte Schema und führt einen Prozess aus; damit fällt eine fehlende oder falsche Engine-Migration in der CI auf
@@ -73,14 +75,14 @@ Ordner und Benennung:
 | `src/main/resources/db/migration/views` | Repeatable Migrations (`R__`) für Views, z. B. Monatskosten | alle |
 | `src/main/resources/db/dev-data` | Beispieldaten für lokale Entwicklung | nur `dev` |
 
-- Versionierte Migrationen: `V<nummer>__<bereich>_<beschreibung>.sql`, z. B. `V1__app_initial_schema.sql`, `V2__app_seed.sql`, ab Schritt 4 `V3__bpm_create_engine_3_0.sql`; eine gemeinsame, fortlaufende Nummernfolge über alle Ordner und eine Historientabelle
+- Versionierte Migrationen: `V<nummer>__<bereich>_<beschreibung>.sql`, z. B. `V1__app_initial_schema.sql`, `V2__app_seed.sql`, `V3__bpm_create_engine_3_0` (Java-Migration, siehe Engine-Tabellen); eine gemeinsame, fortlaufende Nummernfolge über alle Ordner und eine Historientabelle
 - Repeatable Migrations (`R__<beschreibung>.sql`) nur für Views, nie für Tabellen
 - Angewendete Migrationen werden nie verändert, Änderungen immer als neue Migration
 - Eine Migration pro logischer Änderung
 - Abwärtskompatibel zur vorherigen App-Version (erst hinzufügen, später entfernen), damit Rollbacks möglich bleiben
 
 Einstellungen:
-- `spring.flyway.schemas=app,bpm`, Historientabelle in `app` (bis Schritt 4 nur `app`)
+- `spring.flyway.schemas=app,bpm`, Historientabelle in `app`
 - `clean-disabled=true` in allen Profilen
 - `out-of-order=false`, `validate-on-migrate=true`
 - Flyway läuft beim Start der App, bevor die Engine startet
@@ -93,4 +95,4 @@ Tests:
 - Alle Migrationen laufen mit Testcontainers auf einer leeren PostgreSQL-Datenbank durch (gleiches Image und gleiches Init-Skript wie im Compose; Basisklasse `PostgresTestSupport`)
 - Constraints, Teilindizes, Löschverhalten, Rechte des App-Benutzers und der View `monthly_cost` sind in `SchemaMigrationTest` abgesichert, die Abbildung aller Entities in `EntityMappingTest`
 - Hibernate-Validierung gegen `app` ist grün
-- Engine startet gegen `bpm` und führt einen Testprozess aus
+- Engine startet gegen `bpm` und führt einen Testprozess mit asynchronem Job aus (`EngineStartupTest`, Prozess nur unter `src/test/resources/bpmn/`)

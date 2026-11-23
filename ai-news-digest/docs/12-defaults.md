@@ -54,7 +54,7 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 |---|---|
 | Retries externer Tasks | 3 Versuche, 5 min Abstand (`R3/PT5M`) |
 | Job-Executor-Threads | mindestens Summe der parallelen Aufrufe aller Anbieter + 2 |
-| `historyTimeToLive` | 30 Tage |
+| `historyTimeToLive` | 30 Tage (Engine-Default, gesetzt von `ProcessEngineSettings`) |
 | Sperrzeit eines Jobs (`lockTimeInMillis`) | 10 min |
 | Stop-Zeit beim Herunterfahren | 3 min |
 

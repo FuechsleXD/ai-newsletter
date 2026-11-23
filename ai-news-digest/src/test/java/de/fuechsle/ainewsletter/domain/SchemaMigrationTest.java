@@ -49,12 +49,16 @@ class SchemaMigrationTest extends PostgresTestSupport {
     // Without the "schema creation" marker Flyway writes before the first migration
     MigrationInfo[] applied =
         Arrays.stream(flyway.info().applied())
-            .filter(info -> info.getScript().endsWith(".sql"))
+            .filter(info -> !info.getScript().startsWith("\""))
             .toArray(MigrationInfo[]::new);
 
     assertThat(applied)
         .extracting(MigrationInfo::getScript)
-        .containsExactly("V1__app_initial_schema.sql", "V2__app_seed.sql", "R__monthly_cost.sql");
+        .containsExactly(
+            "V1__app_initial_schema.sql",
+            "V2__app_seed.sql",
+            "de.fuechsle.ainewsletter.migration.V3__bpm_create_engine_3_0",
+            "R__monthly_cost.sql");
     assertThat(Arrays.stream(applied).map(MigrationInfo::getState))
         .allMatch(MigrationState::isApplied)
         .noneMatch(MigrationState::isFailed);

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Test-only process: proves that the engine runs against the Flyway schema, including an
+     asynchronous job picked up by the job executor. Not deployed by the application. -->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  id="engineSmokeTestDefinitions"
+                  targetNamespace="https://fuechsle.de/ainewsletter/test">
+  <bpmn:process id="engineSmokeTest" name="Engine smoke test" isExecutable="true">
+    <bpmn:startEvent id="start">
+      <bpmn:outgoing>toAsyncTask</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="toAsyncTask" sourceRef="start" targetRef="asyncTask"/>
+    <bpmn:serviceTask id="asyncTask" name="Async task"
+                      camunda:asyncBefore="true"
+                      camunda:expression="${execution.setVariable('visited', true)}">
+      <bpmn:incoming>toAsyncTask</bpmn:incoming>
+      <bpmn:outgoing>toEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="toEnd" sourceRef="asyncTask" targetRef="end"/>
+    <bpmn:endEvent id="end">
+      <bpmn:incoming>toEnd</bpmn:incoming>
+    </bpmn:endEvent>
+  </bpmn:process>
+</bpmn:definitions>
