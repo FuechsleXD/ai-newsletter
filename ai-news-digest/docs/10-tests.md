@@ -40,7 +40,9 @@
 
 Test-Hilfen von CIB seven prüfen; sonst direkt mit `RuntimeService`, `HistoryService` und Job-Ausführung testen.
 
-Stand nach Roadmap-Schritt 6 (`DigestRunProcessTest`, eingebettete Engine mit laufendem Job Executor, Testcontainers, Fake-Anbieter `FAKE` mit Verhalten je Modellname-Präfix `ok-`, `empty-`, `fail-`, `slow-`): abgedeckt sind 1 (ohne Mail und PDF, die noch Platzhalter sind), 5 (ohne Betreiber-Mail), 6, 8, 9, 11 und 12 (Recherche, `RunResearchServiceTest`). Fall 2, 3 und 4 folgen mit mehreren Modellen in Schritt 13, 7 und 10 mit Mail und Aggregation in Schritt 7 und 8, 13 mit dem Abbrechen in Schritt 16.
+Stand nach Roadmap-Schritt 6 (`DigestRunProcessTest`, eingebettete Engine mit laufendem Job Executor, Testcontainers, Fake-Anbieter `FAKE` mit Verhalten je Modellname-Präfix `ok-`, `empty-`, `fail-`, `slow-`): abgedeckt sind 1 (ohne Mail und PDF, die noch Platzhalter sind), 5 (ohne Betreiber-Mail), 6, 8, 9, 11 und 12 (Recherche, `RunResearchServiceTest`). Fall 2, 3 und 4 folgen mit mehreren Modellen in Schritt 13, 7 mit dem Mailversand in Schritt 8, 10 mit den Duplikaten früherer Läufe in Schritt 14, 13 mit dem Abbrechen in Schritt 16.
+
+Stand nach Roadmap-Schritt 7: Der Fake-Anbieter liefert zusätzlich Aggregator-Antworten (erkennbar am Block `<MELDUNGEN>` im Prompt; `garbage-` antwortet ohne JSON, `fail-` mit Fehler) und Meldungen mit dem heutigen Datum (`old-`: eine Meldung außerhalb jedes Zeitraums). `DigestRunProcessTest` prüft zusätzlich Aggregat und Aggregator-Kosten im Happy Path sowie den Fehlerpfad der Aggregation (`FAILED` ohne Retries, Betreiber informieren). `RunAggregationServiceTest` prüft ohne Engine `DUPLICATE_RUN` und Konsens mit zwei Modellen, `OUT_OF_PERIOD`, wiederholte und gescheiterte Aggregation; Fall 10 (Duplikate früherer Läufe) folgt mit Schritt 14. Unit-Tests: `UrlNormalizerTest`, `NewsItemCheckerTest`, `AggregateResponseParserTest` (Fixtures in `fixtures/aggregate/`), `AggregationServiceTest`, `IconKeysTest`.
 
 ## Bewertung von Prompts
 - Beispielantworten echter Modelle (anonymisiert, ohne Keys) liegen als Fixtures in `src/test/resources/fixtures/research/` und `.../aggregate/`; automatische Tests prüfen Parsing, Prüfung und Rendering damit (seit Schritt 5: konstruierte Beispiele für gültige, umrahmte, kaputte und zu lange Antworten; echte Antworten kommen mit dem Eval in Schritt 9 dazu)
@@ -52,7 +54,7 @@ Stand nach Roadmap-Schritt 6 (`DigestRunProcessTest`, eingebettete Engine mit la
 | Bereich | Mindestwert |
 |---|---|
 | Backend gesamt (JaCoCo) | 80 % Zeilen, 70 % Branches |
-| `service`, `process`, `scheduling`, `research`, `cost` | 85 % Zeilen |
+| `service`, `process`, `scheduling`, `research`, `cost`, `aggregate` | 85 % Zeilen |
 | Frontend `src/` ohne generierten Client (Vitest v8) | 80 % Zeilen |
 
 - Ausnahmen nur für Records, reine Konfigurationsklassen, `main`-Klasse, generierten Code; jede Ausnahme explizit

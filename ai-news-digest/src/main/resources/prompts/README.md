@@ -22,11 +22,11 @@ Schreibweise `{{name}}`. Die Ersetzung übernimmt eine eigene kleine Klasse `Pro
 | `timezone` | research | Zeitzone des Zeitplans |
 | `maxItems` | research | Default "Meldungen pro Modell" |
 | `language` | research, aggregate | Default "Sprache" |
-| `previousHeadlines` | aggregate | Überschriften des letzten erfolgreichen Laufs, eine pro Zeile, sonst "keine" |
-| `allowedIconKeys` | aggregate | Liste der Icon-Schlüssel aus `src/main/resources/pdf/icons/` |
-| `newsItemsJson` | aggregate | Gültige Meldungen als JSON (`id`, `headline`, `summary`, `url`, `publishedAt`, `models`) |
+| `previousHeadlines` | aggregate | Überschriften des letzten erfolgreichen Laufs, eine pro Zeile, sonst "keine" (bis Schritt 14 immer "keine") |
+| `allowedIconKeys` | aggregate | Icon-Schlüssel aus `src/main/resources/pdf/icon-keys.txt`, durch Komma getrennt |
+| `newsItemsJson` | aggregate | Gültige Meldungen als JSON (`id`, `headline`, `summary`, `url`, `publishedAt`, `models`); `<` und `>` als `\u003c`/`\u003e` |
 | `minSections`, `maxSections` | aggregate | Defaults Themen-Karten |
-| `maxHeadingChars`, `maxTextChars` | aggregate | Längengrenzen aus den Defaults |
+| `maxHeadingChars`, `maxTextChars` | aggregate | Längengrenzen aus den Defaults (60 und 320 Zeichen) |
 | `parseError`, `expectedFormat`, `previousResponse` | repair-json | Fehlermeldung, Format des ursprünglichen Prompts, vorherige Antwort |
 
 Die Topic-spezifische Ausrichtung entsteht über `topicName` und `topicDescription`. Eigene Prompts pro Topic sind nicht vorgesehen.

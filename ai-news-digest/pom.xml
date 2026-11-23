@@ -235,6 +235,7 @@
                     <include>de.fuechsle.ainewsletter.scheduling*</include>
                     <include>de.fuechsle.ainewsletter.research*</include>
                     <include>de.fuechsle.ainewsletter.cost*</include>
+                    <include>de.fuechsle.ainewsletter.aggregate*</include>
                   </includes>
                   <limits>
                     <limit>

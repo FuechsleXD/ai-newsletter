@@ -59,6 +59,15 @@ public class AggregationResult {
     this.durationMs = durationMs;
   }
 
+  /** Adds the usage of a repeated aggregation; every call was billed. */
+  public void addUsage(
+      int addedInputTokens, int addedOutputTokens, BigDecimal addedCost, long addedMs) {
+    this.inputTokens += addedInputTokens;
+    this.outputTokens += addedOutputTokens;
+    this.costUsd = costUsd.add(addedCost);
+    this.durationMs += addedMs;
+  }
+
   public Long getDigestRunId() {
     return digestRunId;
   }

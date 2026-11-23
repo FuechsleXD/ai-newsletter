@@ -1,5 +1,7 @@
 package de.fuechsle.ainewsletter.research;
 
+import de.fuechsle.ainewsletter.provider.AnswerParseException;
+import de.fuechsle.ainewsletter.provider.JsonAnswer;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDate;
@@ -8,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import org.springframework.stereotype.Component;
-import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
@@ -58,18 +59,10 @@ public class ResearchResponseParser {
   }
 
   private JsonNode readObject(String text) {
-    if (text == null) {
-      throw new ResearchParseException("Answer is empty");
-    }
-    int start = text.indexOf('{');
-    int end = text.lastIndexOf('}');
-    if (start < 0 || end < start) {
-      throw new ResearchParseException("Answer contains no JSON object");
-    }
     try {
-      return objectMapper.readTree(text.substring(start, end + 1));
-    } catch (JacksonException e) {
-      throw new ResearchParseException("Invalid JSON: " + e.getOriginalMessage(), e);
+      return JsonAnswer.readObject(objectMapper, text);
+    } catch (AnswerParseException e) {
+      throw new ResearchParseException(e.getMessage(), e);
     }
   }
 
@@ -77,22 +70,14 @@ public class ResearchResponseParser {
     if (!item.isObject()) {
       return null;
     }
-    String headline = text(item, "headline");
-    String summary = text(item, "summary");
-    String url = text(item, "url");
+    String headline = JsonAnswer.text(item, "headline");
+    String summary = JsonAnswer.text(item, "summary");
+    String url = JsonAnswer.text(item, "url");
     if (headline == null || summary == null || !isHttpUrl(url)) {
       return null;
     }
-    return new NewsItemCandidate(headline, summary, url, date(text(item, "publishedAt")));
-  }
-
-  private static String text(JsonNode item, String field) {
-    JsonNode node = item.get(field);
-    if (node == null || !node.isString()) {
-      return null;
-    }
-    String value = node.asString().strip();
-    return value.isEmpty() ? null : value;
+    return new NewsItemCandidate(
+        headline, summary, url, date(JsonAnswer.text(item, "publishedAt")));
   }
 
   private static boolean isHttpUrl(String url) {

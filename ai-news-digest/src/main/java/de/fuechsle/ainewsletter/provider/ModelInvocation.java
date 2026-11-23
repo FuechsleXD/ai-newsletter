@@ -38,6 +38,41 @@ public record ModelInvocation(
     Objects.requireNonNull(timeout, "timeout");
   }
 
+  /**
+   * Call of a model with its settings from the database, without web search.
+   *
+   * @param defaultMaxOutputTokens used when the model has no own output limit
+   */
+  public static ModelInvocation of(
+      ModelSnapshot model, String prompt, int defaultMaxOutputTokens, Duration timeout) {
+    int maxTokens =
+        model.maxOutputTokens() != null ? model.maxOutputTokens() : defaultMaxOutputTokens;
+    return new ModelInvocation(
+        model.providerCode(),
+        model.secretName(),
+        model.modelName(),
+        maxTokens,
+        model.temperature(),
+        false,
+        0,
+        prompt,
+        timeout);
+  }
+
+  /** Same call with web search, limited to {@code maxSearches} searches (cost guard). */
+  public ModelInvocation withWebSearch(int maxSearches) {
+    return new ModelInvocation(
+        providerCode,
+        secretName,
+        modelName,
+        maxOutputTokens,
+        temperature,
+        true,
+        maxSearches,
+        prompt,
+        timeout);
+  }
+
   /** Same call with another prompt, e.g. for the JSON repair attempt. */
   public ModelInvocation withPrompt(String newPrompt) {
     return new ModelInvocation(

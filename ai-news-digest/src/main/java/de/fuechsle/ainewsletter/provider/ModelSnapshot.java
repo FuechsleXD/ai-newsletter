@@ -1,14 +1,14 @@
-package de.fuechsle.ainewsletter.research;
+package de.fuechsle.ainewsletter.provider;
 
 import de.fuechsle.ainewsletter.cost.ModelPrices;
 import de.fuechsle.ainewsletter.domain.AiModel;
 import java.math.BigDecimal;
 
 /**
- * Snapshot of a research model and its provider as needed for one call, taken from the database
- * rows so that no entity leaves the service layer.
+ * Snapshot of a model (research or aggregator) and its provider as needed for one call, taken from
+ * the database rows so that no entity leaves the service layer.
  */
-public record ResearchModel(
+public record ModelSnapshot(
     Long modelId,
     String providerCode,
     String secretName,
@@ -19,8 +19,8 @@ public record ResearchModel(
     ModelPrices prices) {
 
   /** Copies the relevant values of a model and its provider. */
-  public static ResearchModel of(AiModel model) {
-    return new ResearchModel(
+  public static ModelSnapshot of(AiModel model) {
+    return new ModelSnapshot(
         model.getId(),
         model.getProvider().getCode(),
         model.getProvider().getSecretName(),

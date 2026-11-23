@@ -1,0 +1,85 @@
+{
+  "title": "Viele Themen",
+  "summary": "Zu viele Sections.",
+  "sections": [
+    {
+      "heading": "Thema 1",
+      "iconKey": "chart",
+      "text": "Text 1.",
+      "sourceIds": [
+        "1"
+      ]
+    },
+    {
+      "heading": "Thema 2",
+      "iconKey": "chart",
+      "text": "Text 2.",
+      "sourceIds": [
+        "1"
+      ]
+    },
+    {
+      "heading": "",
+      "iconKey": "chart",
+      "text": "Ohne Überschrift.",
+      "sourceIds": [
+        "1"
+      ]
+    },
+    {
+      "heading": "Ohne Text",
+      "iconKey": "chart",
+      "sourceIds": [
+        "1"
+      ]
+    },
+    {
+      "heading": "Thema 3",
+      "iconKey": "chart",
+      "text": "Text 3.",
+      "sourceIds": [
+        "1"
+      ]
+    },
+    {
+      "heading": "Thema 4",
+      "iconKey": "chart",
+      "text": "Text 4.",
+      "sourceIds": [
+        "1"
+      ]
+    },
+    {
+      "heading": "Thema 5",
+      "iconKey": "chart",
+      "text": "Text 5.",
+      "sourceIds": [
+        "1"
+      ]
+    },
+    {
+      "heading": "Thema 6",
+      "iconKey": "chart",
+      "text": "Text 6.",
+      "sourceIds": [
+        "1"
+      ]
+    },
+    {
+      "heading": "Thema 7",
+      "iconKey": "chart",
+      "text": "Text 7.",
+      "sourceIds": [
+        "1"
+      ]
+    },
+    {
+      "heading": "Thema 8",
+      "iconKey": "chart",
+      "text": "Text 8.",
+      "sourceIds": [
+        "1"
+      ]
+    }
+  ]
+}

@@ -107,6 +107,10 @@ public record NewsDigestProperties(
       @NotNull @DefaultValue("de") Locale language,
       @Min(1) @DefaultValue("4") int minTopicCards,
       @Min(1) @DefaultValue("6") int maxTopicCards,
+      /** Upper limit for headings in the digest (prompt and shortening before rendering). */
+      @Min(10) @DefaultValue("60") int maxHeadingChars,
+      /** Upper limit for texts in the digest (prompt and shortening before rendering). */
+      @Min(20) @DefaultValue("320") int maxTextChars,
       @NotBlank @DefaultValue("[News Digest] {topic} – {date}") String mailSubjectPattern) {}
 
   /** Retention periods. */

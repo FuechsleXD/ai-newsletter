@@ -70,7 +70,9 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 | Einstellung | Default |
 |---|---|
 | Sprache | Deutsch |
-| Themen-Karten | 4–6, je 2–3 Sätze |
+| Themen-Karten | 4–6, je 2–3 Sätze (`newsdigest.output.min-topic-cards`, `.max-topic-cards`); weniger sind erlaubt, wenn die Meldungen nicht für mehr Themen reichen |
+| Längengrenzen | Überschriften 60 Zeichen, Texte 320 Zeichen (`newsdigest.output.max-heading-chars`, `.max-text-chars`); stehen im Prompt, gekürzt wird vor dem Rendern |
+| Icon-Schlüssel | feste Liste in `src/main/resources/pdf/icon-keys.txt`, unbekannte werden `default` |
 | PDF | A4, eine Seite |
 | Mail | HTML-Inhalt + PDF-Anhang |
 | Mail-Betreff | `[News Digest] <Topic> – <Datum>` |

@@ -14,6 +14,9 @@
                   id="digestRunDefinitions"
                   targetNamespace="https://fuechsle.de/ainewsletter/process">
 
+  <bpmn:error id="aggregationFailedError" name="Aggregation fehlgeschlagen"
+              errorCode="AGGREGATION_FAILED"/>
+
   <bpmn:process id="digestRun" name="News-Digest-Lauf" isExecutable="true">
 
     <bpmn:startEvent id="startEvent" name="Lauf angefordert">
@@ -85,6 +88,27 @@
       <bpmn:outgoing>toRender</bpmn:outgoing>
     </bpmn:serviceTask>
 
+    <!-- The aggregator model failed or its answer stayed invalid after the repair attempt: no
+         retries (they would pay the same failing call again), inform the operator instead. -->
+    <bpmn:boundaryEvent id="aggregationFailed" name="Aggregation fehlgeschlagen"
+                        attachedToRef="aggregate">
+      <bpmn:outgoing>toNotifyOperatorAggregation</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="aggregationFailedDefinition"
+                                 errorRef="aggregationFailedError"/>
+    </bpmn:boundaryEvent>
+
+    <bpmn:serviceTask id="notifyOperatorAggregation" name="Betreiber informieren"
+                      camunda:delegateExpression="${notifyOperatorDelegate}"
+                      camunda:asyncBefore="true">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="notificationReason">AGGREGATION_FAILED</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>toNotifyOperatorAggregation</bpmn:incoming>
+      <bpmn:outgoing>aggregationToFinishFailed</bpmn:outgoing>
+    </bpmn:serviceTask>
+
     <bpmn:serviceTask id="render" name="HTML und PDF erzeugen"
                       camunda:delegateExpression="${renderDigestDelegate}"
                       camunda:asyncBefore="true">
@@ -149,6 +173,7 @@
         </camunda:inputOutput>
       </bpmn:extensionElements>
       <bpmn:incoming>toFinishFailed</bpmn:incoming>
+      <bpmn:incoming>aggregationToFinishFailed</bpmn:incoming>
       <bpmn:outgoing>toEndFailed</bpmn:outgoing>
     </bpmn:serviceTask>
 
@@ -206,6 +231,8 @@
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${researchOutcome == 'NONE_SUCCEEDED'}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="toRender" sourceRef="aggregate" targetRef="render"/>
+    <bpmn:sequenceFlow id="toNotifyOperatorAggregation" sourceRef="aggregationFailed" targetRef="notifyOperatorAggregation"/>
+    <bpmn:sequenceFlow id="aggregationToFinishFailed" sourceRef="notifyOperatorAggregation" targetRef="finishFailed"/>
     <bpmn:sequenceFlow id="toSendMails" sourceRef="render" targetRef="sendMails"/>
     <bpmn:sequenceFlow id="toFinishCompleted" sourceRef="sendMails" targetRef="finishCompleted"/>
     <bpmn:sequenceFlow id="toEndCompleted" sourceRef="finishCompleted" targetRef="endCompleted"/>
@@ -252,6 +279,13 @@
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="aggregate_di" bpmnElement="aggregate">
         <dc:Bounds x="1230" y="180" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="aggregationFailed_di" bpmnElement="aggregationFailed">
+        <dc:Bounds x="1262" y="162" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1300" y="140" width="76" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="notifyOperatorAggregation_di" bpmnElement="notifyOperatorAggregation">
+        <dc:Bounds x="1380" y="40" width="100" height="80"/>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="render_di" bpmnElement="render">
         <dc:Bounds x="1380" y="180" width="100" height="80"/>
@@ -334,6 +368,13 @@
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="toRender_di" bpmnElement="toRender">
         <di:waypoint x="1330" y="220"/><di:waypoint x="1380" y="220"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toNotifyOperatorAggregation_di" bpmnElement="toNotifyOperatorAggregation">
+        <di:waypoint x="1280" y="162"/><di:waypoint x="1280" y="80"/><di:waypoint x="1380" y="80"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="aggregationToFinishFailed_di" bpmnElement="aggregationToFinishFailed">
+        <di:waypoint x="1480" y="80"/><di:waypoint x="1655" y="80"/><di:waypoint x="1655" y="560"/>
+        <di:waypoint x="1430" y="560"/><di:waypoint x="1430" y="520"/>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="toSendMails_di" bpmnElement="toSendMails">
         <di:waypoint x="1480" y="220"/><di:waypoint x="1530" y="220"/>
