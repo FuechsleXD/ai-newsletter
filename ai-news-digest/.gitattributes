@@ -1,0 +1,6 @@
+# Enforce LF in the repository and working tree (Spotless checks UNIX line endings).
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.jpg binary
+*.png binary
+*.pdf binary

@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: ai-news-digest
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+# Defaults are defined in de.fuechsle.ainewsletter.config.NewsDigestProperties (docs/12-defaults.md).
+# Override individual values here or via environment variables, e.g. NEWSDIGEST_BUDGET_MONTHLYLIMITUSD=20.

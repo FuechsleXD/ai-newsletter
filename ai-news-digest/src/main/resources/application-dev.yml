@@ -1,0 +1,9 @@
+# Local development profile. Local services come from docker-compose.yml; values from .env (not checked in).
+management:
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    de.fuechsle.ainewsletter: DEBUG

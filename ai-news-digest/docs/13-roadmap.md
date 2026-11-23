@@ -5,7 +5,7 @@ Status: `[ ]` offen, `[~]` in Arbeit, `[x]` erledigt. Immer nur einen Schritt gl
 Leitidee: erst ein schmaler Durchstich von Anfang bis Ende, dann früh deployen, dann in die Breite. Das größte Risiko ist die Qualität der KI-Ergebnisse, nicht die Technik.
 
 ## Phase 1 – Fundament
-- [ ] 1. Versionen prüfen und festschreiben (Spring Boot 4.x, passende CIB-seven-Starter mit Suffix `-4`, `cibseven-keycloak`, Spring AI 2.x, springdoc; siehe ADR-012); Grundgerüst: Spring-Boot-Projekt, Maven-Wrapper, `.gitignore`, `.editorconfig`, `.env.example`, Spotless, `docker-compose.yml` (zunächst PostgreSQL und Mailpit; Gotenberg kommt in Schritt 8, Keycloak in Schritt 20), Defaults-Klasse
+- [x] 1. Versionen prüfen und festschreiben (Spring Boot 4.x, passende CIB-seven-Starter mit Suffix `-4`, `cibseven-keycloak`, Spring AI 2.x, springdoc; siehe ADR-012); Grundgerüst: Spring-Boot-Projekt, Maven-Wrapper, `.gitignore`, `.editorconfig`, `.env.example`, Spotless, `docker-compose.yml` (zunächst PostgreSQL und Mailpit; Gotenberg kommt in Schritt 8, Keycloak in Schritt 20), Defaults-Klasse
 - [ ] 2. GitHub-Actions-CI (`ci.yml`): Build, Tests, JaCoCo-Schwellen, Formatierung; `dependabot.yml`
 - [ ] 3. Flyway V1: komplettes Datenmodell + Migrations-Tests
 - [ ] 4. CIB seven startet leer neben dem Flyway-Schema

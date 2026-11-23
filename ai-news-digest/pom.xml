@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <!-- Must match the Spring Boot version CIB seven is built against (see ADR-012). -->
+    <version>4.1.2</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>de.fuechsle</groupId>
+  <artifactId>ai-news-digest</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <name>AI News Digest</name>
+  <description>Parallel AI news research, aggregation and digest mails orchestrated by CIB seven</description>
+
+  <properties>
+    <java.version>21</java.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+    <!--
+      Pinned versions (verified 2026-11-23 against Maven Central, see ADR-012).
+      Libraries not yet used are pinned here already and added as dependencies in later roadmap steps.
+    -->
+    <!-- CIB seven 3.0.0: Spring Boot 4.1.x line, built against Spring Boot 4.1.2, Jackson 3.1.7 -->
+    <cibseven.version>3.0.0</cibseven.version>
+    <!-- cibseven-keycloak (org.cibseven.bpm.extension): latest 2.1.0, no CIB seven 3.0 release yet; needed from step 25 -->
+    <cibseven-keycloak.version>2.1.0</cibseven-keycloak.version>
+    <!-- Spring AI 2.0.x supports Spring Boot 4.0.x and 4.1.x -->
+    <spring-ai.version>2.0.3</spring-ai.version>
+    <!-- springdoc 3.1.x targets Spring Boot 4.1 -->
+    <springdoc.version>3.1.1</springdoc.version>
+
+    <!-- Build plugins -->
+    <spotless.version>3.12.0</spotless.version>
+    <jacoco.version>0.8.16</jacoco.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webmvc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-configuration-processor</artifactId>
+      <optional>true</optional>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.springframework.boot</groupId>
+              <artifactId>spring-boot-configuration-processor</artifactId>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>
+              <groupId>org.springframework.boot</groupId>
+              <artifactId>spring-boot-configuration-processor</artifactId>
+            </exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+
+      <!-- Formatting: Google Java Format, checked in verify (spotless:check binds to verify) -->
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>${spotless.version}</version>
+        <configuration>
+          <lineEndings>UNIX</lineEndings>
+          <java>
+            <googleJavaFormat/>
+            <removeUnusedImports/>
+            <trimTrailingWhitespace/>
+            <endWithNewline/>
+          </java>
+          <pom>
+            <sortPom>
+              <expandEmptyElements>false</expandEmptyElements>
+              <keepBlankLines>true</keepBlankLines>
+              <nrOfIndentSpace>2</nrOfIndentSpace>
+              <sortDependencies/>
+              <sortPlugins/>
+            </sortPom>
+          </pom>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Coverage thresholds, see docs/10-tests.md; never lower without asking -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco.version}</version>
+        <configuration>
+          <excludes>
+            <!-- Explicit exception: Spring Boot main class -->
+            <exclude>de/fuechsle/ainewsletter/AiNewsDigestApplication.class</exclude>
+          </excludes>
+        </configuration>
+        <executions>
+          <execution>
+            <id>prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <goals>
+              <goal>report</goal>
+            </goals>
+            <phase>verify</phase>
+          </execution>
+          <execution>
+            <id>check</id>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <phase>verify</phase>
+            <configuration>
+              <rules>
+                <rule>
+                  <element>BUNDLE</element>
+                  <limits>
+                    <limit>
+                      <counter>LINE</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>0.80</minimum>
+                    </limit>
+                    <limit>
+                      <counter>BRANCH</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>0.70</minimum>
+                    </limit>
+                  </limits>
+                </rule>
+                <rule>
+                  <element>PACKAGE</element>
+                  <includes>
+                    <include>de.fuechsle.ainewsletter.service*</include>
+                    <include>de.fuechsle.ainewsletter.process*</include>
+                    <include>de.fuechsle.ainewsletter.scheduling*</include>
+                    <include>de.fuechsle.ainewsletter.research*</include>
+                    <include>de.fuechsle.ainewsletter.cost*</include>
+                  </includes>
+                  <limits>
+                    <limit>
+                      <counter>LINE</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>0.85</minimum>
+                    </limit>
+                  </limits>
+                </rule>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
