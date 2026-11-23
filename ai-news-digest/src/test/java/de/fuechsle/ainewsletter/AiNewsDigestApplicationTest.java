@@ -3,6 +3,7 @@ package de.fuechsle.ainewsletter;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.fuechsle.ainewsletter.config.NewsDigestProperties;
+import de.fuechsle.ainewsletter.support.PostgresTestSupport;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -13,7 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class AiNewsDigestApplicationTest {
+class AiNewsDigestApplicationTest extends PostgresTestSupport {
 
   private final int port;
   private final NewsDigestProperties properties;

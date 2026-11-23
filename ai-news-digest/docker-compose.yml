@@ -8,12 +8,17 @@ services:
     image: postgres:18.7-alpine
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-newsdigest}
-      POSTGRES_USER: ${POSTGRES_USER:-newsdigest}
+      # Superuser, only for administration and the init script
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      # Passwords of the users created by docker/postgres/init/01-create-users.sh
+      DB_MIGRATION_PASSWORD: ${DB_MIGRATION_PASSWORD:?set DB_MIGRATION_PASSWORD in .env}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:?set DB_APP_PASSWORD in .env}
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s

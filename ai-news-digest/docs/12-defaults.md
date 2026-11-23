@@ -46,7 +46,7 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 | Einstellung | Default | Überschreibbar in |
 |---|---|---|
 | Monatsbudget | 10 USD (Startwert, nach den ersten Läufen anhand der echten Kosten anpassen) | `budget` |
-| Warnschwelle | 80 % | `budget` |
+| Warnschwelle | 80 % (`warn-percent`, ganze Prozent wie `budget.warn_percent`) | `budget` |
 | Verhalten bei erreichtem Budget | Geplante und manuelle Läufe werden nicht gestartet | – |
 
 ## Prozess
