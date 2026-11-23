@@ -13,7 +13,7 @@ Backend ──> KI-Anbieter | Quellen-URLs (Prüfung) | Gotenberg (PDF, intern) 
 Hosting ohne Load Balancer, Details in `11-deployment-cicd.md`.
 
 ## Packages
-`de.<firma>.newsdigest`
+`de.fuechsle.ainewsletter` (Maven: `de.fuechsle:ai-news-digest`)
 | Package | Inhalt |
 |---|---|
 | `config` | `@ConfigurationProperties` (Defaults), technische Konfiguration |

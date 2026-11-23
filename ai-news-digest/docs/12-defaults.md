@@ -1,6 +1,6 @@
 # 12 – Defaults
 
-Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Klasse im Package `config`), sind über `application.yml` bzw. Umgebungsvariablen überschreibbar und per Test abgesichert. Wo eine DB-Spalte existiert, überschreibt sie den Default.
+Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `NewsDigestProperties` im Package `config`, Präfix `newsdigest`), sind über `application.yml` bzw. Umgebungsvariablen überschreibbar und per Test abgesichert. Wo eine DB-Spalte existiert, überschreibt sie den Default.
 
 ## Läufe
 | Einstellung | Default | Überschreibbar in |

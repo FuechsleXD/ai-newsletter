@@ -1,0 +1,30 @@
+# Build
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Local configuration and secrets
+.env
+*.local.yml
+application-local.yml
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+.factorypath
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend (later)
+node_modules/
+frontend/dist/
+
+# Terraform (later)
+.terraform/
+*.tfstate
+*.tfstate.*
