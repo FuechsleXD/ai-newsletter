@@ -32,6 +32,8 @@ Hosting ohne Load Balancer, Details in `11-deployment-cicd.md`.
 | `repository` | Spring-Data-Repositories |
 | `domain` | JPA-Entities |
 | `migration` | Flyway-Java-Migrationen (offizielle CIB-seven-Skripte im Schema `bpm`, siehe `03-datenmodell.md`) |
+| `prompt` | Laden der versionierten Prompt-Templates, `PromptRenderer` |
+| `secret` | `SecretProvider` (bis Schritt 11 aus Umgebungsvariablen, danach AWS Secrets Manager) |
 
 ## Schichten
 - Controller -> Service -> Repository; keine Logik und kein try/catch im Controller
@@ -46,7 +48,8 @@ Hosting ohne Load Balancer, Details in `11-deployment-cicd.md`.
 ## KI-Anbindung
 - Interface `NewsProvider` pro Anbieter; Registry ordnet `ai_provider.code` der Implementierung zu
 - Das Modell ist ein Aufrufparameter: jeder Aufruf bekommt ein Record mit Modell-ID, Temperatur, Max-Tokens (bei Spring AI über Chat-Options pro Request)
-- Modellnamen nie fest im Code oder in `application.yml` (Ausnahme: Default-Aggregator-Modell, siehe `12-defaults.md`)
+- Modellnamen und Preise nie fest im Code, in `application.yml` oder in Migrationen; auch das Aggregator-Modell steht nur am Topic (ADR-013)
+- Umsetzung für Anthropic: `AnthropicNewsProvider` über Spring AI (`spring-ai-anthropic`, ohne Starter); Modell-ID, Max-Tokens, Temperatur (nur wenn gesetzt), API-Key, Timeout und Websuche (`max_uses`) werden pro Aufruf gesetzt. Bekannte Lücke: Spring AI 2.0.3 liefert bei einer Antwort ohne Inhalt (z. B. Ablehnung) weder Stop-Grund noch Token-Zahlen; das Ergebnis ist dann `FAILED` mit Kosten 0 (offener Punkt 6)
 - Recherche nutzt die Web-Suche bzw. Grounding des Anbieters
 - Jeder Aufruf liefert Token-Zahlen; daraus und aus den Modellpreisen werden die Kosten berechnet und gespeichert
 - Parallelität: begrenzte gleichzeitige Aufrufe pro Anbieter (Semaphore, Default in `12-defaults.md`), damit Rate-Limits nicht greifen
@@ -65,7 +68,9 @@ Hosting ohne Load Balancer, Details in `11-deployment-cicd.md`.
 }
 ```
 - Max. Anzahl Meldungen pro Modell siehe Defaults
-- Antwort, die sich nicht parsen lässt: ein Reparaturversuch mit demselben Modell, danach `FAILED`
+- Antwort, die sich nicht parsen lässt: ein Reparaturversuch mit demselben Modell (Prompt `repair-json`, ohne Websuche), danach `FAILED`; beide Aufrufe werden gezählt und berechnet
+- Text vor oder nach dem JSON-Objekt (Einleitungssatz, Markdown-Codeblock) wird ignoriert; einzelne Meldungen, die den Vertrag verletzen (Überschrift oder Zusammenfassung fehlt, keine absolute http(s)-URL, URL länger als 2048 Zeichen), werden verworfen, der Rest bleibt gültig; ein Datum, das nicht `YYYY-MM-DD` ist, gilt als unbekannt; Meldungen über dem Maximum werden abgeschnitten (das Modell sortiert nach Bedeutung)
+- Umsetzung: `ResearchService` (Package `research`) liefert ein `ResearchResult` mit Status, Meldungen, Token, Websuchen, Kosten und Fehlertext; gespeichert wird es vom Prozess (Schritte 6 und 7)
 
 ## Prüfung der Meldungen
 Reihenfolge, jeweils mit Status am `news_item`:

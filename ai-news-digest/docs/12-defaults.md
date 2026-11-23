@@ -13,9 +13,11 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 ## Modelle und Recherche
 | Einstellung | Default | Überschreibbar in |
 |---|---|---|
-| Aggregator-Modell | Anbieter `ANTHROPIC` + konfigurierte Modell-ID (stärkstes verfügbares Claude-Modell), beim Start gegen die DB geprüft | `topic.aggregator_model_id` |
-| Erster Anbieter | `ANTHROPIC` (Claude), auch für die Recherche | `ai_provider` |
-| Temperatur, Max-Tokens | Anbieter-Standard | `ai_model` |
+| Aggregator-Modell | kein Default, jedes Topic nennt sein Aggregator-Modell (ADR-013) | `topic.aggregator_model_id` (Pflicht) |
+| Erster Anbieter | `ANTHROPIC` (Claude), auch für die Recherche; Modelle und Preise nur in der DB, keine Seed-Daten | `ai_provider`, `ai_model` |
+| Temperatur | Anbieter-Standard (nicht gesendet, wenn NULL; aktuelle Claude-Modelle lehnen sie ab) | `ai_model.temperature` |
+| Max-Tokens | 16000 (`newsdigest.ai.default-max-output-tokens`) | `ai_model.max_output_tokens` |
+| Websuchen pro Recherche-Aufruf | max. 5 (`newsdigest.ai.max-web-searches-per-call`, Kostenbremse) | – |
 | Timeout pro Modellaufruf | 120 s | – |
 | Gleichzeitige Aufrufe pro Anbieter | 2 | `ai_provider.max_concurrent_calls` |
 | Meldungen pro Modell | max. 10 | – |
@@ -73,7 +75,7 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 | Mail | HTML-Inhalt + PDF-Anhang |
 | Mail-Betreff | `[News Digest] <Topic> – <Datum>` |
 | Absender, Betreiber-Empfänger | nur über Umgebungsvariablen |
-| Aktive Prompt-Version | in der Konfiguration, je Prompt |
+| Aktive Prompt-Version | `v1` je Prompt (`newsdigest.prompts.research`, `.aggregate`, `.repair-json`) |
 
 ## Aufbewahrung
 | Daten | Frist |

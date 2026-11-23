@@ -58,6 +58,7 @@ class SchemaMigrationTest extends PostgresTestSupport {
             "V1__app_initial_schema.sql",
             "V2__app_seed.sql",
             "de.fuechsle.ainewsletter.migration.V3__bpm_create_engine_3_0",
+            "V4__app_topic_aggregator_required.sql",
             "R__monthly_cost.sql");
     assertThat(Arrays.stream(applied).map(MigrationInfo::getState))
         .allMatch(MigrationState::isApplied)
@@ -126,7 +127,17 @@ class SchemaMigrationTest extends PostgresTestSupport {
   @Test
   void topicRequiresExistingSchedule() {
     assertViolates(
-        "fk_topic_schedule", "INSERT INTO topic (name, schedule_id) VALUES ('KI', 999999)");
+        "fk_topic_schedule",
+        "INSERT INTO topic (name, schedule_id, aggregator_model_id) VALUES ('KI', 999999, ?)",
+        insertModel(anthropicId(), "aggregator"));
+  }
+
+  @Test
+  void topicRequiresAnAggregatorModel() {
+    assertViolates(
+        "aggregator_model_id",
+        "INSERT INTO topic (name, schedule_id) VALUES ('KI', ?)",
+        defaultScheduleId());
   }
 
   @Test
@@ -370,11 +381,13 @@ class SchemaMigrationTest extends PostgresTestSupport {
   }
 
   private long insertTopic(String name) {
+    long aggregatorId = insertModel(anthropicId(), "topic-aggregator-" + name);
     return jdbc.queryForObject(
-        "INSERT INTO topic (name, schedule_id) VALUES (?, ?) RETURNING id",
+        "INSERT INTO topic (name, schedule_id, aggregator_model_id) VALUES (?, ?, ?) RETURNING id",
         Long.class,
         name,
-        defaultScheduleId());
+        defaultScheduleId(),
+        aggregatorId);
   }
 
   private long insertRecipient(String email) {

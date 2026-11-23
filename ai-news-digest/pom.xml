@@ -38,6 +38,18 @@
     <jacoco.version>0.8.16</jacoco.version>
   </properties>
 
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.springframework.ai</groupId>
+        <artifactId>spring-ai-bom</artifactId>
+        <version>${spring-ai.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -68,6 +80,11 @@
       <groupId>org.cibseven.bpm.springboot</groupId>
       <artifactId>cibseven-bpm-spring-boot-starter</artifactId>
       <version>${cibseven.version}</version>
+    </dependency>
+    <!-- Anthropic chat model without auto-configuration: API keys are resolved per provider at runtime -->
+    <dependency>
+      <groupId>org.springframework.ai</groupId>
+      <artifactId>spring-ai-anthropic</artifactId>
     </dependency>
     <dependency>
       <groupId>org.postgresql</groupId>

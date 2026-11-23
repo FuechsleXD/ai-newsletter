@@ -11,7 +11,7 @@ Leitidee: erst ein schmaler Durchstich von Anfang bis Ende, dann früh deployen,
 - [x] 4. CIB seven startet leer neben dem Flyway-Schema
 
 ## Phase 2 – Durchstich (ein Topic, ein Modell, lokal)
-- [ ] 5. Ein Anbieter + ein Modell, Recherche-JSON, Prompt v1, Kostenberechnung
+- [x] 5. Ein Anbieter + ein Modell, Recherche-JSON, Prompt v1, Kostenberechnung
 - [ ] 6. BPMN `digestRun` vollständig modelliert (inkl. Parallel-Gateways und paralleler Multi-Instance), zunächst mit einem Modell
 - [ ] 7. Einfache Prüfung (Zeitraum, Duplikate im Lauf), Aggregator mit JSON-Vertrag
 - [ ] 8. Gotenberg im Compose, einfaches PDF und HTML-Mail (noch ohne fertiges Design), Versand über Mailpit

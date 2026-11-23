@@ -19,7 +19,7 @@ Regeln:
 - Die App liest Secrets zur Laufzeit über die IAM-Rolle der Instanz (AWS SDK bzw. Spring Cloud AWS) und hält sie mit kurzer Lebensdauer im Speicher (Default siehe `12-defaults.md`), damit ein rotierter Key ohne Neustart wirkt
 - Die IAM-Rolle darf nur `secretsmanager:GetSecretValue` auf `newsdigest/prod/*`
 - Fehlt ein Secret für einen aktiven Anbieter, schlagen dessen Aufrufe mit klarer Meldung fehl; die App startet trotzdem
-- Lokal (`dev`): Keys aus einer nicht eingecheckten Datei `.env` (in `.gitignore`), die nur Docker Compose liest; eine `.env.example` ohne Werte liegt im Repo
+- Lokal (`dev`): Keys aus einer nicht eingecheckten Datei `.env` (in `.gitignore`); eine `.env.example` ohne Werte liegt im Repo. Bis Schritt 11 liest `EnvironmentSecretProvider` ein Secret aus der Umgebungsvariablen, deren Name aus dem Secret-Namen entsteht (Großbuchstaben, alles außer Buchstaben und Ziffern wird `_`): `newsdigest/prod/ai/anthropic` → `NEWSDIGEST_PROD_AI_ANTHROPIC`
 - In Tests werden keine echten Keys verwendet
 - Rotation: KI-Keys bei Verdacht sofort, sonst regelmäßig manuell; DB-Passwörter bei jedem Wechsel der Betreuung
 

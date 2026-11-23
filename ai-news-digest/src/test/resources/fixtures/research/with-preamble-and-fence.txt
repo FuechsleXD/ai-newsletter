@@ -1,0 +1,14 @@
+Ich habe die Websuche genutzt und folgende Meldungen gefunden:
+
+```json
+{
+  "items": [
+    {
+      "headline": "Release X",
+      "summary": "Kurze Zusammenfassung. Zweiter Satz.",
+      "url": "https://news.example.test/x",
+      "publishedAt": "2026-11-18"
+    }
+  ]
+}
+```

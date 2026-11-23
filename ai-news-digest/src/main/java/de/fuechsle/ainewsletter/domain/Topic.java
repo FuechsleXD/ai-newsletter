@@ -33,9 +33,9 @@ public class Topic extends AuditedEntity {
   @Column(name = "initial_lookback_days")
   private Integer initialLookbackDays;
 
-  /** NULL = default aggregator model. */
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "aggregator_model_id")
+  /** Model that condenses the research results; required, there is no default (ADR-013). */
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "aggregator_model_id", nullable = false)
   private AiModel aggregatorModel;
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -62,9 +62,10 @@ public class Topic extends AuditedEntity {
 
   protected Topic() {}
 
-  public Topic(String name, Schedule schedule) {
+  public Topic(String name, Schedule schedule, AiModel aggregatorModel) {
     this.name = name;
     this.schedule = schedule;
+    this.aggregatorModel = aggregatorModel;
   }
 
   public Long getId() {
