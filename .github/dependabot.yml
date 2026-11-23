@@ -44,3 +44,7 @@ updates:
     groups:
       compose-images:
         patterns: ["*"]
+    ignore:
+      # A PostgreSQL major upgrade needs a dump/restore and a deliberate decision, not a bot PR.
+      - dependency-name: postgres
+        update-types: [version-update:semver-major]
