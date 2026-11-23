@@ -64,7 +64,7 @@ class EntityMappingTest extends PostgresTestSupport {
     recipient.setActive(false);
     em.persist(recipient);
 
-    Topic topic = new Topic("KI", schedule);
+    Topic topic = new Topic("KI", schedule, model);
     topic.setName("Künstliche Intelligenz");
     topic.setDescription("Neuigkeiten zu Sprachmodellen");
     topic.setInitialLookbackDays(14);
@@ -167,7 +167,7 @@ class EntityMappingTest extends PostgresTestSupport {
     AiModel model =
         new AiModel(provider, "model-y", "Y", true, true, BigDecimal.ONE, BigDecimal.TEN);
     em.persist(model);
-    Topic topic = new Topic("Robotik", schedule);
+    Topic topic = new Topic("Robotik", schedule, model);
     em.persist(topic);
     Recipient recipient = new Recipient("reader@example.test");
     em.persist(recipient);
@@ -275,7 +275,7 @@ class EntityMappingTest extends PostgresTestSupport {
     em.persist(provider);
     AiModel model = new AiModel(provider, "m", "M", true, true, BigDecimal.ONE, BigDecimal.ONE);
     em.persist(model);
-    Topic topic = new Topic("Energie", schedule);
+    Topic topic = new Topic("Energie", schedule, model);
     em.persist(topic);
     DigestRun run =
         new DigestRun(

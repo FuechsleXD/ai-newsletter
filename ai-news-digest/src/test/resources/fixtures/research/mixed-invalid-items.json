@@ -1,0 +1,13 @@
+{
+  "items": [
+    { "headline": "Gültig", "summary": "Gültige Meldung.", "url": "https://news.example.test/ok", "publishedAt": "2026-11-19" },
+    { "headline": "", "summary": "Leere Überschrift.", "url": "https://news.example.test/empty" },
+    { "headline": "Ohne Zusammenfassung", "url": "https://news.example.test/nosummary" },
+    { "headline": "FTP-Link", "summary": "Kein http(s).", "url": "ftp://files.example.test/a" },
+    { "headline": "Relative URL", "summary": "Ohne Host.", "url": "/nur/ein/pfad" },
+    { "headline": "Kaputte URL", "summary": "Leerzeichen.", "url": "https://news example.test/a" },
+    { "headline": 42, "summary": "Zahl statt Text.", "url": "https://news.example.test/number" },
+    "kein Objekt",
+    { "headline": "Datum ungültig", "summary": "Datum wird unbekannt.", "url": "https://news.example.test/date", "publishedAt": "20. November 2026" }
+  ]
+}

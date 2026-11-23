@@ -30,9 +30,11 @@ class NewsDigestPropertiesTest {
       assertThat(p.run().configReloadInterval()).isEqualTo(Duration.ofSeconds(60));
       assertThat(p.run().maxManualRunsPerTopicPerHour()).isEqualTo(3);
 
-      assertThat(p.ai().defaultProviderCode()).isEqualTo("ANTHROPIC");
-      assertThat(p.ai().aggregatorModelId()).isNull();
       assertThat(p.ai().callTimeout()).isEqualTo(Duration.ofSeconds(120));
+      assertThat(p.prompts().research()).isEqualTo("v1");
+      assertThat(p.prompts().aggregate()).isEqualTo("v1");
+      assertThat(p.prompts().repairJson()).isEqualTo("v1");
+      assertThat(p.providers().anthropic().baseUrl()).isEqualTo("https://api.anthropic.com");
       assertThat(p.ai().maxConcurrentCallsPerProvider()).isEqualTo(2);
       assertThat(p.ai().maxItemsPerModel()).isEqualTo(10);
       assertThat(p.ai().jsonRepairAttempts()).isEqualTo(1);
@@ -76,13 +78,13 @@ class NewsDigestPropertiesTest {
         .withPropertyValues(
             "newsdigest.budget.monthly-limit-usd=25.50",
             "newsdigest.ai.call-timeout=90s",
-            "newsdigest.ai.aggregator-model-id=some-model",
+            "newsdigest.prompts.research=v2",
             "newsdigest.run.initial-lookback-days=14")
         .run(context -> {
           NewsDigestProperties p = context.getBean(NewsDigestProperties.class);
           assertThat(p.budget().monthlyLimitUsd()).isEqualByComparingTo("25.50");
           assertThat(p.ai().callTimeout()).isEqualTo(Duration.ofSeconds(90));
-          assertThat(p.ai().aggregatorModelId()).isEqualTo("some-model");
+          assertThat(p.prompts().research()).isEqualTo("v2");
           assertThat(p.run().initialLookbackDays()).isEqualTo(14);
           // untouched values keep their defaults
           assertThat(p.budget().warnPercent()).isEqualTo(80);

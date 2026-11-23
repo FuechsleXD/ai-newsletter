@@ -1,0 +1,76 @@
+{
+  "items": [
+    {
+      "headline": "Meldung 1",
+      "summary": "Zusammenfassung 1.",
+      "url": "https://news.example.test/1",
+      "publishedAt": "2026-11-20"
+    },
+    {
+      "headline": "Meldung 2",
+      "summary": "Zusammenfassung 2.",
+      "url": "https://news.example.test/2",
+      "publishedAt": "2026-11-20"
+    },
+    {
+      "headline": "Meldung 3",
+      "summary": "Zusammenfassung 3.",
+      "url": "https://news.example.test/3",
+      "publishedAt": "2026-11-20"
+    },
+    {
+      "headline": "Meldung 4",
+      "summary": "Zusammenfassung 4.",
+      "url": "https://news.example.test/4",
+      "publishedAt": "2026-11-20"
+    },
+    {
+      "headline": "Meldung 5",
+      "summary": "Zusammenfassung 5.",
+      "url": "https://news.example.test/5",
+      "publishedAt": "2026-11-20"
+    },
+    {
+      "headline": "Meldung 6",
+      "summary": "Zusammenfassung 6.",
+      "url": "https://news.example.test/6",
+      "publishedAt": "2026-11-20"
+    },
+    {
+      "headline": "Meldung 7",
+      "summary": "Zusammenfassung 7.",
+      "url": "https://news.example.test/7",
+      "publishedAt": "2026-11-20"
+    },
+    {
+      "headline": "Meldung 8",
+      "summary": "Zusammenfassung 8.",
+      "url": "https://news.example.test/8",
+      "publishedAt": "2026-11-20"
+    },
+    {
+      "headline": "Meldung 9",
+      "summary": "Zusammenfassung 9.",
+      "url": "https://news.example.test/9",
+      "publishedAt": "2026-11-20"
+    },
+    {
+      "headline": "Meldung 10",
+      "summary": "Zusammenfassung 10.",
+      "url": "https://news.example.test/10",
+      "publishedAt": "2026-11-20"
+    },
+    {
+      "headline": "Meldung 11",
+      "summary": "Zusammenfassung 11.",
+      "url": "https://news.example.test/11",
+      "publishedAt": "2026-11-20"
+    },
+    {
+      "headline": "Meldung 12",
+      "summary": "Zusammenfassung 12.",
+      "url": "https://news.example.test/12",
+      "publishedAt": "2026-11-20"
+    }
+  ]
+}

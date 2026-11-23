@@ -1,0 +1,9 @@
+{
+  "items": [
+    {
+      "headline": "Abgeschnittene Antwort",
+      "summary": "Die Antwort endet mitten im Objekt,
+      "url": "https://news.example.test/cut"
+    }
+  ]
+}

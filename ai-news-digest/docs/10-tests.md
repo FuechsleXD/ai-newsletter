@@ -41,7 +41,8 @@
 Test-Hilfen von CIB seven prüfen; sonst direkt mit `RuntimeService`, `HistoryService` und Job-Ausführung testen.
 
 ## Bewertung von Prompts
-- Beispielantworten echter Modelle (anonymisiert, ohne Keys) liegen als Fixtures in `src/test/resources/fixtures/research/` und `.../aggregate/`; automatische Tests prüfen Parsing, Prüfung und Rendering damit
+- Beispielantworten echter Modelle (anonymisiert, ohne Keys) liegen als Fixtures in `src/test/resources/fixtures/research/` und `.../aggregate/`; automatische Tests prüfen Parsing, Prüfung und Rendering damit (seit Schritt 5: konstruierte Beispiele für gültige, umrahmte, kaputte und zu lange Antworten; echte Antworten kommen mit dem Eval in Schritt 9 dazu)
+- Anbieter-Anbindung: `AnthropicNewsProviderTest` spricht gegen einen lokalen Stub der Messages-API (HTTP-Server des JDK) und prüft Anfrage (Modell, Max-Tokens, Temperatur nur wenn gesetzt, Websuche, API-Key) und Abbildung der Antwort (Text, Token, Websuchen, Stop-Grund); keine neue Test-Abhängigkeit
 - Eval-Profil `eval` (nur manuell, nie in der CI): führt die aktuellen Prompts gegen echte APIs für festgelegte Topics aus und schreibt Ergebnisse, Kosten und PDFs nach `target/eval/<prompt-version>/`, damit ich Versionen vergleichen kann
 - Vor einer neuen Prompt-Version: Eval laufen lassen und Ergebnis mit der vorherigen Version vergleichen
 

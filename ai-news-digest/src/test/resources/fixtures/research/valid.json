@@ -1,0 +1,16 @@
+{
+  "items": [
+    {
+      "headline": "Spring Boot 4.1.3 veröffentlicht",
+      "summary": "Das Patch-Release behebt mehrere Fehler. Es aktualisiert außerdem Abhängigkeiten.",
+      "url": "https://spring.example.test/blog/2026/11/20/spring-boot-4-1-3",
+      "publishedAt": "2026-11-20"
+    },
+    {
+      "headline": "Neue Java-Preview",
+      "summary": "Ein neues Early-Access-Build ist verfügbar. Es enthält zwei Preview-Features.",
+      "url": "https://jdk.example.test/ea",
+      "publishedAt": null
+    }
+  ]
+}

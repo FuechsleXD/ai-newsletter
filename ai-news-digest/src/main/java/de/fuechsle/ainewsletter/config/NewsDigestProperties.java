@@ -19,15 +19,16 @@ import org.springframework.validation.annotation.Validated;
  * application.yml or via environment variables; where a database column exists, it overrides the
  * default at runtime.
  *
- * <p>Model names, recipients and schedules are intentionally not part of this class: they live in
- * the database. The only exception is the default aggregator model ID, which has no default value
- * and must be configured explicitly.
+ * <p>Providers, models, prices, recipients and schedules are intentionally not part of this class:
+ * they live in the database only (ADR-013).
  */
 @Validated
 @ConfigurationProperties(prefix = "newsdigest")
 public record NewsDigestProperties(
     @Valid @NotNull @DefaultValue Run run,
     @Valid @NotNull @DefaultValue Ai ai,
+    @Valid @NotNull @DefaultValue Prompts prompts,
+    @Valid @NotNull @DefaultValue Providers providers,
     @Valid @NotNull @DefaultValue Auth auth,
     @Valid @NotNull @DefaultValue Secrets secrets,
     @Valid @NotNull @DefaultValue UrlCheck urlCheck,
@@ -46,15 +47,31 @@ public record NewsDigestProperties(
 
   /** Model and research defaults. */
   public record Ai(
-      @NotBlank @DefaultValue("ANTHROPIC") String defaultProviderCode,
-      /** Default aggregator model ID; no default value, checked against the DB at startup. */
-      String aggregatorModelId,
       @NotNull @DefaultValue("120s") Duration callTimeout,
+      /**
+       * Used when {@code ai_model.max_output_tokens} is NULL; the Anthropic API requires a value.
+       */
+      @Min(1) @DefaultValue("16000") int defaultMaxOutputTokens,
+      /** Upper limit of web searches per research call (cost guard). */
+      @Min(1) @DefaultValue("5") int maxWebSearchesPerCall,
       @Min(1) @DefaultValue("2") int maxConcurrentCallsPerProvider,
       @Min(1) @DefaultValue("10") int maxItemsPerModel,
       @Min(0) @DefaultValue("1") int jsonRepairAttempts,
       @Min(1) @DefaultValue("90") int duplicateLookbackDays,
       @DefaultValue("true") boolean passPreviousHeadlinesToAggregator) {}
+
+  /** Active prompt version per prompt (src/main/resources/prompts/<name>/<version>.txt). */
+  public record Prompts(
+      @NotBlank @DefaultValue("v1") String research,
+      @NotBlank @DefaultValue("v1") String aggregate,
+      @NotBlank @DefaultValue("v1") String repairJson) {}
+
+  /** Technical endpoints of the provider APIs (not secrets, not model choices). */
+  public record Providers(@Valid @NotNull @DefaultValue Anthropic anthropic) {
+
+    /** Anthropic Messages API. */
+    public record Anthropic(@NotBlank @DefaultValue("https://api.anthropic.com") String baseUrl) {}
+  }
 
   /** Token validation defaults (Keycloak). */
   public record Auth(@NotNull @DefaultValue("30s") Duration clockSkew) {}
