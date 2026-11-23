@@ -122,6 +122,19 @@ public class DigestRun {
     return status;
   }
 
+  /**
+   * Ends the run with a final status.
+   *
+   * @throws IllegalArgumentException if the status is {@code RUNNING}
+   */
+  public void finish(RunStatus finalStatus, Instant finishedAt) {
+    if (finalStatus == RunStatus.RUNNING) {
+      throw new IllegalArgumentException("A run cannot finish with status RUNNING");
+    }
+    this.status = finalStatus;
+    this.finishedAt = finishedAt;
+  }
+
   public void setStatus(RunStatus status) {
     this.status = status;
   }

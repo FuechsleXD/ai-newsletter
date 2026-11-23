@@ -83,6 +83,10 @@ public class ProviderResult {
     return status;
   }
 
+  public void setStatus(ProviderResultStatus status) {
+    this.status = status;
+  }
+
   public String getRawResponse() {
     return rawResponse;
   }
@@ -93,6 +97,10 @@ public class ProviderResult {
 
   public long getDurationMs() {
     return durationMs;
+  }
+
+  public void setDurationMs(long durationMs) {
+    this.durationMs = durationMs;
   }
 
   public Integer getInputTokens() {

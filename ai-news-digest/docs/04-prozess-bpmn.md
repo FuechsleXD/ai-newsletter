@@ -41,22 +41,47 @@ Technische Regeln (wichtig für echte Parallelität):
 - Pro Anbieter begrenzt eine Semaphore die gleichzeitigen Aufrufe (Default siehe Defaults); die Job-Executor-Threads müssen dazu passend konfiguriert sein
 
 ## Dateien
-- Modell: `src/main/resources/processes/digest-run.bpmn`, Process-ID `digestRun`
+- Modell: `src/main/resources/processes/digest-run.bpmn`, Process-ID `digestRun`; wird beim Start automatisch deployt (`camunda.bpm.deployment-resource-pattern: classpath*:processes/*.bpmn`), eine neue Prozessversion entsteht nur bei geändertem Modell
 - Delegates im Package `process`, als Spring-Beans über `camunda:delegateExpression="${...}"`
+
+## Umsetzung (Stand Roadmap-Schritt 6)
+| Task | Bean | Asynchron | Stand |
+|---|---|---|---|
+| Lauf vorbereiten | `prepareRunDelegate` | nein, läuft in der Transaktion von `DigestProcessStarter` | fertig |
+| Budget prüfen | `checkBudgetDelegate` | nein | fertig (Monatskosten aus View `monthly_cost` gegen aktives Budget bzw. Default) |
+| Recherche | `researchDelegate` | `asyncBefore`, nicht exklusiv; Multi-Instance-Body `asyncAfter` | fertig (ein Modell; Semaphore pro Anbieter folgt in Schritt 13) |
+| Meldungen prüfen | `checkNewsDelegate` | `asyncBefore` | setzt `researchOutcome`; Prüfungen folgen in Schritt 7 und 14 |
+| Aggregieren | `aggregateDelegate` | `asyncBefore` | Platzhalter bis Schritt 7 |
+| HTML und PDF erzeugen | `renderDigestDelegate` | `asyncBefore` | Platzhalter bis Schritt 8 |
+| Mails versenden | `sendMailsDelegate` | `asyncBefore` | Platzhalter bis Schritt 8 |
+| Betreiber informieren | `notifyOperatorDelegate` (Grund als Input-Parameter `notificationReason`) | `asyncBefore` | Platzhalter bis Schritt 8 |
+| Lauf abschließen | `finishRunDelegate` (Status als Input-Parameter `runStatus`, je Ende ein Task) | nein | fertig |
+
+Platzhalter schreiben nur einen Log-Eintrag (`PendingStepDelegates`) und werden später durch echte Delegates mit demselben Bean-Namen ersetzt; das BPMN bleibt dabei unverändert.
+
+Hinweis: Die Recherche läuft innerhalb der Job-Transaktion der Engine und hält dabei eine DB-Verbindung, solange der Modellaufruf dauert. Bei mehreren parallelen Modellen (Schritt 13) Verbindungs-Pool und Job-Executor-Threads aufeinander abstimmen.
 
 ## Prozessvariablen
 | Variable | Typ | Gesetzt von |
 |---|---|---|
 | `topicId` | Long | Starter |
 | `runId` | Long | Lauf vorbereiten |
-| `periodFrom`, `periodTo` | Datum | Lauf vorbereiten |
-| `models` | Liste von Modell-IDs (Long) | Lauf vorbereiten |
+| `periodFrom`, `periodTo` | String `YYYY-MM-DD` (Datum in der Zeitzone des Zeitplans) | Lauf vorbereiten |
+| `models` | String mit kommagetrennten Modell-IDs, z. B. `3,17`; die Multi-Instance liest sie über `${digestRunVariables.modelIds(models)}` | Lauf vorbereiten |
 | `model` | Long (Element der Multi-Instance, lokal) | Multi-Instance |
 | `aggregatorModelId` | Long | Lauf vorbereiten |
 | `budgetOk` | Boolean | Budget prüfen |
 | `researchOutcome` | String: `NONE_SUCCEEDED`, `NO_VALID_NEWS`, `VALID_NEWS` | Meldungen prüfen (nach dem Join) |
 
 Große Inhalte stehen nie in Prozessvariablen, sondern in Tabellen bzw. S3.
+
+Alle Variablen sind einfache Werte oder Strings, damit die Engine keine Java-Serialisierung braucht (diese ist aus Sicherheitsgründen abgeschaltet). Namen und Kodierung stehen in `DigestRunVariables`.
+
+## Zeitraum eines Laufs
+- Ende: heute in der Zeitzone des Zeitplans
+- Anfang: der Tag nach `last_successful_run_at`; beim ersten Lauf heute minus `initial_lookback_days` (Default 7)
+- Lag der letzte erfolgreiche Lauf schon heute, umfasst der Zeitraum nur heute
+- Umsetzung: `RunPeriodCalculator`
 
 ## Fehlerverhalten
 - Externe Aufrufe (KI, URL-Prüfung, S3, Mail) mit `asyncBefore` und Retries (siehe `12-defaults.md`); nach Ausschöpfen der Retries entsteht ein Incident und ein Alarm (siehe `11-deployment-cicd.md`)
@@ -78,7 +103,7 @@ Große Inhalte stehen nie in Prozessvariablen, sondern in Tabellen bzw. S3.
 
 ## Idempotenz
 Jeder asynchrone Schritt kann von der Engine wiederholt werden (Retry, abgelaufene Job-Sperre nach Neustart). Deshalb:
-- Recherche: vorhandenes `provider_result` für (Lauf, Modell) wird überschrieben, nicht doppelt angelegt (UNIQUE-Constraint)
+- Recherche: vorhandenes `provider_result` für (Lauf, Modell) wird überschrieben, nicht doppelt angelegt (UNIQUE-Constraint); die Meldungen werden ersetzt, Token, Websuchen, Kosten und Dauer des früheren Versuchs werden zu den neuen addiert. Das Ergebnis wird direkt nach dem Modellaufruf in einer eigenen Transaktion gespeichert, damit ein bezahlter Aufruf auch dann erfasst bleibt, wenn der Job danach scheitert (`RunResearchService`)
 - Aggregieren, Rendern, S3-Upload: Ergebnis wird ersetzt; S3-Schlüssel ist deterministisch (`runs/<runId>/digest.pdf`)
 - Mail: bereits `SENT` wird nie erneut verschickt
 - Kosten werden pro Aufruf gespeichert; ein wiederholter Aufruf ersetzt die Kosten nicht, sondern wird zusätzlich erfasst, weil er tatsächlich bezahlt wurde
@@ -93,8 +118,8 @@ Jeder asynchrone Schritt kann von der Engine wiederholt werden (Retry, abgelaufe
 - Fällt ein geplanter Start aus, weil noch ein Lauf aktiv ist, wird das geloggt und als Metrik gezählt
 
 ## Start und Parallelität zwischen Läufen
-- Prozessstart ausschließlich über `DigestProcessStarter` (Scheduler und manueller Lauf)
-- Pro Topic höchstens ein aktiver Lauf (Prüfung im Starter + Teilindex in `digest_run`)
+- Prozessstart ausschließlich über `DigestProcessStarter` (Scheduler und manueller Lauf); Business Key ist die Topic-ID
+- Pro Topic höchstens ein aktiver Lauf (Prüfung im Starter + Teilindex in `digest_run`); weil „Lauf vorbereiten“ synchron in der Start-Transaktion läuft, scheitert ein gleichzeitiger zweiter Start direkt am Teilindex und wird als `RunAlreadyActiveException` gemeldet
 - `process_instance_id` wird in `digest_run` gespeichert
 
 ## Weitere Regeln

@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Process digestRun (docs/04-prozess-bpmn.md). The model describes HOW a run works; WHICH models,
+  aggregator and recipients are used comes from the database (ADR-002, ADR-013). No model, provider
+  or recipient names, no scripts and no business logic in this file. Editable with the Camunda
+  Modeler (CIB seven uses the Camunda 7 extension namespace).
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  id="digestRunDefinitions"
+                  targetNamespace="https://fuechsle.de/ainewsletter/process">
+
+  <bpmn:process id="digestRun" name="News-Digest-Lauf" isExecutable="true">
+
+    <bpmn:startEvent id="startEvent" name="Lauf angefordert">
+      <bpmn:outgoing>toPrepareRun</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <!-- Synchronous: runs in the transaction of DigestProcessStarter, so a second active run of
+         the topic is rejected directly by the partial unique index. -->
+    <bpmn:serviceTask id="prepareRun" name="Lauf vorbereiten"
+                      camunda:delegateExpression="${prepareRunDelegate}">
+      <bpmn:incoming>toPrepareRun</bpmn:incoming>
+      <bpmn:outgoing>toCheckBudget</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="checkBudget" name="Budget prüfen"
+                      camunda:delegateExpression="${checkBudgetDelegate}">
+      <bpmn:incoming>toCheckBudget</bpmn:incoming>
+      <bpmn:outgoing>toBudgetGateway</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:exclusiveGateway id="budgetGateway" name="Budget ok?">
+      <bpmn:incoming>toBudgetGateway</bpmn:incoming>
+      <bpmn:outgoing>budgetOk</bpmn:outgoing>
+      <bpmn:outgoing>budgetExhausted</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- Fork/join around the research make the parallelism visible and are the extension point for
+         further parallel branches (ADR-004). -->
+    <bpmn:parallelGateway id="researchFork" name="Recherche starten">
+      <bpmn:incoming>budgetOk</bpmn:incoming>
+      <bpmn:outgoing>toResearch</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <!-- One parallel instance per research model; non-exclusive jobs so instances really run at the
+         same time; asyncAfter on the body so the join runs in its own transaction. -->
+    <bpmn:serviceTask id="research" name="Recherche"
+                      camunda:delegateExpression="${researchDelegate}"
+                      camunda:asyncBefore="true" camunda:exclusive="false">
+      <bpmn:incoming>toResearch</bpmn:incoming>
+      <bpmn:outgoing>toResearchJoin</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics camunda:asyncAfter="true"
+          camunda:collection="${digestRunVariables.modelIds(models)}"
+          camunda:elementVariable="model"/>
+    </bpmn:serviceTask>
+
+    <bpmn:parallelGateway id="researchJoin" name="Alle Recherchen beendet">
+      <bpmn:incoming>toResearchJoin</bpmn:incoming>
+      <bpmn:outgoing>toCheckNews</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <bpmn:serviceTask id="checkNews" name="Meldungen prüfen"
+                      camunda:delegateExpression="${checkNewsDelegate}"
+                      camunda:asyncBefore="true">
+      <bpmn:incoming>toCheckNews</bpmn:incoming>
+      <bpmn:outgoing>toOutcomeGateway</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:exclusiveGateway id="outcomeGateway" name="Ergebnis der Recherche?">
+      <bpmn:incoming>toOutcomeGateway</bpmn:incoming>
+      <bpmn:outgoing>validNews</bpmn:outgoing>
+      <bpmn:outgoing>noValidNews</bpmn:outgoing>
+      <bpmn:outgoing>noneSucceeded</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:serviceTask id="aggregate" name="Aggregieren"
+                      camunda:delegateExpression="${aggregateDelegate}"
+                      camunda:asyncBefore="true">
+      <bpmn:incoming>validNews</bpmn:incoming>
+      <bpmn:outgoing>toRender</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="render" name="HTML und PDF erzeugen"
+                      camunda:delegateExpression="${renderDigestDelegate}"
+                      camunda:asyncBefore="true">
+      <bpmn:incoming>toRender</bpmn:incoming>
+      <bpmn:outgoing>toSendMails</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="sendMails" name="Mails versenden"
+                      camunda:delegateExpression="${sendMailsDelegate}"
+                      camunda:asyncBefore="true">
+      <bpmn:incoming>toSendMails</bpmn:incoming>
+      <bpmn:outgoing>toFinishCompleted</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="finishCompleted" name="Lauf abschließen"
+                      camunda:delegateExpression="${finishRunDelegate}">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="runStatus">COMPLETED</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>toFinishCompleted</bpmn:incoming>
+      <bpmn:outgoing>toEndCompleted</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="endCompleted" name="Digest verschickt">
+      <bpmn:incoming>toEndCompleted</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:serviceTask id="finishNoNews" name="Lauf ohne Meldungen abschließen"
+                      camunda:delegateExpression="${finishRunDelegate}">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="runStatus">NO_NEWS</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>noValidNews</bpmn:incoming>
+      <bpmn:outgoing>toEndNoNews</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="endNoNews" name="Keine Meldungen">
+      <bpmn:incoming>toEndNoNews</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:serviceTask id="notifyOperatorFailed" name="Betreiber informieren"
+                      camunda:delegateExpression="${notifyOperatorDelegate}"
+                      camunda:asyncBefore="true">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="notificationReason">NO_MODEL_SUCCEEDED</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>noneSucceeded</bpmn:incoming>
+      <bpmn:outgoing>toFinishFailed</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="finishFailed" name="Lauf als fehlgeschlagen abschließen"
+                      camunda:delegateExpression="${finishRunDelegate}">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="runStatus">FAILED</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>toFinishFailed</bpmn:incoming>
+      <bpmn:outgoing>toEndFailed</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="endFailed" name="Lauf fehlgeschlagen">
+      <bpmn:incoming>toEndFailed</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:serviceTask id="notifyOperatorBudget" name="Betreiber informieren"
+                      camunda:delegateExpression="${notifyOperatorDelegate}"
+                      camunda:asyncBefore="true">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="notificationReason">BUDGET_EXHAUSTED</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>budgetExhausted</bpmn:incoming>
+      <bpmn:outgoing>toFinishSkipped</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="finishSkipped" name="Lauf als übersprungen abschließen"
+                      camunda:delegateExpression="${finishRunDelegate}">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="runStatus">SKIPPED_BUDGET</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>toFinishSkipped</bpmn:incoming>
+      <bpmn:outgoing>toEndSkipped</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="endSkipped" name="Budget erreicht">
+      <bpmn:incoming>toEndSkipped</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="toPrepareRun" sourceRef="startEvent" targetRef="prepareRun"/>
+    <bpmn:sequenceFlow id="toCheckBudget" sourceRef="prepareRun" targetRef="checkBudget"/>
+    <bpmn:sequenceFlow id="toBudgetGateway" sourceRef="checkBudget" targetRef="budgetGateway"/>
+    <bpmn:sequenceFlow id="budgetOk" name="ja" sourceRef="budgetGateway" targetRef="researchFork">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${budgetOk}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="budgetExhausted" name="nein" sourceRef="budgetGateway" targetRef="notifyOperatorBudget">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${!budgetOk}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="toResearch" sourceRef="researchFork" targetRef="research"/>
+    <bpmn:sequenceFlow id="toResearchJoin" sourceRef="research" targetRef="researchJoin"/>
+    <bpmn:sequenceFlow id="toCheckNews" sourceRef="researchJoin" targetRef="checkNews"/>
+    <bpmn:sequenceFlow id="toOutcomeGateway" sourceRef="checkNews" targetRef="outcomeGateway"/>
+    <bpmn:sequenceFlow id="validNews" name="gültige Meldungen" sourceRef="outcomeGateway" targetRef="aggregate">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${researchOutcome == 'VALID_NEWS'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="noValidNews" name="keine gültige Meldung" sourceRef="outcomeGateway" targetRef="finishNoNews">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${researchOutcome == 'NO_VALID_NEWS'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="noneSucceeded" name="kein Modell erfolgreich" sourceRef="outcomeGateway" targetRef="notifyOperatorFailed">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${researchOutcome == 'NONE_SUCCEEDED'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="toRender" sourceRef="aggregate" targetRef="render"/>
+    <bpmn:sequenceFlow id="toSendMails" sourceRef="render" targetRef="sendMails"/>
+    <bpmn:sequenceFlow id="toFinishCompleted" sourceRef="sendMails" targetRef="finishCompleted"/>
+    <bpmn:sequenceFlow id="toEndCompleted" sourceRef="finishCompleted" targetRef="endCompleted"/>
+    <bpmn:sequenceFlow id="toEndNoNews" sourceRef="finishNoNews" targetRef="endNoNews"/>
+    <bpmn:sequenceFlow id="toFinishFailed" sourceRef="notifyOperatorFailed" targetRef="finishFailed"/>
+    <bpmn:sequenceFlow id="toEndFailed" sourceRef="finishFailed" targetRef="endFailed"/>
+    <bpmn:sequenceFlow id="toFinishSkipped" sourceRef="notifyOperatorBudget" targetRef="finishSkipped"/>
+    <bpmn:sequenceFlow id="toEndSkipped" sourceRef="finishSkipped" targetRef="endSkipped"/>
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="digestRunDiagram">
+    <bpmndi:BPMNPlane id="digestRunPlane" bpmnElement="digestRun">
+      <bpmndi:BPMNShape id="startEvent_di" bpmnElement="startEvent">
+        <dc:Bounds x="152" y="202" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="128" y="245" width="84" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="prepareRun_di" bpmnElement="prepareRun">
+        <dc:Bounds x="230" y="180" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="checkBudget_di" bpmnElement="checkBudget">
+        <dc:Bounds x="380" y="180" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="budgetGateway_di" bpmnElement="budgetGateway" isMarkerVisible="true">
+        <dc:Bounds x="530" y="195" width="50" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="527" y="165" width="56" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="researchFork_di" bpmnElement="researchFork">
+        <dc:Bounds x="630" y="195" width="50" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="612" y="165" width="86" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="research_di" bpmnElement="research">
+        <dc:Bounds x="730" y="180" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="researchJoin_di" bpmnElement="researchJoin">
+        <dc:Bounds x="880" y="195" width="50" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="855" y="158" width="100" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="checkNews_di" bpmnElement="checkNews">
+        <dc:Bounds x="980" y="180" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="outcomeGateway_di" bpmnElement="outcomeGateway" isMarkerVisible="true">
+        <dc:Bounds x="1130" y="195" width="50" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1105" y="158" width="100" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="aggregate_di" bpmnElement="aggregate">
+        <dc:Bounds x="1230" y="180" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="render_di" bpmnElement="render">
+        <dc:Bounds x="1380" y="180" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sendMails_di" bpmnElement="sendMails">
+        <dc:Bounds x="1530" y="180" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="finishCompleted_di" bpmnElement="finishCompleted">
+        <dc:Bounds x="1680" y="180" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="endCompleted_di" bpmnElement="endCompleted">
+        <dc:Bounds x="1832" y="202" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1806" y="245" width="88" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="finishNoNews_di" bpmnElement="finishNoNews">
+        <dc:Bounds x="1230" y="310" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="endNoNews_di" bpmnElement="endNoNews">
+        <dc:Bounds x="1382" y="332" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1358" y="375" width="84" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="notifyOperatorFailed_di" bpmnElement="notifyOperatorFailed">
+        <dc:Bounds x="1230" y="440" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="finishFailed_di" bpmnElement="finishFailed">
+        <dc:Bounds x="1380" y="440" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="endFailed_di" bpmnElement="endFailed">
+        <dc:Bounds x="1532" y="462" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1500" y="505" width="100" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="notifyOperatorBudget_di" bpmnElement="notifyOperatorBudget">
+        <dc:Bounds x="630" y="310" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="finishSkipped_di" bpmnElement="finishSkipped">
+        <dc:Bounds x="780" y="310" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="endSkipped_di" bpmnElement="endSkipped">
+        <dc:Bounds x="932" y="332" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="912" y="375" width="76" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNEdge id="toPrepareRun_di" bpmnElement="toPrepareRun">
+        <di:waypoint x="188" y="220"/><di:waypoint x="230" y="220"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toCheckBudget_di" bpmnElement="toCheckBudget">
+        <di:waypoint x="330" y="220"/><di:waypoint x="380" y="220"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toBudgetGateway_di" bpmnElement="toBudgetGateway">
+        <di:waypoint x="480" y="220"/><di:waypoint x="530" y="220"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budgetOk_di" bpmnElement="budgetOk">
+        <di:waypoint x="580" y="220"/><di:waypoint x="630" y="220"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="598" y="202" width="14" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budgetExhausted_di" bpmnElement="budgetExhausted">
+        <di:waypoint x="555" y="245"/><di:waypoint x="555" y="350"/><di:waypoint x="630" y="350"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="563" y="295" width="23" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toResearch_di" bpmnElement="toResearch">
+        <di:waypoint x="680" y="220"/><di:waypoint x="730" y="220"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toResearchJoin_di" bpmnElement="toResearchJoin">
+        <di:waypoint x="830" y="220"/><di:waypoint x="880" y="220"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toCheckNews_di" bpmnElement="toCheckNews">
+        <di:waypoint x="930" y="220"/><di:waypoint x="980" y="220"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toOutcomeGateway_di" bpmnElement="toOutcomeGateway">
+        <di:waypoint x="1080" y="220"/><di:waypoint x="1130" y="220"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="validNews_di" bpmnElement="validNews">
+        <di:waypoint x="1180" y="220"/><di:waypoint x="1230" y="220"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="noValidNews_di" bpmnElement="noValidNews">
+        <di:waypoint x="1155" y="245"/><di:waypoint x="1155" y="350"/><di:waypoint x="1230" y="350"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="noneSucceeded_di" bpmnElement="noneSucceeded">
+        <di:waypoint x="1155" y="245"/><di:waypoint x="1155" y="480"/><di:waypoint x="1230" y="480"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toRender_di" bpmnElement="toRender">
+        <di:waypoint x="1330" y="220"/><di:waypoint x="1380" y="220"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toSendMails_di" bpmnElement="toSendMails">
+        <di:waypoint x="1480" y="220"/><di:waypoint x="1530" y="220"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toFinishCompleted_di" bpmnElement="toFinishCompleted">
+        <di:waypoint x="1630" y="220"/><di:waypoint x="1680" y="220"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toEndCompleted_di" bpmnElement="toEndCompleted">
+        <di:waypoint x="1780" y="220"/><di:waypoint x="1832" y="220"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toEndNoNews_di" bpmnElement="toEndNoNews">
+        <di:waypoint x="1330" y="350"/><di:waypoint x="1382" y="350"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toFinishFailed_di" bpmnElement="toFinishFailed">
+        <di:waypoint x="1330" y="480"/><di:waypoint x="1380" y="480"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toEndFailed_di" bpmnElement="toEndFailed">
+        <di:waypoint x="1480" y="480"/><di:waypoint x="1532" y="480"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toFinishSkipped_di" bpmnElement="toFinishSkipped">
+        <di:waypoint x="730" y="350"/><di:waypoint x="780" y="350"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toEndSkipped_di" bpmnElement="toEndSkipped">
+        <di:waypoint x="880" y="350"/><di:waypoint x="932" y="350"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
