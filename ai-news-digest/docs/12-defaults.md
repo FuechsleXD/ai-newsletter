@@ -15,7 +15,7 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 |---|---|---|
 | Aggregator-Modell | kein Default, jedes Topic nennt sein Aggregator-Modell (ADR-013) | `topic.aggregator_model_id` (Pflicht) |
 | Erster Anbieter | `ANTHROPIC` (Claude), auch für die Recherche; Modelle und Preise nur in der DB, keine Seed-Daten | `ai_provider`, `ai_model` |
-| Temperatur | Anbieter-Standard (nicht gesendet, wenn NULL; aktuelle Claude-Modelle lehnen sie ab) | `ai_model.temperature` |
+| Temperatur | Anbieter-Standard (nicht gesendet, wenn NULL); nur pflegbar, wenn `ai_model.supports_temperature` (Default `false`, aktuelle Claude-Modelle lehnen sie ab) | `ai_model.temperature` |
 | Max-Tokens | 16000 (`newsdigest.ai.default-max-output-tokens`) | `ai_model.max_output_tokens` |
 | Websuchen pro Recherche-Aufruf | max. 5 (`newsdigest.ai.max-web-searches-per-call`, Kostenbremse) | – |
 | Timeout pro Modellaufruf | 120 s | – |

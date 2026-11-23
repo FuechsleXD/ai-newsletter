@@ -59,6 +59,7 @@ class SchemaMigrationTest extends PostgresTestSupport {
             "V2__app_seed.sql",
             "de.fuechsle.ainewsletter.migration.V3__bpm_create_engine_3_0",
             "V4__app_topic_aggregator_required.sql",
+            "V5__app_model_supports_temperature.sql",
             "R__monthly_cost.sql");
     assertThat(Arrays.stream(applied).map(MigrationInfo::getState))
         .allMatch(MigrationState::isApplied)
@@ -122,6 +123,29 @@ class SchemaMigrationTest extends PostgresTestSupport {
             + " supports_structured_output, input_price_per_mtok, output_price_per_mtok)"
             + " VALUES (?, 'model-b', 'B', true, true, -1, 2)",
         anthropicId());
+  }
+
+  @Test
+  void temperatureRequiresModelSupport() {
+    long modelId = insertModel(anthropicId(), "no-temperature");
+
+    assertViolates(
+        "ck_ai_model_temperature_supported",
+        "UPDATE ai_model SET temperature = 0.5 WHERE id = ?",
+        modelId);
+  }
+
+  @Test
+  void temperatureIsAllowedForModelsThatSupportIt() {
+    long modelId = insertModel(anthropicId(), "with-temperature");
+
+    jdbc.update(
+        "UPDATE ai_model SET supports_temperature = true, temperature = 0.5 WHERE id = ?", modelId);
+
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT temperature FROM ai_model WHERE id = ?", BigDecimal.class, modelId))
+        .isEqualByComparingTo("0.5");
   }
 
   @Test

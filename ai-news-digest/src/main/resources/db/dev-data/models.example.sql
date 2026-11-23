@@ -6,8 +6,10 @@
 -- Prices are USD per 1 million tokens; the search price is USD per web search.
 
 INSERT INTO app.ai_model (provider_id, model_name, display_name, supports_web_search,
-                          supports_structured_output, input_price_per_mtok, output_price_per_mtok,
-                          price_per_search_call)
-SELECT id, '<MODEL_ID>', '<DISPLAY_NAME>', true, true, <INPUT_PRICE>, <OUTPUT_PRICE>, <SEARCH_PRICE>
+                          supports_structured_output, supports_temperature, input_price_per_mtok,
+                          output_price_per_mtok, price_per_search_call)
+-- supports_temperature: false for current Claude models (they reject a temperature)
+SELECT id, '<MODEL_ID>', '<DISPLAY_NAME>', true, true, false, <INPUT_PRICE>, <OUTPUT_PRICE>,
+       <SEARCH_PRICE>
 FROM app.ai_provider
 WHERE code = 'ANTHROPIC';

@@ -16,6 +16,8 @@ import java.math.BigDecimal;
 @Table(name = "ai_model")
 public class AiModel extends AuditedEntity {
 
+  private static final BigDecimal MAX_TEMPERATURE = BigDecimal.valueOf(2);
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
@@ -40,7 +42,11 @@ public class AiModel extends AuditedEntity {
   @Column(name = "max_output_tokens")
   private Integer maxOutputTokens;
 
-  /** NULL = provider default. */
+  /** Whether the model accepts a sampling temperature; current Claude models do not. */
+  @Column(name = "supports_temperature", nullable = false)
+  private boolean supportsTemperature;
+
+  /** NULL = provider default; only allowed if {@link #supportsTemperature}. */
   @Column(name = "temperature", precision = 3, scale = 2)
   private BigDecimal temperature;
 
@@ -119,11 +125,40 @@ public class AiModel extends AuditedEntity {
     this.maxOutputTokens = maxOutputTokens;
   }
 
+  public boolean isSupportsTemperature() {
+    return supportsTemperature;
+  }
+
+  /**
+   * @throws IllegalStateException if support is switched off while a temperature is maintained
+   */
+  public void setSupportsTemperature(boolean supportsTemperature) {
+    if (!supportsTemperature && temperature != null) {
+      throw new IllegalStateException(
+          "Model " + modelName + " has a temperature; remove it before switching off support");
+    }
+    this.supportsTemperature = supportsTemperature;
+  }
+
   public BigDecimal getTemperature() {
     return temperature;
   }
 
+  /**
+   * Sets the temperature; {@code null} means provider default.
+   *
+   * @throws IllegalStateException if the model does not accept a temperature
+   * @throws IllegalArgumentException if the value is outside 0 to 2
+   */
   public void setTemperature(BigDecimal temperature) {
+    if (temperature != null) {
+      if (!supportsTemperature) {
+        throw new IllegalStateException("Model " + modelName + " does not accept a temperature");
+      }
+      if (temperature.signum() < 0 || temperature.compareTo(MAX_TEMPERATURE) > 0) {
+        throw new IllegalArgumentException("Temperature must be between 0 and 2");
+      }
+    }
     this.temperature = temperature;
   }
 

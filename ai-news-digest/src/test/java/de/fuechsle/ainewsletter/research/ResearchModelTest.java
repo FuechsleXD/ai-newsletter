@@ -18,6 +18,7 @@ class ResearchModelTest {
     AiModel model =
         new AiModel(provider, "test-model-1", "Test", true, true, BigDecimal.ONE, BigDecimal.TEN);
     model.setMaxOutputTokens(8_000);
+    model.setSupportsTemperature(true);
     model.setTemperature(new BigDecimal("0.50"));
     model.setPricePerSearchCall(new BigDecimal("0.02"));
 

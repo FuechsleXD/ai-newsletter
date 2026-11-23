@@ -32,6 +32,7 @@
 ## Validierung
 - Cron mit Springs `CronExpression`, Zeitzone gegen `ZoneId`, E-Mail-Format, eindeutige Namen
 - Recherche-Modelle müssen `supports_web_search` haben, Aggregator-Modell `supports_structured_output`
+- `temperature` (0 bis 2) nur, wenn das Modell `supportsTemperature` hat; sonst 400 mit Feldfehler `temperature` (zusätzlich CHECK in der Datenbank, ADR-013)
 - Modell und Anbieter müssen aktiv sein; ein aktives Topic braucht mindestens ein Recherche-Modell und mindestens einen aktiven Empfänger
 - Preise >= 0; Budget > 0, Warnschwelle 1–100 %
 - Änderungen an Topics und Zeitplänen stoßen den Scheduler-Reload sofort an

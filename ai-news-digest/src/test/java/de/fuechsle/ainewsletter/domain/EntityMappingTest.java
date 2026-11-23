@@ -52,6 +52,7 @@ class EntityMappingTest extends PostgresTestSupport {
     model.setSupportsWebSearch(true);
     model.setSupportsStructuredOutput(true);
     model.setMaxOutputTokens(8000);
+    model.setSupportsTemperature(true);
     model.setTemperature(new BigDecimal("0.30"));
     model.setInputPricePerMtok(new BigDecimal("2.5"));
     model.setOutputPricePerMtok(new BigDecimal("10"));
@@ -119,6 +120,7 @@ class EntityMappingTest extends PostgresTestSupport {
     assertThat(loadedModel.isSupportsWebSearch()).isTrue();
     assertThat(loadedModel.isSupportsStructuredOutput()).isTrue();
     assertThat(loadedModel.getMaxOutputTokens()).isEqualTo(8000);
+    assertThat(loadedModel.isSupportsTemperature()).isTrue();
     assertThat(loadedModel.getTemperature()).isEqualByComparingTo("0.3");
     assertThat(loadedModel.getInputPricePerMtok()).isEqualByComparingTo("2.5");
     assertThat(loadedModel.getOutputPricePerMtok()).isEqualByComparingTo("10");
