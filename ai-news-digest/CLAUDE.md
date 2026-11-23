@@ -30,7 +30,7 @@ Die Details stehen in `docs/`. Lies vor einer Aufgabe die passende Datei, nicht 
 ## Tech-Stack (verbindlich)
 - Java 21 (LTS), Spring Boot 4.x (bevorzugt 4.1, sonst die neueste 4.x-Linie, die CIB seven unterstützt; Spring Boot 3.5 ist seit Juni 2026 ohne kostenlose Sicherheitsupdates) – Versionswechsel nur nach Rückfrage, siehe ADR-012
 - Maven ausschließlich über den Wrapper (`./mvnw`)
-- CIB seven eingebettet mit den Spring-Boot-4-Startern (Artefakte mit Suffix `-4`), Version passend zur Spring-Boot-Version laut Kompatibilitätstabelle (NICHT Camunda 7 CE, End of Life); Maven-Koordinaten in der CIB-seven-Doku prüfen, nicht raten
+- CIB seven eingebettet mit den Spring-Boot-4-Startern (ab CIB seven 3.0 die Artefakte ohne Suffix, z. B. `cibseven-bpm-spring-boot-starter`; die `-4`-Artefakte sind dort nur Relocations), Version passend zur Spring-Boot-Version laut Kompatibilitätstabelle (NICHT Camunda 7 CE, End of Life); Maven-Koordinaten in der CIB-seven-Doku prüfen, nicht raten; siehe ADR-012
 - PostgreSQL + Flyway, Hibernate `ddl-auto=validate`
 - Spring Data JPA, Spring Web, Spring Security (OAuth2 Resource Server, JWT), springdoc-openapi, Spring AI 2.x (setzt Spring Boot 4 voraus), Spring Mail (SMTP); Jackson 3
 - Keycloak als Identity Provider (eigener Container)

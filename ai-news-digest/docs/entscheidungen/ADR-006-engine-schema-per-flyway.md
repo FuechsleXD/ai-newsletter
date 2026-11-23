@@ -18,3 +18,4 @@ CIB seven braucht eigene Tabellen in PostgreSQL. Die eigenen Tabellen der App ve
 - Jeder Datenbankstand ist reproduzierbar und in der CI getestet
 - Bei jedem Versionswechsel von CIB seven müssen die passenden Upgrade-Skripte als Migration ergänzt werden
 - Engine-Konfiguration braucht Schema-Name und Tabellen-Präfix für `bpm`
+- Ergänzung 2026-11-23 (Roadmap-Schritt 4): Die offiziellen Skripte enthalten kein Schema-Präfix. Sie werden deshalb unverändert ins Repo kopiert und von einer Java-Migration mit `search_path=bpm` ausgeführt; die Prüfsumme hängt am Skriptinhalt. Verworfen: Skripte mit vorangestelltem `SET search_path` (nicht mehr unverändert, Wirkung auf Folgemigrationen) und eine zweite Flyway-Instanz mit eigener Historientabelle (zwei Nummernfolgen)

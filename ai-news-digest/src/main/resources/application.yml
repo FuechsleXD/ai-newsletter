@@ -16,7 +16,8 @@ spring:
   flyway:
     user: ${DB_MIGRATION_USER:newsdigest_migration}
     password: ${DB_MIGRATION_PASSWORD:}
-    schemas: app
+    # History table in "app"; "bpm" holds the CIB seven tables (created by V3, ADR-006)
+    schemas: app,bpm
     default-schema: app
     locations:
       - classpath:db/migration/app
@@ -36,6 +37,21 @@ spring:
         default_schema: app
         jdbc:
           time_zone: UTC
+
+# Embedded CIB seven engine (property prefix is still "camunda.bpm"). Tables are created by Flyway
+# from the official scripts (ADR-006); the engine never creates or changes them.
+# Process defaults (history TTL, job lock time, retries) come from NewsDigestProperties.
+camunda:
+  bpm:
+    database:
+      schema-update: false
+      schema-name: bpm
+      table-prefix: bpm.
+    # No default admin user: identities come from Keycloak (step 25)
+    # Processes are deployed explicitly once the BPMN exists (step 6)
+    auto-deployment-enabled: false
+    metrics:
+      enabled: false
 
 management:
   endpoints:
