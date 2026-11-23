@@ -55,6 +55,7 @@ Stand nach Roadmap-Schritt 2: Job `backend` (Punkt 1 und 5, Formatierung über S
 - `.github/dependabot.yml` für Maven, npm, Docker-Images (Dockerfile und Compose), GitHub Actions und Terraform-Provider, wöchentlich, gruppiert
 - Eingerichtet sind bisher Maven, GitHub Actions und Compose; npm, Dockerfile und Terraform kommen dazu, sobald es die Ordner gibt (Schritte 22, 10, 11)
 - Ignoriert werden (ADR-012): Spring-Boot-Sprünge über 4.1.x hinaus, solange CIB seven keine neuere Linie unterstützt, und Jackson 3.2+
+- Ebenfalls ignoriert: neue Hauptversionen von PostgreSQL; ein Wechsel braucht Dump und Restore der Daten und wird bewusst geplant (Image-Tag in Compose, Testcontainers und Produktion gemeinsam ändern)
 
 ### `cd.yml` – nach grüner CI auf `main` bzw. bei Release-Tag
 1. Images bauen und nach Amazon ECR pushen
