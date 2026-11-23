@@ -14,7 +14,7 @@
 | `schedule` | id, name, cron_expression, timezone | `name` UNIQUE; von mehreren Topics nutzbar |
 | `topic` | id, name, description, initial_lookback_days NULL, aggregator_model_id, schedule_id, active | `name` UNIQUE; FK `schedule`, FK `ai_model`; `initial_lookback_days` NULL = Default; `aggregator_model_id` Pflicht seit `V4` (ADR-013) |
 | `ai_provider` | id, code, display_name, secret_name, max_concurrent_calls NULL, active | `code` UNIQUE (z. B. `ANTHROPIC`, `OPENAI`, `GEMINI`); `secret_name` = Name des Secrets im AWS Secrets Manager, nie der Key selbst |
-| `ai_model` | id, provider_id, model_name, display_name, supports_web_search, supports_structured_output, max_output_tokens NULL, temperature NULL, input_price_per_mtok, output_price_per_mtok, price_per_search_call NULL, active | UNIQUE (provider_id, model_name); Preise in USD pro 1 Mio. Token |
+| `ai_model` | id, provider_id, model_name, display_name, supports_web_search, supports_structured_output, supports_temperature, max_output_tokens NULL, temperature NULL, input_price_per_mtok, output_price_per_mtok, price_per_search_call NULL, active | UNIQUE (provider_id, model_name); Preise in USD pro 1 Mio. Token; `temperature` nur erlaubt, wenn `supports_temperature` (CHECK, seit `V5`) |
 | `topic_model` | topic_id, model_id | PK (topic_id, model_id); Menge der Recherche-Modelle (parallel, keine Reihenfolge) |
 | `recipient` | id, email, display_name, active | `email` UNIQUE, in Kleinschreibung |
 | `topic_recipient` | topic_id, recipient_id | PK (topic_id, recipient_id) |
