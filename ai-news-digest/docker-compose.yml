@@ -5,7 +5,7 @@ name: ai-news-digest
 
 services:
   postgres:
-    image: postgres:18.7-alpine
+    image: postgres:19.0-alpine
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-newsdigest}
       # Superuser, only for administration and the init script
