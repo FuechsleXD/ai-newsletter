@@ -17,6 +17,8 @@
   <bpmn:error id="aggregationFailedError" name="Aggregation fehlgeschlagen"
               errorCode="AGGREGATION_FAILED"/>
 
+  <bpmn:error id="noRecipientsError" name="Keine aktiven Empfänger" errorCode="NO_RECIPIENTS"/>
+
   <bpmn:process id="digestRun" name="News-Digest-Lauf" isExecutable="true">
 
     <bpmn:startEvent id="startEvent" name="Lauf angefordert">
@@ -116,11 +118,48 @@
       <bpmn:outgoing>toSendMails</bpmn:outgoing>
     </bpmn:serviceTask>
 
+    <!-- The topic has no active recipients: nobody would get the digest. -->
+    <bpmn:boundaryEvent id="noRecipients" name="Keine Empfänger" attachedToRef="render">
+      <bpmn:outgoing>toNotifyOperatorNoRecipients</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="noRecipientsDefinition" errorRef="noRecipientsError"/>
+    </bpmn:boundaryEvent>
+
+    <bpmn:serviceTask id="notifyOperatorNoRecipients" name="Betreiber informieren"
+                      camunda:delegateExpression="${notifyOperatorDelegate}"
+                      camunda:asyncBefore="true">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="notificationReason">NO_RECIPIENTS</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>toNotifyOperatorNoRecipients</bpmn:incoming>
+      <bpmn:outgoing>noRecipientsToFinishFailed</bpmn:outgoing>
+    </bpmn:serviceTask>
+
     <bpmn:serviceTask id="sendMails" name="Mails versenden"
                       camunda:delegateExpression="${sendMailsDelegate}"
                       camunda:asyncBefore="true">
       <bpmn:incoming>toSendMails</bpmn:incoming>
-      <bpmn:outgoing>toFinishCompleted</bpmn:outgoing>
+      <bpmn:outgoing>toMailGateway</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Some recipients failed for good, but at least one got the mail (otherwise: incident). -->
+    <bpmn:exclusiveGateway id="mailGateway" name="Alle zugestellt?">
+      <bpmn:incoming>toMailGateway</bpmn:incoming>
+      <bpmn:outgoing>allSent</bpmn:outgoing>
+      <bpmn:outgoing>partiallySent</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:serviceTask id="notifyOperatorMail" name="Betreiber informieren"
+                      camunda:delegateExpression="${notifyOperatorDelegate}"
+                      camunda:asyncBefore="true">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="notificationReason">MAIL_PARTIALLY_FAILED</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>partiallySent</bpmn:incoming>
+      <bpmn:outgoing>mailToFinishCompleted</bpmn:outgoing>
     </bpmn:serviceTask>
 
     <bpmn:serviceTask id="finishCompleted" name="Lauf abschließen"
@@ -130,7 +169,8 @@
           <camunda:inputParameter name="runStatus">COMPLETED</camunda:inputParameter>
         </camunda:inputOutput>
       </bpmn:extensionElements>
-      <bpmn:incoming>toFinishCompleted</bpmn:incoming>
+      <bpmn:incoming>allSent</bpmn:incoming>
+      <bpmn:incoming>mailToFinishCompleted</bpmn:incoming>
       <bpmn:outgoing>toEndCompleted</bpmn:outgoing>
     </bpmn:serviceTask>
 
@@ -174,6 +214,7 @@
       </bpmn:extensionElements>
       <bpmn:incoming>toFinishFailed</bpmn:incoming>
       <bpmn:incoming>aggregationToFinishFailed</bpmn:incoming>
+      <bpmn:incoming>noRecipientsToFinishFailed</bpmn:incoming>
       <bpmn:outgoing>toEndFailed</bpmn:outgoing>
     </bpmn:serviceTask>
 
@@ -234,7 +275,16 @@
     <bpmn:sequenceFlow id="toNotifyOperatorAggregation" sourceRef="aggregationFailed" targetRef="notifyOperatorAggregation"/>
     <bpmn:sequenceFlow id="aggregationToFinishFailed" sourceRef="notifyOperatorAggregation" targetRef="finishFailed"/>
     <bpmn:sequenceFlow id="toSendMails" sourceRef="render" targetRef="sendMails"/>
-    <bpmn:sequenceFlow id="toFinishCompleted" sourceRef="sendMails" targetRef="finishCompleted"/>
+    <bpmn:sequenceFlow id="toNotifyOperatorNoRecipients" sourceRef="noRecipients" targetRef="notifyOperatorNoRecipients"/>
+    <bpmn:sequenceFlow id="noRecipientsToFinishFailed" sourceRef="notifyOperatorNoRecipients" targetRef="finishFailed"/>
+    <bpmn:sequenceFlow id="toMailGateway" sourceRef="sendMails" targetRef="mailGateway"/>
+    <bpmn:sequenceFlow id="allSent" name="ja" sourceRef="mailGateway" targetRef="finishCompleted">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${mailOutcome == 'ALL_SENT'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="partiallySent" name="nein" sourceRef="mailGateway" targetRef="notifyOperatorMail">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${mailOutcome == 'PARTIALLY_SENT'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="mailToFinishCompleted" sourceRef="notifyOperatorMail" targetRef="finishCompleted"/>
     <bpmn:sequenceFlow id="toEndCompleted" sourceRef="finishCompleted" targetRef="endCompleted"/>
     <bpmn:sequenceFlow id="toEndNoNews" sourceRef="finishNoNews" targetRef="endNoNews"/>
     <bpmn:sequenceFlow id="toFinishFailed" sourceRef="notifyOperatorFailed" targetRef="finishFailed"/>
@@ -293,12 +343,26 @@
       <bpmndi:BPMNShape id="sendMails_di" bpmnElement="sendMails">
         <dc:Bounds x="1530" y="180" width="100" height="80"/>
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mailGateway_di" bpmnElement="mailGateway" isMarkerVisible="true">
+        <dc:Bounds x="1680" y="195" width="50" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1666" y="252" width="78" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="notifyOperatorMail_di" bpmnElement="notifyOperatorMail">
+        <dc:Bounds x="1780" y="40" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="noRecipients_di" bpmnElement="noRecipients">
+        <dc:Bounds x="1444" y="242" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1488" y="280" width="80" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="notifyOperatorNoRecipients_di" bpmnElement="notifyOperatorNoRecipients">
+        <dc:Bounds x="1530" y="300" width="100" height="80"/>
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="finishCompleted_di" bpmnElement="finishCompleted">
-        <dc:Bounds x="1680" y="180" width="100" height="80"/>
+        <dc:Bounds x="1780" y="180" width="100" height="80"/>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="endCompleted_di" bpmnElement="endCompleted">
-        <dc:Bounds x="1832" y="202" width="36" height="36"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="1806" y="245" width="88" height="14"/></bpmndi:BPMNLabel>
+        <dc:Bounds x="1932" y="202" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1906" y="245" width="88" height="14"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="finishNoNews_di" bpmnElement="finishNoNews">
         <dc:Bounds x="1230" y="310" width="100" height="80"/>
@@ -379,11 +443,29 @@
       <bpmndi:BPMNEdge id="toSendMails_di" bpmnElement="toSendMails">
         <di:waypoint x="1480" y="220"/><di:waypoint x="1530" y="220"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="toFinishCompleted_di" bpmnElement="toFinishCompleted">
+      <bpmndi:BPMNEdge id="toMailGateway_di" bpmnElement="toMailGateway">
         <di:waypoint x="1630" y="220"/><di:waypoint x="1680" y="220"/>
       </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="allSent_di" bpmnElement="allSent">
+        <di:waypoint x="1730" y="220"/><di:waypoint x="1780" y="220"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1748" y="202" width="14" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="partiallySent_di" bpmnElement="partiallySent">
+        <di:waypoint x="1705" y="195"/><di:waypoint x="1705" y="80"/><di:waypoint x="1780" y="80"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1712" y="130" width="23" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="mailToFinishCompleted_di" bpmnElement="mailToFinishCompleted">
+        <di:waypoint x="1830" y="120"/><di:waypoint x="1830" y="180"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toNotifyOperatorNoRecipients_di" bpmnElement="toNotifyOperatorNoRecipients">
+        <di:waypoint x="1462" y="278"/><di:waypoint x="1462" y="340"/><di:waypoint x="1530" y="340"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="noRecipientsToFinishFailed_di" bpmnElement="noRecipientsToFinishFailed">
+        <di:waypoint x="1580" y="380"/><di:waypoint x="1580" y="420"/><di:waypoint x="1430" y="420"/>
+        <di:waypoint x="1430" y="440"/>
+      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="toEndCompleted_di" bpmnElement="toEndCompleted">
-        <di:waypoint x="1780" y="220"/><di:waypoint x="1832" y="220"/>
+        <di:waypoint x="1880" y="220"/><di:waypoint x="1932" y="220"/>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="toEndNoNews_di" bpmnElement="toEndNoNews">
         <di:waypoint x="1330" y="350"/><di:waypoint x="1382" y="350"/>

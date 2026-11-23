@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<!--
+  Simple one-page PDF (roadmap step 8); the final infographic design follows in step 17
+  (docs/09-pdf-design.md). Rendered by Gotenberg (Chromium). No external resources: everything the
+  page needs is in this file. All texts come from an LLM and are escaped by th:text.
+-->
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title th:text="${digest.title}">Titel</title>
+  <style>
+    @page { size: A4; margin: 10mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "DejaVu Sans", Arial, Helvetica, sans-serif; font-size: 9pt;
+           color: #1f2937; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .banner { background: #1e3a8a; color: #fff; border-radius: 6px; padding: 8px 12px; }
+    .banner h1 { margin: 0; font-size: 16pt; }
+    .banner p { margin: 2px 0 0; font-size: 9pt; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+    .card { border: 1.5px solid #93c5fd; background: #eff6ff; border-radius: 6px; padding: 6px 8px; }
+    .card h2 { margin: 0 0 3px; font-size: 10pt; }
+    .card p, .card ul { margin: 0; }
+    .card ul { padding-left: 14px; }
+    .section { border-width: 1.5px; border-style: solid; }
+    .blue { border-color: #3b82f6; background: #eff6ff; }
+    .green { border-color: #22c55e; background: #f0fdf4; }
+    .purple { border-color: #a855f7; background: #faf5ff; }
+    .orange { border-color: #f97316; background: #fff7ed; }
+    .red { border-color: #ef4444; background: #fef2f2; }
+    .teal { border-color: #14b8a6; background: #f0fdfa; }
+    .number { font-weight: bold; margin-right: 4px; }
+    .highlight { margin-top: 3px; font-weight: bold; }
+    .flow { margin-top: 3px; color: #374151; }
+    .meta { margin-top: 3px; font-size: 8pt; color: #4b5563; }
+    .unconfirmed { color: #b45309; }
+    .closing { margin-top: 6px; background: #1e3a8a; color: #fff; border-radius: 6px;
+               padding: 6px 10px; display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
+    .closing h2 { margin: 0 0 3px; font-size: 10pt; }
+    .closing ul { margin: 0; padding-left: 14px; }
+    .footer { margin-top: 6px; font-size: 8pt; color: #4b5563; }
+    .footer a { color: #1e3a8a; }
+  </style>
+</head>
+<body>
+  <div class="banner">
+    <h1 th:text="${digest.title}">Titel</h1>
+    <p><span th:text="${digest.topicName}">Topic</span> · <span th:text="${digest.period}">Zeitraum</span></p>
+    <p th:if="${!#strings.isEmpty(digest.subtitle)}" th:text="${digest.subtitle}">Untertitel</p>
+  </div>
+
+  <div class="row">
+    <div class="card">
+      <h2>Kurzfazit</h2>
+      <p th:text="${digest.summary}">Kurzfazit</p>
+    </div>
+    <div class="card">
+      <h2>Kernpunkte</h2>
+      <ul>
+        <li th:each="point : ${digest.keyPoints}" th:text="${point.text}">Kernpunkt</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="row">
+    <div th:each="section : ${digest.sections}" th:class="${'card section ' + section.color}">
+      <h2><span class="number" th:text="${section.number}">1</span><span th:text="${section.heading}">Thema</span></h2>
+      <p th:text="${section.text}">Text</p>
+      <p class="highlight" th:if="${section.highlightValue != null}">
+        <span th:text="${section.highlightValue}">42</span> <span th:text="${section.highlightLabel}">Label</span>
+      </p>
+      <p class="flow" th:if="${!section.flowSteps.isEmpty()}" th:text="${#strings.listJoin(section.flowSteps, ' → ')}">Ablauf</p>
+      <p class="meta">
+        Quellen: <span th:each="source, it : ${section.sourceNumbers}" th:text="${'[' + source + ']' + (it.last ? '' : ' ')}">[1]</span>
+        · Modelle: <span th:text="${#strings.listJoin(section.models, ', ')}">Modell</span>
+        <span class="unconfirmed" th:if="${section.unconfirmed}">· unbestätigt</span>
+      </p>
+    </div>
+  </div>
+
+  <div class="closing">
+    <div>
+      <h2>Key Takeaways</h2>
+      <ul>
+        <li th:each="takeaway : ${digest.takeaways}" th:text="${takeaway}">Takeaway</li>
+      </ul>
+    </div>
+    <div th:if="${!#strings.isEmpty(digest.watchOut)}">
+      <h2>Worauf achten</h2>
+      <p th:text="${digest.watchOut}">Ausblick</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>
+      Erstellt am <span th:text="${digest.createdOn}">Datum</span> · Zeitraum <span th:text="${digest.period}">Zeitraum</span>
+      · <span th:text="${digest.modelCount}">2</span> Modelle · <span th:text="${digest.sources.size()}">5</span> Quellen
+    </p>
+    <p>
+      <span th:each="source : ${digest.sources}">[<span th:text="${source.number}">1</span>] <a th:href="${source.url}" th:text="${source.domain}">domain</a> </span>
+    </p>
+  </div>
+</body>
+</html>

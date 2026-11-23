@@ -2,6 +2,12 @@ spring:
   application:
     name: ai-news-digest
 
+  # SMTP: locally Mailpit (docker-compose.yml), in AWS SES with credentials from the environment
+  mail:
+    host: ${SPRING_MAIL_HOST:localhost}
+    port: ${SPRING_MAIL_PORT:1025}
+    default-encoding: UTF-8
+
   # The app connects as a user without DDL rights (docs/06-security.md).
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/newsdigest}
@@ -59,6 +65,11 @@ management:
     web:
       exposure:
         include: health,info
+  health:
+    # An SMTP outage must not mark the app as down (the container would be restarted); failed
+    # deliveries are retried by the process and end in an incident.
+    mail:
+      enabled: false
 
 # Defaults are defined in de.fuechsle.ainewsletter.config.NewsDigestProperties (docs/12-defaults.md).
 # Override individual values here or via environment variables, e.g. NEWSDIGEST_BUDGET_MONTHLYLIMITUSD=20.

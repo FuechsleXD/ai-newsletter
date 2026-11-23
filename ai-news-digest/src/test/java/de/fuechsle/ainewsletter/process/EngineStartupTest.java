@@ -22,13 +22,23 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 
 /**
  * The embedded CIB seven engine starts against the tables created by Flyway in the schema {@code
  * bpm} (ADR-006) and executes a process including an asynchronous job.
  */
 @SpringBootTest
+// Its job executor must not stay alive and take the jobs of the process tests
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class EngineStartupTest extends PostgresTestSupport {
+
+  @DynamicPropertySource
+  static void jobExecutor(DynamicPropertyRegistry registry) {
+    registry.add("camunda.bpm.job-execution.enabled", () -> "true");
+  }
 
   private final RepositoryService repositoryService;
   private final RuntimeService runtimeService;

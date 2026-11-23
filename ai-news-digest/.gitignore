@@ -2,6 +2,9 @@
 target/
 !.mvn/wrapper/maven-wrapper.jar
 
+# Local PDF storage (until S3, roadmap step 11)
+data/
+
 # Local configuration and secrets
 .env
 *.local.yml

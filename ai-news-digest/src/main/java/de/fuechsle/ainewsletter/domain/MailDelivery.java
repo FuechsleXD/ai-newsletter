@@ -79,6 +79,12 @@ public class MailDelivery {
     this.errorMessage = null;
   }
 
+  /** Records the error of an attempt; the delivery stays open for the next attempt. */
+  public void recordFailedAttempt(String errorMessage) {
+    this.status = MailDeliveryStatus.PENDING;
+    this.errorMessage = errorMessage;
+  }
+
   /** Marks the delivery as failed with the given (sanitised) error message. */
   public void markFailed(String errorMessage) {
     this.status = MailDeliveryStatus.FAILED;

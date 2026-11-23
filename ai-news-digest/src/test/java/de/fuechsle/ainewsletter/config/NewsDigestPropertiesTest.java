@@ -18,7 +18,11 @@ class NewsDigestPropertiesTest {
   private final ApplicationContextRunner runner =
       new ApplicationContextRunner()
           .withConfiguration(AutoConfigurations.of(ValidationAutoConfiguration.class))
-          .withUserConfiguration(PropertiesConfig.class);
+          .withUserConfiguration(PropertiesConfig.class)
+          // Mail addresses have no default; they come only from the environment
+          .withPropertyValues(
+              "newsdigest.mail.from=digest@example.test",
+              "newsdigest.mail.operator=operator@example.test");
 
   @Test
   void bindsDocumentedDefaultsWithoutAnyConfiguration() {
@@ -89,6 +93,31 @@ class NewsDigestPropertiesTest {
           // untouched values keep their defaults
           assertThat(p.budget().warnPercent()).isEqualTo(80);
         });
+  }
+
+  @Test
+  void documentedRenderMailAndStorageDefaults() {
+    runner.run(context -> {
+      NewsDigestProperties p = context.getBean(NewsDigestProperties.class);
+      assertThat(p.render().gotenbergUrl()).isEqualTo("http://localhost:3000");
+      assertThat(p.render().gotenbergTimeout()).isEqualTo(Duration.ofSeconds(30));
+      assertThat(p.output().maxHeadingChars()).isEqualTo(60);
+      assertThat(p.output().maxTextChars()).isEqualTo(320);
+      assertThat(p.mail().from()).isEqualTo("digest@example.test");
+      assertThat(p.mail().operator()).isEqualTo("operator@example.test");
+      assertThat(p.storage().localDirectory()).isEqualTo("data/pdfs");
+    });
+  }
+
+  @Test
+  void missingOrInvalidMailAddressesFailStartup() {
+    new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(ValidationAutoConfiguration.class))
+        .withUserConfiguration(PropertiesConfig.class)
+        .run(context -> assertThat(context).hasFailed());
+    runner
+        .withPropertyValues("newsdigest.mail.operator=kein-mail")
+        .run(context -> assertThat(context).hasFailed());
   }
 
   @Test
