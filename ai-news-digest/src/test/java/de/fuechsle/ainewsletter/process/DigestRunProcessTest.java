@@ -56,6 +56,20 @@ class DigestRunProcessTest extends ProcessTestSupport {
     assertThat((BigDecimal) result.get("cost_usd")).isEqualByComparingTo("0.0205");
     assertThat(newsItems((Long) run.get("id"))).isEqualTo(2);
 
+    Map<String, Object> aggregation =
+        jdbc.queryForMap(
+            "SELECT model_id, cost_usd FROM aggregation_result WHERE digest_run_id = ?",
+            run.get("id"));
+    assertThat(aggregation.get("model_id")).isEqualTo(model);
+    // 1,000 * 3 / 1M + 500 * 15 / 1M, no web search
+    assertThat((BigDecimal) aggregation.get("cost_usd")).isEqualByComparingTo("0.0105");
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT aggregate_json ->> 'title' FROM digest_run WHERE id = ?",
+                String.class,
+                run.get("id")))
+        .isEqualTo("Fake-Digest");
+
     assertThat(lastSuccessfulRun(topic)).isEqualTo(today);
     assertThat(visited(instance))
         .contains(
@@ -104,6 +118,28 @@ class DigestRunProcessTest extends ProcessTestSupport {
     assertThat(runStatus(instance)).isEqualTo("NO_NEWS");
     assertThat(lastSuccessfulRun(topic)).isEqualTo(LocalDate.now(ZoneId.of("Europe/Berlin")));
     assertThat(visited(instance)).doesNotContain("aggregate", "sendMails");
+  }
+
+  @Test
+  void failingAggregatorEndsTheRunAsFailedWithoutRetriesAndInformsTheOperator() {
+    String suffix = unique();
+    long researcher = model("ok-" + suffix);
+    long aggregator = model("fail-agg-" + suffix);
+    long topic = topic("Aggregator " + suffix, aggregator, researcher);
+
+    String instance = starter.start(topic);
+    awaitEnd(instance);
+
+    assertThat(runStatus(instance)).isEqualTo("FAILED");
+    assertThat(fakeProvider.aggregations("fail-agg-" + suffix)).isEqualTo(1);
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT error_message FROM digest_run WHERE id = ?", String.class, runId(instance)))
+        .isEqualTo("Aggregation fehlgeschlagen: Fake provider error for fail-agg-" + suffix);
+    assertThat(lastSuccessfulRun(topic)).isNull();
+    assertThat(visited(instance))
+        .contains("aggregationFailed", "notifyOperatorAggregation", "finishFailed", "endFailed")
+        .doesNotContain("render", "sendMails");
   }
 
   @Test

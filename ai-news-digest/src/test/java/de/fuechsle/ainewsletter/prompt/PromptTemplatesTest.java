@@ -55,4 +55,11 @@ class PromptTemplatesTest {
     assertThatThrownBy(() -> templates.load("research", "v1/../../x"))
         .isInstanceOf(PromptException.class);
   }
+
+  @Test
+  void outputSectionStartsAtAusgabeAndFallsBackToTheWholeText() {
+    assertThat(new PromptTemplate("x", "v1", "Aufgabe\nAUSGABE\n{}\n").outputSection())
+        .isEqualTo("AUSGABE\n{}");
+    assertThat(new PromptTemplate("x", "v1", "nur Text").outputSection()).isEqualTo("nur Text");
+  }
 }

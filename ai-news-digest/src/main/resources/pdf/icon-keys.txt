@@ -1,0 +1,16 @@
+# Allowed icon keys for the aggregator (prompt placeholder allowedIconKeys).
+# One key per line. The SVG files follow in roadmap step 17 as pdf/icons/<key>.svg.
+# Unknown keys from the aggregator are replaced by "default".
+default
+ai
+chip
+cloud
+security
+code
+chart
+money
+law
+research
+rocket
+warning
+globe

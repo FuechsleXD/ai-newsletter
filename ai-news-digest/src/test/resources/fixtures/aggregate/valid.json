@@ -1,0 +1,31 @@
+{
+  "title": "Java im Überblick",
+  "subtitle": "16. bis 22. November 2026",
+  "summary": "Ein Patch-Release und eine neue Preview prägen die Woche.",
+  "keyPoints": [
+    { "iconKey": "code", "text": "Spring Boot 4.1.3 ist da" },
+    { "iconKey": "rocket", "text": "Neue Java-Preview" },
+    { "iconKey": "sparkles", "text": "Unbekanntes Icon" }
+  ],
+  "sections": [
+    {
+      "heading": "Spring Boot 4.1.3",
+      "iconKey": "code",
+      "text": "Das Patch-Release behebt mehrere Fehler.",
+      "flowSteps": ["Upgrade", "Testen", "Ausrollen"],
+      "highlightNumber": null,
+      "sourceIds": ["1", "2"],
+      "models": ["vom Modell erfunden"]
+    },
+    {
+      "heading": "Java-Preview",
+      "iconKey": "rocket",
+      "text": "Ein neues Early-Access-Build ist verfügbar.",
+      "flowSteps": ["soll entfallen"],
+      "highlightNumber": { "value": "2", "label": "Preview-Features" },
+      "sourceIds": [3]
+    }
+  ],
+  "takeaways": ["Upgrade planen", " ", "Preview testen"],
+  "watchOut": "Auf das nächste Release achten."
+}

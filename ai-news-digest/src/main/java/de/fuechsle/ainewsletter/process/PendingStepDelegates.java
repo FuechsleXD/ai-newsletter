@@ -18,11 +18,6 @@ public class PendingStepDelegates {
   private static final Logger log = LoggerFactory.getLogger(PendingStepDelegates.class);
 
   @Bean
-  JavaDelegate aggregateDelegate() {
-    return pending("Aggregieren", 7);
-  }
-
-  @Bean
   JavaDelegate renderDigestDelegate() {
     return pending("HTML und PDF erzeugen", 8);
   }

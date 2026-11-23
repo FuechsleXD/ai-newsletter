@@ -1,15 +1,14 @@
-package de.fuechsle.ainewsletter.research;
+package de.fuechsle.ainewsletter.provider;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.fuechsle.ainewsletter.domain.AiModel;
 import de.fuechsle.ainewsletter.domain.AiProvider;
-import de.fuechsle.ainewsletter.provider.ModelResponse;
 import java.math.BigDecimal;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
-class ResearchModelTest {
+class ModelSnapshotTest {
 
   @Test
   void copiesModelAndProviderValuesFromTheDatabaseRows() {
@@ -22,7 +21,7 @@ class ResearchModelTest {
     model.setTemperature(new BigDecimal("0.50"));
     model.setPricePerSearchCall(new BigDecimal("0.02"));
 
-    ResearchModel snapshot = ResearchModel.of(model);
+    ModelSnapshot snapshot = ModelSnapshot.of(model);
 
     assertThat(snapshot.modelId()).isNull();
     assertThat(snapshot.providerCode()).isEqualTo("ANTHROPIC");

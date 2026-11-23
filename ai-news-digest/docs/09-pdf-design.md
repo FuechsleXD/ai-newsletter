@@ -15,7 +15,7 @@ Stilvorlage: `design/pdf-referenz.jpg`. Übernommen werden nur Aufbau und Stil, 
 ## Stilregeln
 - A4 hochkant, kleine Ränder, immer genau eine Seite
 - Abgerundete Karten, Pastellhintergründe mit farbigem Rahmen, serifenlose Schrift, mindestens 8 pt
-- Icons als lokale SVGs in `src/main/resources/pdf/icons/`; der Aggregator wählt nur einen `iconKey` aus einer festen Liste
+- Icons als lokale SVGs in `src/main/resources/pdf/icons/`; der Aggregator wählt nur einen `iconKey` aus einer festen Liste (`src/main/resources/pdf/icon-keys.txt`, unbekannte Schlüssel werden `default`; zu jedem Schlüssel gehört ab Schritt 17 eine SVG-Datei)
 - Schriften im Repo und im PDF eingebettet (Lizenz beachten), keine Webfonts zur Laufzeit
 - Textlängen pro Feld begrenzt (Defaults), zu lange Texte werden vor dem Rendern gekürzt
 
@@ -43,7 +43,7 @@ Stilvorlage: `design/pdf-referenz.jpg`. Übernommen werden nur Aufbau und Stil, 
 - Der Aggregator liefert alle Felder außer `sources` und `models`; diese beiden ergänzt die App nach dem Parsen aus den geprüften Meldungen (Prompt: `src/main/resources/prompts/aggregate/`)
 - `keyPoints` 3–4, `sections` 4–6, `takeaways` 4–5
 - `flowSteps` und `highlightNumber` optional, höchstens eines davon pro Section
-- Im Code als Record `DigestAggregate` mit verschachtelten Records abgebildet und nach dem Parsen validiert
+- Im Code als Record `DigestAggregate` mit verschachtelten Records abgebildet und nach dem Parsen validiert (Regeln in `02-architektur.md`, Abschnitt "Aggregation"); `sources` enthält die Meldungen, auf die mindestens eine Section verweist
 
 ## Quellen und Konsens
 - `sources` enthält nur Meldungen mit Prüfstatus `VALID`; `id` ist die ID des `news_item`

@@ -1,0 +1,9 @@
+{
+  "title": "Erfunden",
+  "summary": "Nur unbekannte Quellen.",
+  "sections": [
+    { "heading": "Thema A", "iconKey": "ai", "text": "Text.", "sourceIds": ["999"] },
+    { "heading": "Thema B", "iconKey": "ai", "text": "Text.", "sourceIds": [] },
+    { "heading": "Thema C", "iconKey": "ai", "text": "Text." }
+  ]
+}

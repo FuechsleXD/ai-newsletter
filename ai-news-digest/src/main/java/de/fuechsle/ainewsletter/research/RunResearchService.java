@@ -5,6 +5,7 @@ import de.fuechsle.ainewsletter.domain.DigestRun;
 import de.fuechsle.ainewsletter.domain.NewsItem;
 import de.fuechsle.ainewsletter.domain.NewsItemStatus;
 import de.fuechsle.ainewsletter.domain.ProviderResult;
+import de.fuechsle.ainewsletter.provider.ModelSnapshot;
 import de.fuechsle.ainewsletter.repository.AiModelRepository;
 import de.fuechsle.ainewsletter.repository.DigestRunRepository;
 import de.fuechsle.ainewsletter.repository.NewsItemRepository;
@@ -72,7 +73,7 @@ public class RunResearchService {
         run.getPeriodFrom(),
         run.getPeriodTo(),
         ZoneId.of(run.getTopic().getSchedule().getTimezone()),
-        ResearchModel.of(model));
+        ModelSnapshot.of(model));
   }
 
   private long store(long runId, long modelId, ResearchResult result) {
@@ -101,15 +102,14 @@ public class RunResearchService {
     ProviderResult saved = providerResults.save(row);
 
     for (NewsItemCandidate candidate : result.items()) {
-      // Checks (period, duplicates, reachability) and URL normalization follow in roadmap step 7;
-      // until then every stored item counts as valid and the URL is stored unchanged.
+      // Stored as VALID; the checks after the join (NewsItemChecker) set the final status.
       newsItems.save(
           new NewsItem(
               saved,
               candidate.headline(),
               candidate.summary(),
               candidate.url(),
-              candidate.url(),
+              UrlNormalizer.normalize(candidate.url()),
               candidate.publishedAt(),
               NewsItemStatus.VALID));
     }

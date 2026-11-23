@@ -1,0 +1,11 @@
+Gern, hier ist das Briefing:
+
+```json
+{
+  "title": "Kurz",
+  "summary": "Eine Meldung.",
+  "sections": [
+    { "heading": "Thema", "iconKey": "ai", "text": "Text.", "sourceIds": ["1"] }
+  ]
+}
+```

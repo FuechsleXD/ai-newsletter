@@ -1,5 +1,6 @@
 package de.fuechsle.ainewsletter.research;
 
+import de.fuechsle.ainewsletter.provider.ModelSnapshot;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Objects;
@@ -18,7 +19,7 @@ public record ResearchRequest(
     LocalDate periodFrom,
     LocalDate periodTo,
     ZoneId timezone,
-    ResearchModel model) {
+    ModelSnapshot model) {
 
   public ResearchRequest {
     Objects.requireNonNull(topicName, "topicName");

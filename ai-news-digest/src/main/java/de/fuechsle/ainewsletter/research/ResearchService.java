@@ -6,15 +6,15 @@ import de.fuechsle.ainewsletter.domain.ProviderResultStatus;
 import de.fuechsle.ainewsletter.prompt.PromptRenderer;
 import de.fuechsle.ainewsletter.prompt.PromptTemplate;
 import de.fuechsle.ainewsletter.prompt.PromptTemplates;
+import de.fuechsle.ainewsletter.provider.JsonModelCall;
+import de.fuechsle.ainewsletter.provider.JsonModelCall.Outcome;
+import de.fuechsle.ainewsletter.provider.ModelCalls;
 import de.fuechsle.ainewsletter.provider.ModelInvocation;
-import de.fuechsle.ainewsletter.provider.ModelResponse;
+import de.fuechsle.ainewsletter.provider.ModelSnapshot;
 import de.fuechsle.ainewsletter.provider.NewsProviderRegistry;
-import de.fuechsle.ainewsletter.provider.ProviderException;
-import de.fuechsle.ainewsletter.secret.SecretNotFoundException;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -24,9 +24,9 @@ import org.springframework.stereotype.Service;
 
 /**
  * Runs the research of one model for one topic and period: render the active research prompt, call
- * the model with web search, parse the JSON answer and, if it is not valid, make the configured
- * number of repair attempts with the same model (without web search). Every call is costed, also
- * when the result is {@code FAILED} (golden rule 5).
+ * the model with web search and parse the JSON answer, with repair attempts if it is not valid
+ * ({@link JsonModelCall}). Every call is costed, also when the result is {@code FAILED} (golden
+ * rule 5).
  *
  * <p>Nothing is persisted here; the process stores the result as {@code provider_result}.
  */
@@ -35,11 +35,11 @@ public class ResearchService {
 
   private static final Logger log = LoggerFactory.getLogger(ResearchService.class);
   private static final String NO_DESCRIPTION = "keiner";
-  private static final String OUTPUT_SECTION = "AUSGABE";
 
   private final NewsProviderRegistry providers;
   private final PromptTemplates templates;
   private final PromptRenderer renderer;
+  private final JsonModelCall jsonCall;
   private final ResearchResponseParser parser;
   private final CostCalculator costs;
   private final NewsDigestProperties.Ai ai;
@@ -49,12 +49,14 @@ public class ResearchService {
       NewsProviderRegistry providers,
       PromptTemplates templates,
       PromptRenderer renderer,
+      JsonModelCall jsonCall,
       ResearchResponseParser parser,
       CostCalculator costs,
       NewsDigestProperties properties) {
     this.providers = providers;
     this.templates = templates;
     this.renderer = renderer;
+    this.jsonCall = jsonCall;
     this.parser = parser;
     this.costs = costs;
     this.ai = properties.ai();
@@ -67,78 +69,38 @@ public class ResearchService {
   }
 
   public ResearchResult research(ResearchRequest request) {
-    ResearchModel model = request.model();
+    ModelSnapshot model = request.model();
     if (!model.supportsWebSearch()) {
-      return failed("Modell " + model.modelName() + " unterstützt keine Websuche");
+      return rejected("Modell " + model.modelName() + " unterstützt keine Websuche");
     }
     if (model.prices().perSearchCall() == null) {
-      return failed("Für Modell " + model.modelName() + " ist kein Preis pro Websuche gepflegt");
+      return rejected("Für Modell " + model.modelName() + " ist kein Preis pro Websuche gepflegt");
     }
 
     PromptTemplate template = templates.research();
-    ModelInvocation invocation = invocation(model, renderer.render(template, values(request)));
-    Calls calls = new Calls(model);
+    ModelInvocation invocation =
+        ModelInvocation.of(
+                model,
+                renderer.render(template, values(request)),
+                ai.defaultMaxOutputTokens(),
+                ai.callTimeout())
+            .withWebSearch(ai.maxWebSearchesPerCall());
+    ModelCalls calls = new ModelCalls(providers, costs, model);
+    Outcome<ResearchResponse> outcome =
+        jsonCall.call(
+            calls, invocation, template, text -> parser.parse(text, ai.maxItemsPerModel()));
 
-    ModelResponse response = calls.call(invocation);
-    if (response == null) {
-      return calls.failed(calls.lastError);
+    if (!outcome.succeeded()) {
+      return result(calls, ProviderResultStatus.FAILED, List.of(), outcome.errorMessage());
     }
-    if (response.refused()) {
-      return calls.failed("Modell hat die Anfrage abgelehnt");
-    }
-    if (response.noContent()) {
-      return calls.failed("Modell hat keine Antwort geliefert (möglicherweise abgelehnt)");
-    }
-
-    String parseError;
-    try {
-      return calls.succeeded(parser.parse(response.text(), ai.maxItemsPerModel()));
-    } catch (ResearchParseException e) {
-      parseError = e.getMessage();
-    }
-
-    for (int attempt = 1; attempt <= ai.jsonRepairAttempts(); attempt++) {
+    ResearchResponse parsed = outcome.value();
+    if (parsed.skippedItems() > 0) {
       log.info(
-          "Research answer of model {} is not valid ({}), repair attempt {}",
+          "Model {} returned {} item(s) that break the contract or exceed the limit",
           model.modelName(),
-          parseError,
-          attempt);
-      String repairPrompt =
-          renderer.render(
-              templates.repairJson(),
-              Map.of(
-                  "parseError",
-                  parseError,
-                  "expectedFormat",
-                  expectedFormat(template),
-                  "previousResponse",
-                  calls.lastText));
-      response = calls.call(invocation.withPrompt(repairPrompt).withoutWebSearch());
-      if (response == null) {
-        return calls.failed(calls.lastError);
-      }
-      try {
-        return calls.succeeded(parser.parse(response.text(), ai.maxItemsPerModel()));
-      } catch (ResearchParseException e) {
-        parseError = e.getMessage();
-      }
+          parsed.skippedItems());
     }
-    return calls.failed("Antwort ist kein gültiges JSON: " + parseError);
-  }
-
-  private ModelInvocation invocation(ResearchModel model, String prompt) {
-    int maxTokens =
-        model.maxOutputTokens() != null ? model.maxOutputTokens() : ai.defaultMaxOutputTokens();
-    return new ModelInvocation(
-        model.providerCode(),
-        model.secretName(),
-        model.modelName(),
-        maxTokens,
-        model.temperature(),
-        true,
-        ai.maxWebSearchesPerCall(),
-        prompt,
-        ai.callTimeout());
+    return result(calls, ProviderResultStatus.SUCCEEDED, parsed.items(), null);
   }
 
   private Map<String, String> values(ResearchRequest request) {
@@ -156,13 +118,22 @@ public class ResearchService {
         "language", language.getDisplayLanguage(Locale.GERMAN));
   }
 
-  /** The output section of the research prompt, shown again in the repair prompt. */
-  static String expectedFormat(PromptTemplate template) {
-    int index = template.text().indexOf(OUTPUT_SECTION);
-    return index < 0 ? template.text() : template.text().substring(index).strip();
+  private static ResearchResult result(
+      ModelCalls calls, ProviderResultStatus status, List<NewsItemCandidate> items, String error) {
+    return new ResearchResult(
+        status,
+        items,
+        calls.lastText(),
+        calls.inputTokens(),
+        calls.outputTokens(),
+        calls.webSearches(),
+        calls.cost(),
+        calls.duration(),
+        error);
   }
 
-  private static ResearchResult failed(String message) {
+  /** The model is not suitable for research; no call was made. */
+  private static ResearchResult rejected(String message) {
     return new ResearchResult(
         ProviderResultStatus.FAILED,
         List.of(),
@@ -173,58 +144,5 @@ public class ResearchService {
         BigDecimal.ZERO.setScale(CostCalculator.SCALE),
         Duration.ZERO,
         message);
-  }
-
-  /** Accumulates usage, cost and duration over the research call and the repair attempts. */
-  private final class Calls {
-
-    private final ResearchModel model;
-    private final List<ModelResponse> responses = new ArrayList<>();
-    private String lastText;
-    private String lastError;
-
-    private Calls(ResearchModel model) {
-      this.model = model;
-    }
-
-    /** Returns the response, or {@code null} if the call failed ({@link #lastError} is set). */
-    private ModelResponse call(ModelInvocation invocation) {
-      try {
-        ModelResponse response = providers.get(model.providerCode()).call(invocation);
-        responses.add(response);
-        lastText = response.text();
-        return response;
-      } catch (ProviderException | SecretNotFoundException e) {
-        log.warn("Research call of model {} failed: {}", model.modelName(), e.getMessage());
-        lastError = e.getMessage();
-        return null;
-      }
-    }
-
-    private ResearchResult succeeded(ResearchResponse parsed) {
-      if (parsed.skippedItems() > 0) {
-        log.info(
-            "Model {} returned {} item(s) that break the contract or exceed the limit",
-            model.modelName(),
-            parsed.skippedItems());
-      }
-      return result(ProviderResultStatus.SUCCEEDED, parsed.items(), null);
-    }
-
-    private ResearchResult failed(String message) {
-      return result(ProviderResultStatus.FAILED, List.of(), message);
-    }
-
-    private ResearchResult result(
-        ProviderResultStatus status, List<NewsItemCandidate> items, String error) {
-      long input = responses.stream().mapToLong(ModelResponse::inputTokens).sum();
-      long output = responses.stream().mapToLong(ModelResponse::outputTokens).sum();
-      long searches = responses.stream().mapToLong(ModelResponse::webSearches).sum();
-      Duration duration =
-          responses.stream().map(ModelResponse::duration).reduce(Duration.ZERO, Duration::plus);
-      BigDecimal cost = costs.cost(model.prices(), input, output, searches);
-      return new ResearchResult(
-          status, items, lastText, input, output, searches, cost, duration, error);
-    }
   }
 }

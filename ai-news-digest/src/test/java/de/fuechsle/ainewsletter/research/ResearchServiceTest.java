@@ -8,24 +8,22 @@ import de.fuechsle.ainewsletter.cost.ModelPrices;
 import de.fuechsle.ainewsletter.domain.ProviderResultStatus;
 import de.fuechsle.ainewsletter.prompt.PromptRenderer;
 import de.fuechsle.ainewsletter.prompt.PromptTemplates;
+import de.fuechsle.ainewsletter.provider.JsonModelCall;
 import de.fuechsle.ainewsletter.provider.ModelInvocation;
 import de.fuechsle.ainewsletter.provider.ModelResponse;
-import de.fuechsle.ainewsletter.provider.NewsProvider;
+import de.fuechsle.ainewsletter.provider.ModelSnapshot;
 import de.fuechsle.ainewsletter.provider.NewsProviderRegistry;
 import de.fuechsle.ainewsletter.provider.ProviderException;
 import de.fuechsle.ainewsletter.secret.SecretNotFoundException;
 import de.fuechsle.ainewsletter.support.Fixtures;
+import de.fuechsle.ainewsletter.support.ScriptedProvider;
 import de.fuechsle.ainewsletter.support.TestProperties;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -35,7 +33,7 @@ class ResearchServiceTest {
   private static final ModelPrices PRICES =
       new ModelPrices(new BigDecimal("3"), new BigDecimal("15"), new BigDecimal("0.01"));
 
-  private final FakeProvider provider = new FakeProvider();
+  private final ScriptedProvider provider = new ScriptedProvider();
 
   @Test
   void successfulResearchIsParsedAndCosted() {
@@ -71,7 +69,7 @@ class ResearchServiceTest {
 
     service().research(request(model(4_000, new BigDecimal("0.2"))));
 
-    ModelInvocation invocation = provider.invocations.getFirst();
+    ModelInvocation invocation = provider.invocations().getFirst();
     assertThat(invocation.providerCode()).isEqualTo("TEST");
     assertThat(invocation.secretName()).isEqualTo("newsdigest/test/ai/test");
     assertThat(invocation.modelName()).isEqualTo("test-model-1");
@@ -103,7 +101,7 @@ class ResearchServiceTest {
 
     service().research(request);
 
-    ModelInvocation invocation = provider.invocations.getFirst();
+    ModelInvocation invocation = provider.invocations().getFirst();
     assertThat(invocation.maxOutputTokens()).isEqualTo(16_000);
     assertThat(invocation.temperature()).isNull();
     assertThat(invocation.prompt()).contains("SCHWERPUNKT: keiner");
@@ -118,8 +116,8 @@ class ResearchServiceTest {
 
     assertThat(result.status()).isEqualTo(ProviderResultStatus.SUCCEEDED);
     assertThat(result.items()).hasSize(2);
-    assertThat(provider.invocations).hasSize(2);
-    ModelInvocation repair = provider.invocations.get(1);
+    assertThat(provider.invocations()).hasSize(2);
+    ModelInvocation repair = provider.invocations().get(1);
     assertThat(repair.webSearch()).isFalse();
     assertThat(repair.modelName()).isEqualTo("test-model-1");
     assertThat(repair.prompt())
@@ -157,7 +155,7 @@ class ResearchServiceTest {
     ResearchResult result = service(noRepair).research(request(model(null, null)));
 
     assertThat(result.status()).isEqualTo(ProviderResultStatus.FAILED);
-    assertThat(provider.invocations).hasSize(1);
+    assertThat(provider.invocations()).hasSize(1);
   }
 
   @Test
@@ -203,7 +201,7 @@ class ResearchServiceTest {
     assertThat(result.status()).isEqualTo(ProviderResultStatus.FAILED);
     assertThat(result.errorMessage()).isEqualTo("Modell hat die Anfrage abgelehnt");
     assertThat(result.inputTokens()).isEqualTo(500);
-    assertThat(provider.invocations).hasSize(1);
+    assertThat(provider.invocations()).hasSize(1);
   }
 
   @Test
@@ -215,26 +213,26 @@ class ResearchServiceTest {
 
     assertThat(result.status()).isEqualTo(ProviderResultStatus.FAILED);
     assertThat(result.errorMessage()).contains("keine Antwort");
-    assertThat(provider.invocations).hasSize(1);
+    assertThat(provider.invocations()).hasSize(1);
   }
 
   @Test
   void modelWithoutWebSearchIsRejectedWithoutCall() {
-    ResearchModel noSearch =
-        new ResearchModel(
+    ModelSnapshot noSearch =
+        new ModelSnapshot(
             1L, "TEST", "newsdigest/test/ai/test", "test-model-1", null, null, false, PRICES);
 
     ResearchResult result = service().research(request(noSearch));
 
     assertThat(result.status()).isEqualTo(ProviderResultStatus.FAILED);
     assertThat(result.errorMessage()).contains("keine Websuche");
-    assertThat(provider.invocations).isEmpty();
+    assertThat(provider.invocations()).isEmpty();
   }
 
   @Test
   void modelWithoutSearchPriceIsRejectedWithoutCall() {
-    ResearchModel noPrice =
-        new ResearchModel(
+    ModelSnapshot noPrice =
+        new ModelSnapshot(
             1L,
             "TEST",
             "newsdigest/test/ai/test",
@@ -249,20 +247,12 @@ class ResearchServiceTest {
     assertThat(result.status()).isEqualTo(ProviderResultStatus.FAILED);
     assertThat(result.errorMessage()).contains("kein Preis pro Websuche");
     assertThat(result.costUsd()).isEqualByComparingTo(BigDecimal.ZERO);
-    assertThat(provider.invocations).isEmpty();
+    assertThat(provider.invocations()).isEmpty();
   }
 
   @Test
   void promptVersionIsTheActiveResearchVersion() {
     assertThat(service().promptVersion()).isEqualTo("v1");
-  }
-
-  @Test
-  void expectedFormatFallsBackToTheWholeTemplate() {
-    assertThat(
-            ResearchService.expectedFormat(
-                new de.fuechsle.ainewsletter.prompt.PromptTemplate("x", "v1", "nur Text")))
-        .isEqualTo("nur Text");
   }
 
   @Test
@@ -283,17 +273,20 @@ class ResearchServiceTest {
   }
 
   private ResearchService service(NewsDigestProperties properties) {
+    PromptTemplates templates = new PromptTemplates(properties);
+    PromptRenderer renderer = new PromptRenderer();
     return new ResearchService(
         new NewsProviderRegistry(List.of(provider)),
-        new PromptTemplates(properties),
-        new PromptRenderer(),
+        templates,
+        renderer,
+        new JsonModelCall(templates, renderer, properties),
         new ResearchResponseParser(new JsonMapper()),
         new CostCalculator(),
         properties);
   }
 
-  private static ResearchModel model(Integer maxTokens, BigDecimal temperature) {
-    return new ResearchModel(
+  private static ModelSnapshot model(Integer maxTokens, BigDecimal temperature) {
+    return new ModelSnapshot(
         1L,
         "TEST",
         "newsdigest/test/ai/test",
@@ -304,7 +297,7 @@ class ResearchServiceTest {
         PRICES);
   }
 
-  private static ResearchRequest request(ResearchModel model) {
+  private static ResearchRequest request(ModelSnapshot model) {
     return new ResearchRequest(
         "Java",
         "Releases und JEPs",
@@ -316,33 +309,5 @@ class ResearchServiceTest {
 
   private static ModelResponse response(String text, long in, long out, long searches) {
     return new ModelResponse(text, in, out, searches, "END_TURN", Duration.ofSeconds(2));
-  }
-
-  /** Replays prepared answers or errors and records every invocation. */
-  private static final class FakeProvider implements NewsProvider {
-
-    private final Deque<Supplier<ModelResponse>> answers = new ArrayDeque<>();
-    private final List<ModelInvocation> invocations = new ArrayList<>();
-
-    void answer(ModelResponse response) {
-      answers.add(() -> response);
-    }
-
-    void fail(RuntimeException error) {
-      answers.add(() -> {
-        throw error;
-      });
-    }
-
-    @Override
-    public String code() {
-      return "TEST";
-    }
-
-    @Override
-    public ModelResponse call(ModelInvocation invocation) {
-      invocations.add(invocation);
-      return answers.removeFirst().get();
-    }
   }
 }
