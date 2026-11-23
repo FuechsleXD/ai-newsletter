@@ -26,6 +26,7 @@ Regeln:
 ## Datenbank-Benutzer
 - `newsdigest_migration`: Eigentümer der Schemas `app` und `bpm`, wird nur von Flyway verwendet (`spring.flyway.user`)
 - `newsdigest_app`: nur Lesen und Schreiben von Daten in `app` und `bpm`, keine DDL-Rechte
+- Lokal und in Tests legt das Init-Skript `docker/postgres/init/01-create-users.sh` beide Benutzer an (Passwörter aus `.env`); der Superuser des Containers wird von der App nicht verwendet
 
 ## Authentifizierung mit Keycloak und JWT (siehe ADR-009)
 Keycloak ist der Identity Provider. Er verwaltet Benutzer, Passwörter und Rollen und stellt die JWTs aus. Das Backend stellt selbst keine Tokens aus und speichert keine Passwörter; es prüft nur.

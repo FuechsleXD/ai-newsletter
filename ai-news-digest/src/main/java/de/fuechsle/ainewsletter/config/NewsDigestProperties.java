@@ -1,8 +1,8 @@
 package de.fuechsle.ainewsletter.config;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -71,8 +71,7 @@ public record NewsDigestProperties(
   /** Budget defaults in USD. */
   public record Budget(
       @NotNull @DecimalMin("0") @DefaultValue("10") BigDecimal monthlyLimitUsd,
-      @NotNull @DecimalMin("0") @DecimalMax("1") @DefaultValue("0.8")
-          BigDecimal warningThreshold) {}
+      @Min(1) @Max(100) @DefaultValue("80") int warnPercent) {}
 
   /** Process engine defaults. */
   public record Process(

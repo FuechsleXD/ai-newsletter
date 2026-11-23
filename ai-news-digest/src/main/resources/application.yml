@@ -2,6 +2,41 @@ spring:
   application:
     name: ai-news-digest
 
+  # The app connects as a user without DDL rights (docs/06-security.md).
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/newsdigest}
+    username: ${DB_APP_USER:newsdigest_app}
+    password: ${DB_APP_PASSWORD:}
+    hikari:
+      data-source-properties:
+        # search_path of the app connections; native queries use unqualified names
+        currentSchema: app
+
+  # Flyway runs as the schema owner before the app (and later the engine) starts.
+  flyway:
+    user: ${DB_MIGRATION_USER:newsdigest_migration}
+    password: ${DB_MIGRATION_PASSWORD:}
+    schemas: app
+    default-schema: app
+    locations:
+      - classpath:db/migration/app
+      - classpath:db/migration/views
+    clean-disabled: true
+    out-of-order: false
+    validate-on-migrate: true
+    placeholders:
+      appUser: ${spring.datasource.username}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: app
+        jdbc:
+          time_zone: UTC
+
 management:
   endpoints:
     web:

@@ -47,7 +47,7 @@ class NewsDigestPropertiesTest {
       assertThat(p.urlCheck().maxConcurrentChecks()).isEqualTo(5);
 
       assertThat(p.budget().monthlyLimitUsd()).isEqualByComparingTo(BigDecimal.TEN);
-      assertThat(p.budget().warningThreshold()).isEqualByComparingTo("0.8");
+      assertThat(p.budget().warnPercent()).isEqualTo(80);
 
       assertThat(p.process().externalTaskRetryCycle()).isEqualTo("R3/PT5M");
       assertThat(p.process().historyTimeToLive()).isEqualTo(Duration.ofDays(30));
@@ -85,14 +85,14 @@ class NewsDigestPropertiesTest {
           assertThat(p.ai().aggregatorModelId()).isEqualTo("some-model");
           assertThat(p.run().initialLookbackDays()).isEqualTo(14);
           // untouched values keep their defaults
-          assertThat(p.budget().warningThreshold()).isEqualByComparingTo("0.8");
+          assertThat(p.budget().warnPercent()).isEqualTo(80);
         });
   }
 
   @Test
   void invalidValuesFailStartup() {
     runner
-        .withPropertyValues("newsdigest.budget.warning-threshold=1.5")
+        .withPropertyValues("newsdigest.budget.warn-percent=101")
         .run(context -> assertThat(context).hasFailed());
     runner
         .withPropertyValues("newsdigest.ai.max-concurrent-calls-per-provider=0")

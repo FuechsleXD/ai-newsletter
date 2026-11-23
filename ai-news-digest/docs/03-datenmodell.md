@@ -40,7 +40,10 @@
 - Aufbewahrung: `raw_response` wird nach einer Frist geleert, Läufe samt Meldungen nach einer längeren Frist gelöscht, PDFs in S3 per Lifecycle-Regel (Fristen in `12-defaults.md`); ein nächtlicher Aufräumjob übernimmt das, Kostenwerte bleiben für die Monatsauswertung erhalten, bis der Lauf gelöscht wird
 - Löschen heißt Deaktivieren, sobald Historie auf den Datensatz verweist
 - Validierung, die das Schema nicht abbilden kann (Recherche-Modell braucht Web-Suche, Aggregator strukturierte Ausgabe), erfolgt im Service
-- Seed-Daten: Standard-Zeitplan, Anbieter-Zeilen, Platzhalter; keine echten Mailadressen, keine geratenen Preise (Preise trage ich selbst ein)
+- Seed-Daten: Standard-Zeitplan, Anbieter-Zeilen, Platzhalter; keine echten Mailadressen, keine geratenen Preise (Preise trage ich selbst ein). Umgesetzt in `V2__app_seed.sql`: Zeitplan „Wöchentlich montags 07:00“ (`0 0 7 * * MON`, `Europe/Berlin`) und Anbieter `ANTHROPIC` (Secret `newsdigest/prod/ai/anthropic`); keine Modelle, kein Budget
+- Datumswerte: `digest_run.period_from`/`period_to`, `topic_state.last_successful_run_at` und `news_item.published_at` sind `date` (lokales Datum in der Zeitzone des Zeitplans), alle Zeitpunkte `timestamptz`
+- Löschverhalten: Historie eines Laufs (`provider_result`, `news_item`, `aggregation_result`, `mail_delivery`) sowie `topic_model`, `topic_recipient` und `topic_state` werden mit ihrem Eltern-Datensatz gelöscht (`ON DELETE CASCADE`, für den Aufräumjob); Verweise auf Konfiguration (Modell, Zeitplan, Empfänger, Topic eines Laufs) verhindern das Löschen (Deaktivieren statt Löschen)
+- Constraint- und Indexnamen: `pk_`, `fk_`, `uq_`, `ck_`, `ix_` + Tabelle + Bedeutung; Tests prüfen auf diese Namen
 
 ## Schemas
 | Schema | Inhalt | Verwaltet durch |
@@ -70,20 +73,24 @@ Ordner und Benennung:
 | `src/main/resources/db/migration/views` | Repeatable Migrations (`R__`) für Views, z. B. Monatskosten | alle |
 | `src/main/resources/db/dev-data` | Beispieldaten für lokale Entwicklung | nur `dev` |
 
-- Versionierte Migrationen: `V<nummer>__<bereich>_<beschreibung>.sql`, z. B. `V1__bpm_create_engine_2_2.sql`, `V2__app_initial_schema.sql`; eine gemeinsame, fortlaufende Nummernfolge über alle Ordner und eine Historientabelle
+- Versionierte Migrationen: `V<nummer>__<bereich>_<beschreibung>.sql`, z. B. `V1__app_initial_schema.sql`, `V2__app_seed.sql`, ab Schritt 4 `V3__bpm_create_engine_3_0.sql`; eine gemeinsame, fortlaufende Nummernfolge über alle Ordner und eine Historientabelle
 - Repeatable Migrations (`R__<beschreibung>.sql`) nur für Views, nie für Tabellen
 - Angewendete Migrationen werden nie verändert, Änderungen immer als neue Migration
 - Eine Migration pro logischer Änderung
 - Abwärtskompatibel zur vorherigen App-Version (erst hinzufügen, später entfernen), damit Rollbacks möglich bleiben
 
 Einstellungen:
-- `spring.flyway.schemas=app,bpm`, Historientabelle in `app`
+- `spring.flyway.schemas=app,bpm`, Historientabelle in `app` (bis Schritt 4 nur `app`)
 - `clean-disabled=true` in allen Profilen
 - `out-of-order=false`, `validate-on-migrate=true`
 - Flyway läuft beim Start der App, bevor die Engine startet
 - Flyway läuft mit dem Migrationsbenutzer (Eigentümer der Schemas), die App mit einem Benutzer ohne DDL-Rechte (siehe `06-security.md`)
+- Die Rechte des App-Benutzers vergibt `V1` per `ALTER DEFAULT PRIVILEGES` (nur `SELECT`, `INSERT`, `UPDATE`, `DELETE` bzw. Sequenzen); sein Name kommt über den Flyway-Platzhalter `${appUser}` (= `spring.datasource.username`), nie fest im SQL
+- Die App-Verbindungen nutzen `currentSchema=app` (Hikari-Datenquelle), Hibernate `default_schema=app`
+- Die Benutzer selbst legt Flyway nicht an: lokal und in Tests das Init-Skript `docker/postgres/init/01-create-users.sh`, in Produktion das Runbook
 
 Tests:
-- Alle Migrationen laufen mit Testcontainers auf einer leeren PostgreSQL-Datenbank durch
+- Alle Migrationen laufen mit Testcontainers auf einer leeren PostgreSQL-Datenbank durch (gleiches Image und gleiches Init-Skript wie im Compose; Basisklasse `PostgresTestSupport`)
+- Constraints, Teilindizes, Löschverhalten, Rechte des App-Benutzers und der View `monthly_cost` sind in `SchemaMigrationTest` abgesichert, die Abbildung aller Entities in `EntityMappingTest`
 - Hibernate-Validierung gegen `app` ist grün
 - Engine startet gegen `bpm` und führt einen Testprozess aus
