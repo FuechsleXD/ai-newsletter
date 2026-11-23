@@ -5,29 +5,31 @@ Backend + React-UI, das mehrere KI-Modelle parallel und in einstellbarem Rhythmu
 Lernziel: BPM (CIB seven) sinnvoll mit KI-Aufrufen verknüpfen.
 
 ## Dokumentation – vor jeder Arbeit lesen
+
 Die Details stehen in `docs/`. Lies vor einer Aufgabe die passende Datei, nicht alle auf einmal. Einstieg: `docs/README.md`.
 
-| Bereich | Datei |
-|---|---|
-| Ziel, Scope, Ablauf | `docs/01-fachkonzept.md` |
-| Architektur, Packages, KI-Anbindung | `docs/02-architektur.md` |
-| Datenmodell, Flyway | `docs/03-datenmodell.md` |
-| BPMN-Prozess | `docs/04-prozess-bpmn.md` |
-| REST-API, Fehlerbehandlung | `docs/05-api.md` |
-| Security | `docs/06-security.md` |
-| Frontend (Technik, Seiten, Engine-UI) | `docs/07-frontend.md` |
-| UI-Design (Look & Feel) | `docs/08-ui-design.md` |
-| PDF- und Mail-Design | `docs/09-pdf-design.md` |
-| Tests, Coverage | `docs/10-tests.md` |
-| Docker, CI/CD, AWS | `docs/11-deployment-cicd.md` |
-| Defaults | `docs/12-defaults.md` |
-| Umsetzungsplan / Status | `docs/13-roadmap.md` |
-| Offene Entscheidungen | `docs/offene-punkte.md` |
-| Getroffene Entscheidungen (ADRs) | `docs/entscheidungen/` |
-| Prompts und Platzhalter | `src/main/resources/prompts/README.md` |
-| Betrieb (Runbooks) | `docs/betrieb/` |
+| Bereich                               | Datei                                  |
+| ------------------------------------- | -------------------------------------- |
+| Ziel, Scope, Ablauf                   | `docs/01-fachkonzept.md`               |
+| Architektur, Packages, KI-Anbindung   | `docs/02-architektur.md`               |
+| Datenmodell, Flyway                   | `docs/03-datenmodell.md`               |
+| BPMN-Prozess                          | `docs/04-prozess-bpmn.md`              |
+| REST-API, Fehlerbehandlung            | `docs/05-api.md`                       |
+| Security                              | `docs/06-security.md`                  |
+| Frontend (Technik, Seiten, Engine-UI) | `docs/07-frontend.md`                  |
+| UI-Design (Look & Feel)               | `docs/08-ui-design.md`                 |
+| PDF- und Mail-Design                  | `docs/09-pdf-design.md`                |
+| Tests, Coverage                       | `docs/10-tests.md`                     |
+| Docker, CI/CD, AWS                    | `docs/11-deployment-cicd.md`           |
+| Defaults                              | `docs/12-defaults.md`                  |
+| Umsetzungsplan / Status               | `docs/13-roadmap.md`                   |
+| Offene Entscheidungen                 | `docs/offene-punkte.md`                |
+| Getroffene Entscheidungen (ADRs)      | `docs/entscheidungen/`                 |
+| Prompts und Platzhalter               | `src/main/resources/prompts/README.md` |
+| Betrieb (Runbooks)                    | `docs/betrieb/`                        |
 
 ## Tech-Stack (verbindlich)
+
 - Java 21 (LTS), Spring Boot 4.x (bevorzugt 4.1, sonst die neueste 4.x-Linie, die CIB seven unterstützt; Spring Boot 3.5 ist seit Juni 2026 ohne kostenlose Sicherheitsupdates) – Versionswechsel nur nach Rückfrage, siehe ADR-012
 - Maven ausschließlich über den Wrapper (`./mvnw`)
 - CIB seven eingebettet mit den Spring-Boot-4-Startern (ab CIB seven 3.0 die Artefakte ohne Suffix, z. B. `cibseven-bpm-spring-boot-starter`; die `-4`-Artefakte sind dort nur Relocations), Version passend zur Spring-Boot-Version laut Kompatibilitätstabelle (NICHT Camunda 7 CE, End of Life); Maven-Koordinaten in der CIB-seven-Doku prüfen, nicht raten; siehe ADR-012
@@ -41,6 +43,7 @@ Die Details stehen in `docs/`. Lies vor einer Aufgabe die passende Datei, nicht 
 - Neue Dependencies nur nach Rückfrage
 
 ## Befehle
+
 - Lokale Dienste (PostgreSQL, Mailpit, Gotenberg, Keycloak): `docker compose up -d` (Mails ansehen im Mailpit-Webinterface)
 - Build + Tests + Coverage: `./mvnw clean verify` (Docker muss laufen, Testcontainers)
 - Nur Tests: `./mvnw test`
@@ -49,6 +52,7 @@ Die Details stehen in `docs/`. Lies vor einer Aufgabe die passende Datei, nicht 
 - Image lokal: `docker build -t newsdigest:local .`
 
 ## Goldene Regeln (gelten immer)
+
 1. BPMN beschreibt den Ablauf, die Datenbank die Konfiguration. Modelle, Reihenfolgen, Empfänger und Zeitpläne werden NIE im BPMN oder im Code fest verdrahtet.
 2. Recherche läuft parallel (Parallel-Gateways + parallele Multi-Instance); der Aggregator startet erst, wenn alle Recherchen beendet sind. Parallele Zweige schreiben nie in gemeinsame Prozessvariablen.
 3. Alles, was von einem LLM kommt, ist nicht vertrauenswürdig: URLs nur mit SSRF-Schutz aufrufen, Texte in HTML/PDF escapen.
@@ -63,8 +67,11 @@ Die Details stehen in `docs/`. Lies vor einer Aufgabe die passende Datei, nicht 
 12. Angewendete Flyway-Migrationen werden nie verändert.
 13. Code und Kommentare auf Englisch, Doku und UI-Texte auf Deutsch.
 14. Constructor Injection, kein Field Injection.
+15. Clean Code Prinzipien, SOLID Prinzipien.
+16. Architektur sauber halten (Pakete und Klassen).
 
 ## Arbeitsweise
+
 - Bei unklaren Anforderungen oder Punkten aus `docs/offene-punkte.md` erst nachfragen, dann bauen
 - Nach `docs/13-roadmap.md` vorgehen, immer genau einen Schritt pro Auftrag, in diesem Ablauf:
   1. Ersten offenen Schritt (`[ ]`) nennen, passende Doku lesen, auf `[~]` setzen
