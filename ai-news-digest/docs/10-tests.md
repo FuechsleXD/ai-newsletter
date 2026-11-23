@@ -40,6 +40,8 @@
 
 Test-Hilfen von CIB seven prüfen; sonst direkt mit `RuntimeService`, `HistoryService` und Job-Ausführung testen.
 
+Stand nach Roadmap-Schritt 6 (`DigestRunProcessTest`, eingebettete Engine mit laufendem Job Executor, Testcontainers, Fake-Anbieter `FAKE` mit Verhalten je Modellname-Präfix `ok-`, `empty-`, `fail-`, `slow-`): abgedeckt sind 1 (ohne Mail und PDF, die noch Platzhalter sind), 5 (ohne Betreiber-Mail), 6, 8, 9, 11 und 12 (Recherche, `RunResearchServiceTest`). Fall 2, 3 und 4 folgen mit mehreren Modellen in Schritt 13, 7 und 10 mit Mail und Aggregation in Schritt 7 und 8, 13 mit dem Abbrechen in Schritt 16.
+
 ## Bewertung von Prompts
 - Beispielantworten echter Modelle (anonymisiert, ohne Keys) liegen als Fixtures in `src/test/resources/fixtures/research/` und `.../aggregate/`; automatische Tests prüfen Parsing, Prüfung und Rendering damit (seit Schritt 5: konstruierte Beispiele für gültige, umrahmte, kaputte und zu lange Antworten; echte Antworten kommen mit dem Eval in Schritt 9 dazu)
 - Anbieter-Anbindung: `AnthropicNewsProviderTest` spricht gegen einen lokalen Stub der Messages-API (HTTP-Server des JDK) und prüft Anfrage (Modell, Max-Tokens, Temperatur nur wenn gesetzt, Websuche, API-Key) und Abbildung der Antwort (Text, Token, Websuchen, Stop-Grund); keine neue Test-Abhängigkeit

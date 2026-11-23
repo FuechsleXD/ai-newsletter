@@ -48,8 +48,9 @@ camunda:
       schema-name: bpm
       table-prefix: bpm.
     # No default admin user: identities come from Keycloak (step 25)
-    # Processes are deployed explicitly once the BPMN exists (step 6)
-    auto-deployment-enabled: false
+    # Deploys src/main/resources/processes/*.bpmn on start (only changed models get a new version)
+    auto-deployment-enabled: true
+    deployment-resource-pattern: classpath*:processes/*.bpmn
     metrics:
       enabled: false
 

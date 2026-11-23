@@ -74,13 +74,32 @@ class SchemaMigrationTest extends PostgresTestSupport {
                 "SELECT cron_expression, timezone FROM schedule WHERE name = 'Wöchentlich montags 07:00'"))
         .containsEntry("cron_expression", "0 0 7 * * MON")
         .containsEntry("timezone", "Europe/Berlin");
-    assertThat(jdbc.queryForMap("SELECT code, secret_name, active FROM ai_provider"))
-        .containsEntry("code", "ANTHROPIC")
+    assertThat(
+            jdbc.queryForMap(
+                "SELECT secret_name, active FROM ai_provider WHERE code = 'ANTHROPIC'"))
         .containsEntry("secret_name", "newsdigest/prod/ai/anthropic")
         .containsEntry("active", true);
-    assertThat(count("ai_model")).isZero();
-    assertThat(count("recipient")).isZero();
-    assertThat(count("budget")).isZero();
+    // Other test classes share the database, so the seed itself is checked instead of row counts:
+    // no models, prices, recipients or budgets (ADR-013, no real mail addresses).
+    assertThat(seedStatements())
+        .allSatisfy(statement ->
+            assertThat(statement).containsAnyOf("INSERT INTO schedule", "INSERT INTO ai_provider"));
+  }
+
+  private static java.util.List<String> seedStatements() {
+    try (java.io.InputStream in =
+        SchemaMigrationTest.class
+            .getClassLoader()
+            .getResourceAsStream("db/migration/app/V2__app_seed.sql")) {
+      String sql = new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+      return java.util.Arrays.stream(sql.split(";"))
+          .map(part -> part.lines().filter(line -> !line.strip().startsWith("--")))
+          .map(lines -> lines.collect(java.util.stream.Collectors.joining(" ")).strip())
+          .filter(statement -> !statement.isEmpty())
+          .toList();
+    } catch (java.io.IOException e) {
+      throw new java.io.UncheckedIOException(e);
+    }
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -307,18 +326,25 @@ class SchemaMigrationTest extends PostgresTestSupport {
             + " cost_usd, duration_ms) VALUES (?, ?, 1, 1, 0.01, 1)",
         runId,
         modelId);
+    long recipientId = insertRecipient("someone@example.test");
     jdbc.update(
         "INSERT INTO mail_delivery (digest_run_id, recipient_id, status) VALUES (?, ?, 'PENDING')",
         runId,
-        insertRecipient("someone@example.test"));
+        recipientId);
 
     jdbc.update("DELETE FROM digest_run WHERE id = ?", runId);
 
-    assertThat(count("provider_result")).isZero();
-    assertThat(count("news_item")).isZero();
-    assertThat(count("aggregation_result")).isZero();
-    assertThat(count("mail_delivery")).isZero();
-    assertThat(count("recipient")).isOne();
+    // Counted per run: other test classes leave committed rows in the shared database
+    assertThat(countWhere("provider_result", "digest_run_id", runId)).isZero();
+    assertThat(countWhere("news_item", "provider_result_id", resultId)).isZero();
+    assertThat(countWhere("aggregation_result", "digest_run_id", runId)).isZero();
+    assertThat(countWhere("mail_delivery", "digest_run_id", runId)).isZero();
+    assertThat(countWhere("recipient", "id", recipientId)).isOne();
+  }
+
+  private long countWhere(String table, String column, long id) {
+    return jdbc.queryForObject(
+        "SELECT count(*) FROM " + table + " WHERE " + column + " = ?", Long.class, id);
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -379,10 +405,6 @@ class SchemaMigrationTest extends PostgresTestSupport {
     assertThatThrownBy(() -> jdbc.update(sql, args))
         .isInstanceOf(DataIntegrityViolationException.class)
         .hasMessageContaining(constraint);
-  }
-
-  private long count(String table) {
-    return jdbc.queryForObject("SELECT count(*) FROM " + table, Long.class);
   }
 
   private long anthropicId() {
