@@ -1,0 +1,11 @@
+Deine vorherige Antwort war kein gültiges JSON im verlangten Format.
+
+FEHLER: {{parseError}}
+
+ERWARTETES FORMAT:
+{{expectedFormat}}
+
+DEINE VORHERIGE ANTWORT:
+{{previousResponse}}
+
+Gib dieselben Inhalte erneut aus, diesmal ausschließlich als gültiges JSON im erwarteten Format, ohne Text davor oder danach und ohne Markdown-Codeblock. Füge keine neuen Inhalte hinzu.
