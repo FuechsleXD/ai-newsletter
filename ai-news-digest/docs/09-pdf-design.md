@@ -68,3 +68,5 @@ Stilvorlage: `design/pdf-referenz.jpg`. Übernommen werden nur Aufbau und Stil, 
 
 ## Vorgehen
 Zuerst mit festem Beispiel-JSON (kurz, normal, maximal lang) das Layout bauen und PNG-Vorschauen erzeugen, bevor Anbieter angebunden werden.
+
+Stand Schritt 8: einfaches Layout mit allen Teilen in der richtigen Reihenfolge (`templates/pdf/digest.html`, `templates/mail/digest.html`), ohne Icons und eigene Schriften; Beispiel-JSON in `src/test/resources/fixtures/digest/`, Vorschauen (HTML, PDF, PNG) erzeugt `GotenbergRenderingTest` unter `target/pdf-preview/`. Das finale Infografik-Design, Icons, Schriften und die Seitenprüfung mit Nachkürzen folgen in Schritt 17.

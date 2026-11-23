@@ -26,9 +26,9 @@ Hosting ohne Load Balancer, Details in `11-deployment-cicd.md`.
 | `cost` | Kostenberechnung, Budgetprüfung |
 | `process` | BPMN-Delegates, `DigestProcessStarter` |
 | `scheduling` | Laden der Zeitpläne, Reload, Start der Läufe |
-| `render` | HTML-Mail- und PDF-Erzeugung aus demselben Aggregat, Längenbegrenzung, Gotenberg-Client |
-| `mail` | Mailversand per SMTP über `JavaMailSender` (lokal Mailpit, in AWS SES); ein Code-Pfad für alle Umgebungen |
-| `storage` | S3-Zugriff |
+| `render` | HTML-Mail- und PDF-Erzeugung aus demselben Aggregat (`DigestView`, Thymeleaf-Templates in `templates/pdf/` und `templates/mail/`, Klartext-Teil), Längenbegrenzung (`TextShortener`), Gotenberg-Client |
+| `mail` | Mailversand per SMTP über `JavaMailSender` (lokal Mailpit, in AWS SES); ein Code-Pfad für alle Umgebungen; Digest-Versand mit Protokoll je Empfänger, Betreiber-Mail |
+| `storage` | Ablage der PDFs (`DigestStorage`): bis Schritt 11 lokales Verzeichnis, danach S3 |
 | `metrics` | Micrometer-Metriken |
 | `repository` | Spring-Data-Repositories |
 | `domain` | JPA-Entities |

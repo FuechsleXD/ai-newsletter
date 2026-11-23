@@ -1,0 +1,43 @@
+{
+  "title": "Kurzes Briefing",
+  "subtitle": "",
+  "summary": "Eine Meldung in dieser Woche.",
+  "keyPoints": [
+    {
+      "iconKey": "ai",
+      "text": "Ein Release"
+    }
+  ],
+  "sections": [
+    {
+      "heading": "Thema 1: Entwicklung im Überblick",
+      "iconKey": "ai",
+      "text": "Kurzer Text.",
+      "flowSteps": [],
+      "highlightNumber": null,
+      "sourceIds": [
+        "1",
+        "2"
+      ],
+      "models": [
+        "Claude Test A"
+      ]
+    }
+  ],
+  "takeaways": [
+    "Release prüfen"
+  ],
+  "watchOut": "",
+  "sources": [
+    {
+      "id": "1",
+      "title": "Meldung 1: Neues Release mit Verbesserungen",
+      "url": "https://news1.example.test/artikel/1"
+    },
+    {
+      "id": "2",
+      "title": "Meldung 2: Neues Release mit Verbesserungen",
+      "url": "https://news2.example.test/artikel/2"
+    }
+  ]
+}

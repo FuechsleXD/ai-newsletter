@@ -63,8 +63,10 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 ## Rendering
 | Einstellung | Default |
 |---|---|
+| Gotenberg-URL | `http://localhost:3000` (`newsdigest.render.gotenberg-url`), in Produktion der interne Docker-Name |
 | Timeout Gotenberg | 30 s |
-| Nachkürzen bei mehr als einer Seite | 1 Versuch |
+| Nachkürzen bei mehr als einer Seite | 1 Versuch (ab Schritt 17) |
+| PDF-Ablage bis Schritt 11 | lokales Verzeichnis `data/pdfs` (`newsdigest.storage.local-directory`) |
 
 ## Ausgabe
 | Einstellung | Default |
@@ -76,7 +78,8 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 | PDF | A4, eine Seite |
 | Mail | HTML-Inhalt + PDF-Anhang |
 | Mail-Betreff | `[News Digest] <Topic> – <Datum>` |
-| Absender, Betreiber-Empfänger | nur über Umgebungsvariablen |
+| Absender, Betreiber-Empfänger | nur über Umgebungsvariablen (`NEWSDIGEST_MAIL_FROM`, `NEWSDIGEST_MAIL_OPERATOR`); ohne sie startet die App nicht |
+| SMTP | `SPRING_MAIL_HOST`/`SPRING_MAIL_PORT`, Default `localhost:1025` (Mailpit); der Mail-Health-Check ist aus, damit ein SMTP-Ausfall die App nicht als down meldet |
 | Aktive Prompt-Version | `v1` je Prompt (`newsdigest.prompts.research`, `.aggregate`, `.repair-json`) |
 
 ## Aufbewahrung

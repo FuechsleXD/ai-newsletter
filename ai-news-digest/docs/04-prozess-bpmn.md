@@ -20,7 +20,10 @@ Start (topicId)
                 gültige Meldungen       -> [Aggregieren]
                      Fehler (Boundary-Event AGGREGATION_FAILED) -> [Betreiber informieren] -> Ende (FAILED)
                      -> [HTML + PDF erzeugen, PDF in S3]
+                          keine aktiven Empfänger (Boundary-Event NO_RECIPIENTS) -> [Betreiber informieren] -> Ende (FAILED)
                      -> [Mails versenden]
+                     -> <XOR: Alle zugestellt?>
+                          nein (mind. einer erreicht) -> [Betreiber informieren]
                      -> [Lauf abschließen]    last_successful_run_at setzen
                      -> Ende (COMPLETED)
 ```
@@ -45,7 +48,7 @@ Technische Regeln (wichtig für echte Parallelität):
 - Modell: `src/main/resources/processes/digest-run.bpmn`, Process-ID `digestRun`; wird beim Start automatisch deployt (`camunda.bpm.deployment-resource-pattern: classpath*:processes/*.bpmn`), eine neue Prozessversion entsteht nur bei geändertem Modell
 - Delegates im Package `process`, als Spring-Beans über `camunda:delegateExpression="${...}"`
 
-## Umsetzung (Stand Roadmap-Schritt 7)
+## Umsetzung (Stand Roadmap-Schritt 8)
 | Task | Bean | Asynchron | Stand |
 |---|---|---|---|
 | Lauf vorbereiten | `prepareRunDelegate` | nein, läuft in der Transaktion von `DigestProcessStarter` | fertig |
@@ -53,12 +56,12 @@ Technische Regeln (wichtig für echte Parallelität):
 | Recherche | `researchDelegate` | `asyncBefore`, nicht exklusiv; Multi-Instance-Body `asyncAfter` | fertig (ein Modell; Semaphore pro Anbieter folgt in Schritt 13) |
 | Meldungen prüfen | `checkNewsDelegate` | `asyncBefore` | fertig für Zeitraum und Duplikate im Lauf (`NewsItemChecker`), setzt `researchOutcome`; Duplikate früherer Läufe und URL-Prüfung folgen in Schritt 14 |
 | Aggregieren | `aggregateDelegate` | `asyncBefore` | fertig (`RunAggregationService`); scheitert das Aggregator-Modell, wirft der Delegate den BPMN-Fehler `AGGREGATION_FAILED` |
-| HTML und PDF erzeugen | `renderDigestDelegate` | `asyncBefore` | Platzhalter bis Schritt 8 |
-| Mails versenden | `sendMailsDelegate` | `asyncBefore` | Platzhalter bis Schritt 8 |
-| Betreiber informieren | `notifyOperatorDelegate` (Grund als Input-Parameter `notificationReason`: `BUDGET_EXHAUSTED`, `NO_MODEL_SUCCEEDED`, `AGGREGATION_FAILED`) | `asyncBefore` | Platzhalter bis Schritt 8 |
+| HTML und PDF erzeugen | `renderDigestDelegate` | `asyncBefore` | fertig (`RenderDigestService`, einfaches Layout bis Schritt 17); ohne aktive Empfänger BPMN-Fehler `NO_RECIPIENTS` vor dem Rendern; PDF-Ablage bis Schritt 11 im lokalen Verzeichnis (`newsdigest.storage.local-directory`), danach S3 |
+| Mails versenden | `sendMailsDelegate` | `asyncBefore` | fertig (`DigestMailService`), setzt `mailOutcome` |
+| Betreiber informieren | `notifyOperatorDelegate` (Grund als Input-Parameter `notificationReason`: `BUDGET_EXHAUSTED`, `NO_MODEL_SUCCEEDED`, `AGGREGATION_FAILED`, `NO_RECIPIENTS`, `MAIL_PARTIALLY_FAILED`) | `asyncBefore` | fertig (`OperatorNotificationService`, Klartext-Mail an `NEWSDIGEST_MAIL_OPERATOR`); scheitert die Mail, Retries und danach Incident, ohne Auswirkung auf den Status des Laufs |
 | Lauf abschließen | `finishRunDelegate` (Status als Input-Parameter `runStatus`, je Ende ein Task) | nein | fertig |
 
-Platzhalter schreiben nur einen Log-Eintrag (`PendingStepDelegates`) und werden später durch echte Delegates mit demselben Bean-Namen ersetzt; das BPMN bleibt dabei unverändert.
+Seit Schritt 8 gibt es keine Platzhalter mehr (`PendingStepDelegates` ist entfernt).
 
 Hinweis: Die Recherche läuft innerhalb der Job-Transaktion der Engine und hält dabei eine DB-Verbindung, solange der Modellaufruf dauert. Bei mehreren parallelen Modellen (Schritt 13) Verbindungs-Pool und Job-Executor-Threads aufeinander abstimmen.
 
@@ -73,6 +76,7 @@ Hinweis: Die Recherche läuft innerhalb der Job-Transaktion der Engine und hält
 | `aggregatorModelId` | Long | Lauf vorbereiten |
 | `budgetOk` | Boolean | Budget prüfen |
 | `researchOutcome` | String: `NONE_SUCCEEDED`, `NO_VALID_NEWS`, `VALID_NEWS` | Meldungen prüfen (nach dem Join) |
+| `mailOutcome` | String: `ALL_SENT`, `PARTIALLY_SENT` | Mails versenden |
 
 Große Inhalte stehen nie in Prozessvariablen, sondern in Tabellen bzw. S3.
 
@@ -91,6 +95,9 @@ Alle Variablen sind einfache Werte oder Strings, damit die Engine keine Java-Ser
 - Kein Modell erfolgreich -> `FAILED`, Fehler-Mail an den Betreiber, `last_successful_run_at` bleibt unverändert
 - Keine gültige Meldung -> `NO_NEWS`, keine Mail an Empfänger, `last_successful_run_at` wird gesetzt
 - Mailversand: Retries senden nur an Empfänger, deren `mail_delivery` noch nicht `SENT` ist; scheitert ein Empfänger endgültig, wird er als `FAILED` protokolliert, der Lauf gilt als `COMPLETED`, wenn mindestens ein Empfänger die Mail erhalten hat, und der Betreiber wird informiert; erreicht keiner die Mail, entsteht ein Incident
+- Umsetzung Mailversand: Jede Zustellung wird direkt nach dem Versuch in eigener Transaktion gespeichert (`SENT` mit Zeitpunkt oder `PENDING` mit Fehlertext). Scheitert ein Empfänger und hat der Job noch Versuche, wirft der Delegate eine Exception (Job-Retry). Im letzten Versuch (Job hat nur noch 1 Retry) werden offene Empfänger `FAILED`; bei mindestens einem `SENT` geht es über das Gateway "Alle zugestellt?" weiter, sonst Exception und Incident. Das setzt einen Retry-Zyklus mit mindestens zwei Wiederholungen voraus (Default `R3/PT5M`)
+- Jede Digest-Mail geht an genau einen Empfänger, damit sich Empfänger nicht gegenseitig sehen
+- Ein Topic ohne aktive Empfänger endet vor dem Rendern über den BPMN-Fehler `NO_RECIPIENTS` als `FAILED` mit Betreiber-Mail
 - Fehler in Delegates laufen über die BPMN-Fehlerbehandlung, nicht über den `@RestControllerAdvice`
 
 ## Status eines Laufs
@@ -108,7 +115,8 @@ Jeder asynchrone Schritt kann von der Engine wiederholt werden (Retry, abgelaufe
 - Recherche: vorhandenes `provider_result` für (Lauf, Modell) wird überschrieben, nicht doppelt angelegt (UNIQUE-Constraint); die Meldungen werden ersetzt, Token, Websuchen, Kosten und Dauer des früheren Versuchs werden zu den neuen addiert. Das Ergebnis wird direkt nach dem Modellaufruf in einer eigenen Transaktion gespeichert, damit ein bezahlter Aufruf auch dann erfasst bleibt, wenn der Job danach scheitert (`RunResearchService`)
 - Meldungen prüfen: beginnt jedes Mal von vorn und kommt zum selben Ergebnis
 - Aggregieren: Inhalt (`aggregate_json`) wird ersetzt, Token und Kosten werden in `aggregation_result` addiert (`RunAggregationService`)
-- Rendern, S3-Upload: Ergebnis wird ersetzt; S3-Schlüssel ist deterministisch (`runs/<runId>/digest.pdf`)
+- Rendern, S3-Upload: Ergebnis wird ersetzt; S3-Schlüssel ist deterministisch (`runs/<runId>/digest.pdf`, steht in `digest_run.pdf_s3_key`; bis Schritt 11 derselbe Schlüssel im lokalen Verzeichnis)
+- Mail-Inhalt: HTML und Klartext werden beim Versand aus `aggregate_json` neu erzeugt; das Erstellungsdatum ist der Start des Laufs, deshalb ist der Inhalt bei jedem Versuch gleich
 - Mail: bereits `SENT` wird nie erneut verschickt
 - Kosten werden pro Aufruf gespeichert; ein wiederholter Aufruf ersetzt die Kosten nicht, sondern wird zusätzlich erfasst, weil er tatsächlich bezahlt wurde
 

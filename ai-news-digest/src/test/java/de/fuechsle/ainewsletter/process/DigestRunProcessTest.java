@@ -5,27 +5,38 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import de.fuechsle.ainewsletter.service.RunAlreadyActiveException;
 import de.fuechsle.ainewsletter.service.TopicNotFoundException;
+import de.fuechsle.ainewsletter.support.Mailpit;
 import de.fuechsle.ainewsletter.support.ProcessTestSupport;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
+import org.cibseven.bpm.engine.RuntimeService;
 import org.cibseven.bpm.engine.history.HistoricActivityInstance;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * The process {@code digestRun} with the embedded engine, a real database and the fake provider
- * (mandatory cases from docs/10-tests.md that apply with one model; parallelism follows in step
- * 13).
+ * The process {@code digestRun} with the embedded engine, a real database, the fake provider and
+ * Gotenberg and Mailpit as local containers (mandatory cases from docs/10-tests.md that apply with
+ * one model; parallelism follows in step 13).
  */
 class DigestRunProcessTest extends ProcessTestSupport {
 
   @Autowired private DigestProcessStarter starter;
+  @Autowired private RuntimeService runtimeService;
 
   @Test
-  void happyPathCompletesAndMovesTheLastSuccessfulRun() {
+  void happyPathCompletesAndMovesTheLastSuccessfulRun() throws IOException {
     String suffix = unique();
     long model = model("ok-" + suffix);
     long topic = topic("Happy " + suffix, model, model);
@@ -71,7 +82,35 @@ class DigestRunProcessTest extends ProcessTestSupport {
         .isEqualTo("Fake-Digest");
 
     assertThat(lastSuccessfulRun(topic)).isEqualTo(today);
+
+    long runId = (Long) run.get("id");
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT pdf_s3_key FROM digest_run WHERE id = ?", String.class, runId))
+        .isEqualTo("runs/" + runId + "/digest.pdf");
+    List<Mailpit.Mail> mails = Mailpit.awaitMailsTo(recipientOf(topic), 1);
+    assertThat(mails).hasSize(1);
+    Mailpit.Mail mail = mails.getFirst();
+    assertThat(mail.subject())
+        .isEqualTo(
+            "[News Digest] Happy "
+                + suffix
+                + " – "
+                + today.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")));
+    assertThat(mail.from()).isEqualTo(MAIL_FROM);
+    assertThat(mail.html()).contains("Fake-Digest", "Kurzfazit");
+    assertThat(mail.text()).contains("KURZFAZIT", "Fake-Digest");
+    assertThat(mail.attachments()).hasSize(1);
+    Mailpit.Attachment attachment = mail.attachments().getFirst();
+    assertThat(attachment.fileName()).isEqualTo("news-digest.pdf");
+    assertThat(attachment.contentType()).isEqualTo("application/pdf");
+    try (PDDocument pdf = Loader.loadPDF(attachment.content())) {
+      assertThat(pdf.getNumberOfPages()).isEqualTo(1);
+      assertThat(new PDFTextStripper().getText(pdf)).contains("Fake-Digest");
+    }
+    assertThat(deliveryStatuses(runId)).containsExactly("SENT");
     assertThat(visited(instance))
+        .doesNotContain("notifyOperatorMail")
         .contains(
             "prepareRun",
             "checkBudget",
@@ -82,6 +121,7 @@ class DigestRunProcessTest extends ProcessTestSupport {
             "aggregate",
             "render",
             "sendMails",
+            "mailGateway",
             "finishCompleted",
             "endCompleted");
   }
@@ -104,6 +144,9 @@ class DigestRunProcessTest extends ProcessTestSupport {
         .contains("Fake provider error");
     assertThat(lastSuccessfulRun(topic)).isNull();
     assertThat(visited(instance)).contains("notifyOperatorFailed", "endFailed");
+    assertThat(operatorMailAbout("Fail " + suffix).text())
+        .contains("Kein Recherche-Modell", "Lauf: " + runId(instance));
+    assertThat(Mailpit.mailsTo(recipientOf(topic))).isEmpty();
   }
 
   @Test
@@ -140,6 +183,80 @@ class DigestRunProcessTest extends ProcessTestSupport {
     assertThat(visited(instance))
         .contains("aggregationFailed", "notifyOperatorAggregation", "finishFailed", "endFailed")
         .doesNotContain("render", "sendMails");
+    assertThat(operatorMailAbout("Aggregator " + suffix).text())
+        .contains("Aggregation ist fehlgeschlagen", "Fehler: Aggregation fehlgeschlagen");
+  }
+
+  @Test
+  void failedRecipientIsRetriedThenLoggedAsFailedAndTheOthersGetTheMailOnlyOnce() {
+    String suffix = unique();
+    long model = model("ok-" + suffix);
+    long topic = topic("Teilweise " + suffix, model, model);
+    long rejected = recipient(topic, "rejected-" + suffix + "@example.test");
+
+    String instance = starter.start(topic);
+    awaitEnd(instance);
+
+    assertThat(runStatus(instance)).isEqualTo("COMPLETED");
+    long runId = runId(instance);
+    // Three attempts of the job, but the accepted recipient got the mail exactly once
+    assertThat(Mailpit.mailsTo(recipientOf(topic))).hasSize(1);
+    Map<String, Object> failed =
+        jdbc.queryForMap(
+            "SELECT status, sent_at, error_message FROM mail_delivery"
+                + " WHERE digest_run_id = ? AND recipient_id = ?",
+            runId,
+            rejected);
+    assertThat(failed.get("status")).isEqualTo("FAILED");
+    assertThat(failed.get("sent_at")).isNull();
+    assertThat((String) failed.get("error_message")).isNotBlank();
+    assertThat(deliveryStatuses(runId)).containsExactlyInAnyOrder("SENT", "FAILED");
+    assertThat(visited(instance)).contains("notifyOperatorMail", "finishCompleted");
+    assertThat(operatorMailAbout("Teilweise " + suffix).text())
+        .contains("nicht alle Empfänger", "Zugestellt: 1, fehlgeschlagen: 1");
+    assertThat(lastSuccessfulRun(topic)).isEqualTo(LocalDate.now(ZoneId.of("Europe/Berlin")));
+  }
+
+  @Test
+  void noRecipientReachedLeadsToAnIncident() {
+    String suffix = unique();
+    long model = model("ok-" + suffix);
+    long topic = topic("Niemand " + suffix, model, model);
+    jdbc.update("UPDATE recipient SET active = false WHERE email = ?", recipientOf(topic));
+    recipient(topic, "rejected-" + suffix + "@example.test");
+
+    String instance = starter.start(topic);
+    try {
+      awaitIncident(instance);
+
+      assertThat(runStatus(instance)).isEqualTo("RUNNING");
+      assertThat(deliveryStatuses(runId(instance))).containsExactly("FAILED");
+    } finally {
+      runtimeService.deleteProcessInstance(instance, "test cleanup");
+    }
+  }
+
+  @Test
+  void topicWithoutActiveRecipientsEndsAsFailedWithoutPdf() {
+    String suffix = unique();
+    long model = model("ok-" + suffix);
+    long topic = topic("Ohne Empfänger " + suffix, model, model);
+    jdbc.update("UPDATE recipient SET active = false WHERE email = ?", recipientOf(topic));
+
+    String instance = starter.start(topic);
+    awaitEnd(instance);
+
+    assertThat(runStatus(instance)).isEqualTo("FAILED");
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT pdf_s3_key FROM digest_run WHERE id = ?", String.class, runId(instance)))
+        .isNull();
+    assertThat(visited(instance))
+        .contains("noRecipients", "notifyOperatorNoRecipients", "finishFailed")
+        .doesNotContain("sendMails");
+    assertThat(operatorMailAbout("Ohne Empfänger " + suffix).text())
+        .contains("keine aktiven Empfänger");
+    assertThat(lastSuccessfulRun(topic)).isNull();
   }
 
   @Test
@@ -168,6 +285,8 @@ class DigestRunProcessTest extends ProcessTestSupport {
       assertThat(fakeProvider.calls("ok-" + suffix)).isZero();
       assertThat(lastSuccessfulRun(topic)).isNull();
       assertThat(visited(instance)).contains("notifyOperatorBudget", "endSkipped");
+      assertThat(operatorMailAbout("Budget " + suffix).text())
+          .contains("Monatsbudget ist erreicht", "Ausgaben im Monat: ", " USD von 0");
     } finally {
       jdbc.update("UPDATE budget SET active = false WHERE active");
     }
@@ -261,6 +380,49 @@ class DigestRunProcessTest extends ProcessTestSupport {
             LocalDate.class,
             topicId);
     return values.isEmpty() ? null : values.getFirst();
+  }
+
+  private List<String> deliveryStatuses(long runId) {
+    return jdbc.queryForList(
+        "SELECT status FROM mail_delivery WHERE digest_run_id = ? ORDER BY id",
+        String.class,
+        runId);
+  }
+
+  /** The operator mail about a topic (the operator address is shared by all tests). */
+  private Mailpit.Mail operatorMailAbout(String topicName) {
+    Instant deadline = Instant.now().plus(Duration.ofSeconds(10));
+    while (Instant.now().isBefore(deadline)) {
+      Optional<Mailpit.Mail> mail =
+          Mailpit.mailsTo(MAIL_OPERATOR).stream()
+              .filter(candidate -> candidate.subject().endsWith("– " + topicName))
+              .findFirst();
+      if (mail.isPresent()) {
+        return mail.get();
+      }
+      sleep();
+    }
+    throw new AssertionError("No operator mail about " + topicName);
+  }
+
+  private void awaitIncident(String instance) {
+    Instant deadline = Instant.now().plus(Duration.ofSeconds(30));
+    while (Instant.now().isBefore(deadline)) {
+      if (runtimeService.createIncidentQuery().processInstanceId(instance).count() > 0) {
+        return;
+      }
+      sleep();
+    }
+    throw new AssertionError("No incident for " + instance);
+  }
+
+  private static void sleep() {
+    try {
+      Thread.sleep(200);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IllegalStateException(e);
+    }
   }
 
   private long newsItems(long runId) {

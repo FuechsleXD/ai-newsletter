@@ -1,0 +1,173 @@
+{
+  "title": "Ein sehr langer Titel, der weit über die Längengrenze für Überschriften hinausgeht",
+  "subtitle": "Ein ebenso langer Untertitel, der gekürzt werden muss, damit er passt und lesbar bleibt",
+  "summary": "Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. ",
+  "keyPoints": [
+    {
+      "iconKey": "ai",
+      "text": "Ein sehr langer Kernpunkt, der deutlich mehr Zeichen hat als erlaubt"
+    },
+    {
+      "iconKey": "chip",
+      "text": "Ein sehr langer Kernpunkt, der deutlich mehr Zeichen hat als erlaubt"
+    },
+    {
+      "iconKey": "cloud",
+      "text": "Ein sehr langer Kernpunkt, der deutlich mehr Zeichen hat als erlaubt"
+    },
+    {
+      "iconKey": "security",
+      "text": "Ein sehr langer Kernpunkt, der deutlich mehr Zeichen hat als erlaubt"
+    }
+  ],
+  "sections": [
+    {
+      "heading": "Thema 1: Entwicklung im Überblick",
+      "iconKey": "ai",
+      "text": "Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. ",
+      "flowSteps": [],
+      "highlightNumber": {
+        "value": "42 %",
+        "label": "schneller"
+      },
+      "sourceIds": [
+        "1",
+        "2"
+      ],
+      "models": [
+        "Claude Test A"
+      ]
+    },
+    {
+      "heading": "Thema 2: Entwicklung im Überblick",
+      "iconKey": "chip",
+      "text": "Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. ",
+      "flowSteps": [
+        "Ankündigung",
+        "Preview",
+        "Release"
+      ],
+      "highlightNumber": null,
+      "sourceIds": [
+        "2",
+        "3"
+      ],
+      "models": [
+        "Claude Test A",
+        "Claude Test B"
+      ]
+    },
+    {
+      "heading": "Thema 3: Entwicklung im Überblick",
+      "iconKey": "cloud",
+      "text": "Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. ",
+      "flowSteps": [],
+      "highlightNumber": {
+        "value": "42 %",
+        "label": "schneller"
+      },
+      "sourceIds": [
+        "3",
+        "4"
+      ],
+      "models": [
+        "Claude Test A"
+      ]
+    },
+    {
+      "heading": "Thema 4: Entwicklung im Überblick",
+      "iconKey": "security",
+      "text": "Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. ",
+      "flowSteps": [
+        "Ankündigung",
+        "Preview",
+        "Release"
+      ],
+      "highlightNumber": null,
+      "sourceIds": [
+        "4",
+        "5"
+      ],
+      "models": [
+        "Claude Test A",
+        "Claude Test B"
+      ]
+    },
+    {
+      "heading": "Thema 5: Entwicklung im Überblick",
+      "iconKey": "code",
+      "text": "Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. ",
+      "flowSteps": [],
+      "highlightNumber": {
+        "value": "42 %",
+        "label": "schneller"
+      },
+      "sourceIds": [
+        "5",
+        "6"
+      ],
+      "models": [
+        "Claude Test A"
+      ]
+    },
+    {
+      "heading": "Thema 6: Entwicklung im Überblick",
+      "iconKey": "chart",
+      "text": "Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. ",
+      "flowSteps": [
+        "Ankündigung",
+        "Preview",
+        "Release"
+      ],
+      "highlightNumber": null,
+      "sourceIds": [
+        "6",
+        "1"
+      ],
+      "models": [
+        "Claude Test A",
+        "Claude Test B"
+      ]
+    }
+  ],
+  "takeaways": [
+    "Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. ",
+    "Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. ",
+    "Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. ",
+    "Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. ",
+    "Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. "
+  ],
+  "watchOut": "Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. Ein neues Release bringt spürbare Verbesserungen bei Leistung, Sicherheit und Bedienung, und mehrere Anbieter haben ihre Werkzeuge bereits angepasst, während Fachleute auf offene Fragen zur Kompatibilität hinweisen und zusätzliche Tests in größeren Umgebungen empfehlen, bevor der Umstieg in der Produktion erfolgt. ",
+  "sources": [
+    {
+      "id": "1",
+      "title": "Meldung 1: Neues Release mit Verbesserungen",
+      "url": "https://news1.example.test/artikel/1"
+    },
+    {
+      "id": "2",
+      "title": "Meldung 2: Neues Release mit Verbesserungen",
+      "url": "https://news2.example.test/artikel/2"
+    },
+    {
+      "id": "3",
+      "title": "Meldung 3: Neues Release mit Verbesserungen",
+      "url": "https://news3.example.test/artikel/3"
+    },
+    {
+      "id": "4",
+      "title": "Meldung 4: Neues Release mit Verbesserungen",
+      "url": "https://news4.example.test/artikel/4"
+    },
+    {
+      "id": "5",
+      "title": "Meldung 5: Neues Release mit Verbesserungen",
+      "url": "https://news5.example.test/artikel/5"
+    },
+    {
+      "id": "6",
+      "title": "Meldung 6: Neues Release mit Verbesserungen",
+      "url": "https://news6.example.test/artikel/6"
+    }
+  ]
+}

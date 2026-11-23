@@ -88,6 +88,7 @@ Die Prüfung der Quellen ruft URLs auf, die ein LLM geliefert hat. Daher:
 ## Gotenberg
 - Nur im internen Docker-Netz erreichbar, nie über Caddy veröffentlicht
 - Chromium darf keine externen URLs laden; alle Ressourcen kommen im Request mit
+- Umgesetzt über die Startoptionen (Gotenberg 8.40.0, `docker-compose.yml` und Tests): `--chromium-deny-public-ips`, `--chromium-deny-private-ips`, `--chromium-disable-javascript`, `--api-disable-download-from`, `--webhook-disable`; die Standard-Sperrliste erlaubt nur die mitgeschickten Dateien unter `file:///tmp/`
 - Texte aus KI-Antworten sind im HTML escaped, bevor sie an Gotenberg gehen
 
 ## Prompt-Injection

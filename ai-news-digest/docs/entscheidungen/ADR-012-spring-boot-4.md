@@ -23,6 +23,8 @@ Ursprünglich war Spring Boot 3.5 vorgesehen. Die kostenlosen Sicherheitsupdates
 | Jackson 3 | von Spring Boot verwaltet, muss 3.1.x bleiben | CIB seven 3.0 ist mit 3.1.7 getestet, 3.2 wird nicht unterstützt |
 | Spring AI | 2.0.3 | 2.0.x unterstützt Spring Boot 4.0.x und 4.1.x |
 | springdoc-openapi | 3.1.1 | 3.1.x ist die Linie für Spring Boot 4.1 (3.2.x setzt 4.2 voraus) |
+| Gotenberg (Docker-Image) | `gotenberg/gotenberg:8.40.0-chromium` (Schritt 8) | Letzte Version der 8er-Linie (2026-11-05), Chromium-Variante ohne LibreOffice; die 9er-Linie erscheint seit 2026-11-05 fast täglich und wird später geprüft |
+| jsoup, PDFBox | 1.24.1, 3.0.8 (nur Tests, Schritt 8) | Prüfung des Mail-HTML und der PDF-Seitenzahl |
 | `cibseven-keycloak` | 2.1.0 (vorläufig) | Neueste Version unter `org.cibseven.bpm.extension`; ob sie mit CIB seven 3.0 läuft, ist offen (siehe `offene-punkte.md`), benötigt erst ab Schritt 25 |
 
 Die Versionen stehen als Properties in der `pom.xml`; Bibliotheken, die erst später gebraucht werden, kommen in ihrem Roadmap-Schritt als Abhängigkeit dazu.

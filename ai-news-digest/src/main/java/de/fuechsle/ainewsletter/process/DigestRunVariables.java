@@ -29,6 +29,7 @@ public class DigestRunVariables {
   public static final String RESEARCH_OUTCOME = "researchOutcome";
   public static final String RUN_STATUS = "runStatus";
   public static final String NOTIFICATION_REASON = "notificationReason";
+  public static final String MAIL_OUTCOME = "mailOutcome";
 
   /** Encodes model IDs for the variable {@code models}. */
   public static String encodeModelIds(List<Long> modelIds) {

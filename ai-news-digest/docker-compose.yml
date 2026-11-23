@@ -1,5 +1,5 @@
 # Local services for development (docs/11-deployment-cicd.md).
-# Gotenberg is added in roadmap step 8, Keycloak in step 20.
+# Keycloak follows in roadmap step 20.
 # Values come from .env (copy .env.example to .env; .env is not checked in).
 name: ai-news-digest
 
@@ -30,6 +30,20 @@ services:
     ports:
       - "127.0.0.1:1025:1025" # SMTP
       - "127.0.0.1:8025:8025" # Web UI: http://localhost:8025
+
+  # Renders the PDF (ADR-008). Chromium only reads the files sent with the request: public and
+  # private IPs are denied, JavaScript, downloadFrom and webhooks are disabled.
+  gotenberg:
+    image: gotenberg/gotenberg:8.40.0-chromium
+    command:
+      - gotenberg
+      - --chromium-deny-public-ips=true
+      - --chromium-deny-private-ips=true
+      - --chromium-disable-javascript=true
+      - --api-disable-download-from=true
+      - --webhook-disable=true
+    ports:
+      - "127.0.0.1:3000:3000"
 
 volumes:
   postgres-data:

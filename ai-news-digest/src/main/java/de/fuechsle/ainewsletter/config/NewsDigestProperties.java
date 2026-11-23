@@ -2,6 +2,7 @@ package de.fuechsle.ainewsletter.config;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -36,6 +37,8 @@ public record NewsDigestProperties(
     @Valid @NotNull @DefaultValue Process process,
     @Valid @NotNull @DefaultValue Render render,
     @Valid @NotNull @DefaultValue Output output,
+    @Valid @NotNull @DefaultValue Mail mail,
+    @Valid @NotNull @DefaultValue Storage storage,
     @Valid @NotNull @DefaultValue Retention retention,
     @Valid @NotNull @DefaultValue Api api) {
 
@@ -97,8 +100,9 @@ public record NewsDigestProperties(
       @NotNull @DefaultValue("10m") Duration jobLockTime,
       @NotNull @DefaultValue("3m") Duration shutdownTimeout) {}
 
-  /** PDF rendering defaults. */
+  /** PDF rendering defaults. Gotenberg is only reachable in the internal Docker network. */
   public record Render(
+      @NotBlank @DefaultValue("http://localhost:3000") String gotenbergUrl,
       @NotNull @DefaultValue("30s") Duration gotenbergTimeout,
       @Min(0) @DefaultValue("1") int shortenAttempts) {}
 
@@ -112,6 +116,20 @@ public record NewsDigestProperties(
       /** Upper limit for texts in the digest (prompt and shortening before rendering). */
       @Min(20) @DefaultValue("320") int maxTextChars,
       @NotBlank @DefaultValue("[News Digest] {topic} – {date}") String mailSubjectPattern) {}
+
+  /**
+   * Mail addresses of the app; only from environment variables ({@code NEWSDIGEST_MAIL_FROM},
+   * {@code NEWSDIGEST_MAIL_OPERATOR}), never in code or migrations (golden rule 9). The app does
+   * not start without them.
+   */
+  public record Mail(@NotBlank @Email String from, @NotBlank @Email String operator) {}
+
+  /**
+   * Storage of the rendered PDFs until S3 follows in roadmap step 11: a local directory.
+   *
+   * @param localDirectory base directory; the key {@code runs/<runId>/digest.pdf} is resolved in it
+   */
+  public record Storage(@NotBlank @DefaultValue("data/pdfs") String localDirectory) {}
 
   /** Retention periods. */
   public record Retention(
