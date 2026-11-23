@@ -1,0 +1,88 @@
+# CI for AI News Digest (docs/11-deployment-cicd.md).
+# Frontend job follows in roadmap step 22, image build + Trivy in step 10.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (build, tests, coverage, formatting)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: ai-news-digest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: ai-news-digest/pom.xml
+
+      # Includes tests, JaCoCo thresholds and the Spotless format check.
+      - name: Build and verify
+        run: ./mvnw -B -ntp clean verify
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          csv=target/site/jacoco/jacoco.csv
+          if [ ! -f "$csv" ]; then
+            echo "Kein JaCoCo-Bericht vorhanden." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          awk -F, 'NR > 1 { bm += $6; bc += $7; lm += $8; lc += $9 }
+            END {
+              lines = (lm + lc) ? 100 * lc / (lm + lc) : 100
+              branches = (bm + bc) ? 100 * bc / (bm + bc) : 100
+              print "## Coverage (Backend)"
+              print ""
+              print "| Zähler | Abgedeckt | Mindestwert |"
+              print "|---|---|---|"
+              printf "| Zeilen | %.1f %% (%d/%d) | 80 %% |\n", lines, lc, lm + lc
+              printf "| Branches | %.1f %% (%d/%d) | 70 %% |\n", branches, bc, bm + bc
+            }' "$csv" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload test and coverage reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: backend-reports
+          path: |
+            ai-news-digest/target/site/jacoco/
+            ai-news-digest/target/surefire-reports/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
+        with:
+          fail-on-severity: high
