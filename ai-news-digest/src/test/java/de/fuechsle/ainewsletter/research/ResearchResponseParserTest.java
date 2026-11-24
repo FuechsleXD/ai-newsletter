@@ -32,6 +32,26 @@ class ResearchResponseParserTest {
   }
 
   @Test
+  void parsesARealAnswer() {
+    // Answer of Claude Sonnet 5.5 to research prompt v3 (eval run 4, docs/13-roadmap.md 9b)
+    ResearchResponse response = parser.parse(Fixtures.read("research/real-claude-v3.json"), 10);
+
+    assertThat(response.skippedItems()).isZero();
+    assertThat(response.items()).hasSize(4);
+    assertThat(response.items())
+        .extracting(NewsItemCandidate::publishedAt)
+        .containsExactly(
+            LocalDate.of(2026, 11, 17),
+            LocalDate.of(2026, 11, 19),
+            LocalDate.of(2026, 11, 24),
+            LocalDate.of(2026, 11, 22));
+    assertThat(response.items())
+        .allSatisfy(item -> assertThat(item.url()).startsWith("https://"))
+        .extracting(NewsItemCandidate::url)
+        .doesNotHaveDuplicates();
+  }
+
+  @Test
   void ignoresTextAndCodeFenceAroundTheJson() {
     ResearchResponse response =
         parser.parse(Fixtures.read("research/with-preamble-and-fence.txt"), 10);

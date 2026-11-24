@@ -1,0 +1,28 @@
+{
+  "items": [
+    {
+      "headline": "OpenAI veröffentlicht GPT-6.2 Astra und Sol",
+      "summary": "OpenAI hat am 17. November GPT-6.2 Astra veröffentlicht. Das Modell ist für komplexe professionelle Aufgaben wie Finanzmodelle und wissenschaftliche Arbeit gedacht und soll schwierige Aufgaben effizienter erledigen. Laut Bloomberg kommt die Version knapp zwei Monate, nachdem OpenAI ein früheres Update zurückgezogen hatte, um stärkere Schutzmaßnahmen einzubauen.",
+      "url": "https://www.bloomberg.com/news/articles/2026-11-17/openai-unveils-new-astra-ai-model-after-scrapping-prior-release",
+      "publishedAt": "2026-11-17"
+    },
+    {
+      "headline": "Google bringt Gemini 4 Neon für Entwickler und Unternehmen",
+      "summary": "Google hat am 19. November das Sprachmodell Gemini 4 Neon veröffentlicht. Es liegt zwischen den Modellen Hydrogen und Carbon und verarbeitet Text, Bild und Video. Abonnenten von Google AI Pro und Ultra können es in der Gemini-App wählen. Entwickler finden es in Google AI Studio, Android Studio und Antigravity.",
+      "url": "https://winfuture.de/news,162772.html",
+      "publishedAt": "2026-11-19"
+    },
+    {
+      "headline": "GPT-6.2 kommt in den ChatGPT-Chat, zunächst nur für zahlende Nutzer",
+      "summary": "OpenAI verteilt seit dem 23. November eine auf GPT-6.2 Sol basierende Variante im normalen ChatGPT-Chat. Sie ist für Plus-, Pro-, Business- und Enterprise-Nutzer verfügbar. Das Modell soll Fotos besser verstehen und schwierige Anweisungen genauer befolgen. Die Vorgaben verfehlt es laut Bericht aber weiterhin in sechs bis neun Prozent der Fälle.",
+      "url": "https://www.notebookcheck.com/ChatGPT-GPT-6-2-kommt-in-den-Chat-aber-nur-fuer-Abonnenten.1458762.0.html",
+      "publishedAt": "2026-11-24"
+    },
+    {
+      "headline": "US-Gouverneure legen Prinzipien für die KI-Regulierung vor",
+      "summary": "Die National Governors Association hat am 22. November Prinzipien für die KI-Regulierung veröffentlicht. Der Bund soll die Entwicklung von Frontier-Modellen, kritische Infrastruktur und internationale KI-Fragen regeln. Die Bundesstaaten sollen bei Verbraucherschutz, Arbeitnehmern, Kindern, Datenschutz und dem Einsatz von KI zuständig bleiben. Gleichzeitig wurde am 19. November ein Entwurf für den SAFE AI Act vorgestellt.",
+      "url": "https://explainx.ai/blog/nga-governors-federal-frontier-ai-state-consumer-rules-november-2026",
+      "publishedAt": "2026-11-22"
+    }
+  ]
+}

@@ -6,7 +6,7 @@
 #     eval:
 #       topics:
 #         - Java
-# Results: target/eval/<prompt-version>/<time>-<topic>/ (run.json, raw answers, aggregate, PDF).
+# Results: data/eval/<prompt-version>/<time>-<topic>/ (run.json, raw answers, aggregate, PDF).
 newsdigest:
   eval:
     topics: []

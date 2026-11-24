@@ -36,7 +36,7 @@ class EvalServiceTest extends ProcessTestSupport {
     EvalResult result = results.getFirst();
     assertThat(result.status()).isEqualTo("COMPLETED");
     Path directory = result.directory();
-    assertThat(directory.getParent().getFileName().toString()).isEqualTo("v1");
+    assertThat(directory.getParent().getFileName().toString()).isEqualTo("v3");
     assertThat(directory.getFileName().toString()).endsWith("-eval-ae-" + suffix);
     assertThat(directory.resolve("research-ok-research-" + suffix + ".txt")).exists();
     assertThat(directory.resolve("aggregate.json")).content().contains("Fake-Digest");
@@ -46,7 +46,7 @@ class EvalServiceTest extends ProcessTestSupport {
     String runJson = Files.readString(directory.resolve("run.json"), StandardCharsets.UTF_8);
     JsonNode run = new JsonMapper().readTree(runJson);
     assertThat(run.get("status").asString()).isEqualTo("COMPLETED");
-    assertThat(run.get("promptVersion").asString()).isEqualTo("v1");
+    assertThat(run.get("promptVersion").asString()).isEqualTo("v3");
     // research 0.0205 + aggregation 0.0105
     assertThat(run.get("totalCostUsd").decimalValue()).isEqualByComparingTo("0.031");
     JsonNode research = run.get("research").get(0);

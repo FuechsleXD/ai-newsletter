@@ -8,6 +8,8 @@ import de.fuechsle.ainewsletter.service.TopicNotFoundException;
 import java.util.Map;
 import org.cibseven.bpm.engine.RuntimeService;
 import org.cibseven.bpm.engine.runtime.ProcessInstance;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class DigestProcessStarter {
+
+  private static final Logger log = LoggerFactory.getLogger(DigestProcessStarter.class);
 
   private final RuntimeService runtime;
   private final TopicRepository topics;
@@ -52,6 +56,11 @@ public class DigestProcessStarter {
               DigestRunVariables.PROCESS_KEY,
               String.valueOf(topicId),
               Map.of(DigestRunVariables.TOPIC_ID, topicId));
+      log.info(
+          "Started process instance {} of {} for topic {}",
+          instance.getId(),
+          DigestRunVariables.PROCESS_KEY,
+          topicId);
       return instance.getId();
     } catch (DataIntegrityViolationException e) {
       // A concurrent start created a running run between the check and the insert.
