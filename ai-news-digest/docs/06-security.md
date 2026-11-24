@@ -99,4 +99,5 @@ Die Prüfung der Quellen ruft URLs auf, die ein LLM geliefert hat. Daher:
 - Dev-Endpunkte (z. B. manueller Start im Durchstich: `POST /dev/topics/{id}/runs`) gibt es nur im Profil `dev`; ein Test prüft, dass sie ohne das Profil nicht existieren
 - Keine Stacktraces in Antworten, keine Secrets oder Mailadressen in Logs
 - API-Keys tauchen in keiner API-Antwort auf
-- Abhängigkeiten und Images werden in der CI auf Schwachstellen geprüft
+- Abhängigkeiten und Images werden in der CI auf Schwachstellen geprüft (Dependency Review, Trivy; siehe `11-deployment-cicd.md`)
+- Container: App läuft als Nicht-Root-Benutzer, das Image enthält keine Secrets; PostgreSQL und Gotenberg liegen in einem Docker-Netz ohne Internetzugang, öffentlich ist nur Caddy (80/443)

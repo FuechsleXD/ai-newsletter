@@ -1,0 +1,8 @@
+# Only the Maven wrapper, the pom and src/ are needed for the image (Dockerfile).
+# Keeps local data, secrets and build output out of the build context.
+*
+!.mvn/
+!mvnw
+!pom.xml
+!src/
+src/test/
