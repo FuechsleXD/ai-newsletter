@@ -1,0 +1,46 @@
+#!/bin/bash
+# First boot of the server (Terraform templatefile; shell variables are written as $${name}).
+# Mounts the data volume as /var/lib/docker, installs Docker and the pinned Compose plugin and
+# writes the non-secret settings for deploy.sh and backup.sh. Secrets are never written here.
+set -euo pipefail
+
+# --- Data volume: Nitro instances expose EBS volumes as NVMe devices named after the volume ID ---
+device="/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_${replace(data_volume_id, "-", "")}"
+for _ in $(seq 1 60); do
+  [ -e "$device" ] && break
+  sleep 5
+done
+[ -e "$device" ] || { echo "Data volume ${data_volume_id} not attached" >&2; exit 1; }
+
+# Format only a new, empty volume; an existing file system (restore from snapshot) is kept
+if ! blkid "$device" >/dev/null 2>&1; then
+  mkfs.xfs -L newsdigest-data "$device"
+fi
+mkdir -p /var/lib/docker
+uuid="$(blkid -s UUID -o value "$device")"
+grep -q "$uuid" /etc/fstab || echo "UUID=$uuid /var/lib/docker xfs defaults,nofail 0 2" >> /etc/fstab
+mount -a
+
+# --- Docker and the Compose plugin (checksum checked) ---
+dnf install -y docker jq
+plugin_dir=/usr/local/lib/docker/cli-plugins
+mkdir -p "$plugin_dir"
+curl -fsSL -o /tmp/docker-compose \
+  "https://github.com/docker/compose/releases/download/${compose_version}/docker-compose-linux-aarch64"
+echo "${compose_sha256}  /tmp/docker-compose" | sha256sum -c -
+install -m 0755 /tmp/docker-compose "$plugin_dir/docker-compose"
+rm -f /tmp/docker-compose
+systemctl enable --now docker
+
+# --- Settings for deploy.sh and backup.sh (no secrets) ---
+mkdir -p /etc/newsdigest /opt/newsdigest
+cat > /etc/newsdigest/deploy.env <<EOF
+AWS_REGION=${region}
+DOMAIN=${domain}
+DEPLOY_BUCKET=${deploy_bucket}
+BACKUP_BUCKET=${backup_bucket}
+PDF_BUCKET=${pdf_bucket}
+ECR_REPOSITORY_URL=${ecr_repository_url}
+LOG_GROUP=${log_group}
+EOF
+chmod 0644 /etc/newsdigest/deploy.env

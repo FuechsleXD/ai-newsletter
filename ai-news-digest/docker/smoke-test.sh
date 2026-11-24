@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Smoke test of docker-compose.prod.yml (CI job "image" and docs/betrieb/prod-compose-lokal.md).
 # Starts the production services with throw-away values and DOMAIN=localhost (Caddy's internal CA,
-# no Let's Encrypt, no AI or mail calls) and checks what is reachable from the outside.
+# no Let's Encrypt, no AI, mail or AWS calls: the app starts with profile prod, but builds its AWS
+# clients without contacting AWS) and checks what is reachable from the outside.
 # Usage: docker/smoke-test.sh <app-image>   (run from ai-news-digest/)
 set -euo pipefail
 
@@ -16,8 +17,10 @@ APP_IMAGE=$image
 POSTGRES_PASSWORD=smoke-only
 DB_MIGRATION_PASSWORD=smoke-only
 DB_APP_PASSWORD=smoke-only
+NEWSDIGEST_STORAGE_S3BUCKET=smoke-test-bucket
 SPRING_MAIL_HOST=mail.invalid
-SPRING_MAIL_PORT=25
+SPRING_MAIL_USERNAME=smoke
+SPRING_MAIL_PASSWORD=smoke-only
 NEWSDIGEST_MAIL_FROM=digest@example.test
 NEWSDIGEST_MAIL_OPERATOR=operator@example.test
 EOF

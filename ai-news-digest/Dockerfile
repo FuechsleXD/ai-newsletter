@@ -27,9 +27,7 @@ COPY --from=build --chown=app:app /build/extracted/spring-boot-loader/ ./
 COPY --from=build --chown=app:app /build/extracted/snapshot-dependencies/ ./
 COPY --from=build --chown=app:app /build/extracted/application/ ./
 
-# Local PDF storage until S3 (roadmap step 11); a named volume mounted here inherits the owner
-RUN mkdir -p /app/data/pdfs && chown -R app:app /app/data
-
+# PDFs are stored in S3 in production (profile prod, ADR-015), so no data directory is needed
 USER app
 EXPOSE 8080
 

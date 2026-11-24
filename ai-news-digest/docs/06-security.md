@@ -16,10 +16,11 @@
 Regeln:
 - Model- bzw. API-Keys liegen NIE in Code, Repo, `application.yml`, Umgebungsvariablen des Images, Datenbank, Logs oder API-Antworten
 - In der Datenbank steht je Anbieter nur der Name des Secrets (`ai_provider.secret_name`), nie der Wert
-- Die App liest Secrets zur Laufzeit über die IAM-Rolle der Instanz (AWS SDK bzw. Spring Cloud AWS) und hält sie mit kurzer Lebensdauer im Speicher (Default siehe `12-defaults.md`), damit ein rotierter Key ohne Neustart wirkt
+- Laufzeit-Secrets (KI-Keys): Die App liest sie über die IAM-Rolle der Instanz mit dem AWS SDK (`AwsSecretsManagerSecretProvider`, Profil `prod`) und hält sie mit kurzer Lebensdauer im Speicher (Default siehe `12-defaults.md`), damit ein rotierter Key ohne Neustart wirkt
+- Start-Secrets (DB-Passwörter, SES-SMTP): Das Deploy-Skript auf dem Server liest sie aus dem Secrets Manager und übergibt sie als Umgebungsvariablen an `docker-compose.prod.yml`; sie liegen nie im Repo oder im Image, Rotation per Neustart (ADR-015)
 - Die IAM-Rolle darf nur `secretsmanager:GetSecretValue` auf `newsdigest/prod/*`
 - Fehlt ein Secret für einen aktiven Anbieter, schlagen dessen Aufrufe mit klarer Meldung fehl; die App startet trotzdem
-- Lokal (`dev`): Keys aus einer nicht eingecheckten Datei `.env` (in `.gitignore`); eine `.env.example` ohne Werte liegt im Repo. Bis Schritt 11 liest `EnvironmentSecretProvider` ein Secret aus der Umgebungsvariablen, deren Name aus dem Secret-Namen entsteht (Großbuchstaben, alles außer Buchstaben und Ziffern wird `_`): `newsdigest/prod/ai/anthropic` → `NEWSDIGEST_PROD_AI_ANTHROPIC`
+- Lokal (`dev`): Keys aus einer nicht eingecheckten Datei `.env` (in `.gitignore`); eine `.env.example` ohne Werte liegt im Repo. Ohne Profil `prod` liest `EnvironmentSecretProvider` ein Secret aus der Umgebungsvariablen, deren Name aus dem Secret-Namen entsteht (Großbuchstaben, alles außer Buchstaben und Ziffern wird `_`): `newsdigest/prod/ai/anthropic` → `NEWSDIGEST_PROD_AI_ANTHROPIC`
 - In Tests werden keine echten Keys verwendet
 - Rotation: KI-Keys bei Verdacht sofort, sonst regelmäßig manuell; DB-Passwörter bei jedem Wechsel der Betreuung
 
@@ -100,4 +101,5 @@ Die Prüfung der Quellen ruft URLs auf, die ein LLM geliefert hat. Daher:
 - Keine Stacktraces in Antworten, keine Secrets oder Mailadressen in Logs
 - API-Keys tauchen in keiner API-Antwort auf
 - Abhängigkeiten und Images werden in der CI auf Schwachstellen geprüft (Dependency Review, Trivy; siehe `11-deployment-cicd.md`)
+- Server: kein SSH-Port, Zugang nur per SSM; IMDSv2 Pflicht; verschlüsselte Volumes; S3-Buckets privat, nur TLS, versioniert; Instanzrolle nur mit den Rechten aus `infra/terraform/security.tf`; GitHub nur per OIDC (`github-oidc.tf`, ADR-016)
 - Container: App läuft als Nicht-Root-Benutzer, das Image enthält keine Secrets; PostgreSQL und Gotenberg liegen in einem Docker-Netz ohne Internetzugang, öffentlich ist nur Caddy (80/443)

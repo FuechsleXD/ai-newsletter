@@ -107,7 +107,8 @@ jobs:
         if: always()
         run: |
           images="$(DOMAIN=x APP_IMAGE=x POSTGRES_PASSWORD=x DB_MIGRATION_PASSWORD=x DB_APP_PASSWORD=x \
-            SPRING_MAIL_HOST=x SPRING_MAIL_PORT=1 NEWSDIGEST_MAIL_FROM=x NEWSDIGEST_MAIL_OPERATOR=x \
+            NEWSDIGEST_STORAGE_S3BUCKET=x SPRING_MAIL_HOST=x SPRING_MAIL_USERNAME=x \
+            SPRING_MAIL_PASSWORD=x NEWSDIGEST_MAIL_FROM=x NEWSDIGEST_MAIL_OPERATOR=x \
             docker compose -f docker-compose.prod.yml config --images | grep -v '^x$' | sort -u)"
           {
             echo "## Trivy (HIGH, CRITICAL, behebbar)"

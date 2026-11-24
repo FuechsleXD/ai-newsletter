@@ -10,7 +10,7 @@
 | Anmeldung | Keycloak-Container (Version gepinnt) hinter Caddy unter `/auth`, Datenbank `keycloak` in derselben PostgreSQL-Instanz |
 | Datenbank | PostgreSQL-Container auf der EC2 (Version fest gepinnt), Daten auf eigenem verschlüsseltem EBS-Volume, nicht nach außen veröffentlicht; Backups siehe unten |
 | PDFs | S3 (privat), Zugriff über IAM-Rolle der Instanz |
-| Mail | SES über die SMTP-Schnittstelle (`spring-boot-starter-mail`); SES-SMTP-Zugangsdaten im Secrets Manager; Absender-Domain mit SPF, DKIM und DMARC verifiziert |
+| Mail | SES über die SMTP-Schnittstelle (`spring-boot-starter-mail`, Port 587, STARTTLS Pflicht, Profil `prod`); SES-SMTP-Zugangsdaten im Secrets Manager, vom Deploy-Skript als Umgebungsvariablen übergeben; Absender-Domain mit SPF, DKIM und DMARC verifiziert; Start in der SES-Sandbox mit verifizierten Empfängern, Produktionszugang parallel beantragt (ADR-015) |
 | Secrets | AWS Secrets Manager (Key Vault), Zugriff nur über die IAM-Rolle der Instanz; Details in `06-security.md` |
 | KI-Abrechnung | Eigenes Claude-Console-Konto mit Prepaid-Guthaben (getrennt vom Claude-Pro-Abo); API-Key nur im Secrets Manager |
 | Zugriff auf den Server | AWS Systems Manager (kein offener SSH-Port) |
@@ -28,14 +28,15 @@
 - Täglich `pg_dump` (beide Schemas) per Zeitplan auf der Instanz, verschlüsselt nach S3; Aufbewahrung 30 Tage über eine S3-Lifecycle-Regel
 - Zusätzlich tägliche EBS-Snapshots über den Data Lifecycle Manager, Aufbewahrung 7 Tage
 - Wiederherstellung ist als Runbook in `docs/betrieb/wiederherstellung.md` beschrieben und wird einmal nach dem ersten Deployment ausprobiert
-- Fehlgeschlagenes Backup löst einen CloudWatch-Alarm aus
+- Fehlgeschlagenes Backup löst einen CloudWatch-Alarm aus: `infra/server/backup.sh` meldet jeden Erfolg als Metrik `NewsDigest/BackupSucceeded`, fehlt sie 24 Stunden, alarmiert `newsdigest-prod-backup-missing`
+- Umsetzung: systemd-Timer `newsdigest-backup.timer` (03:00 UTC), eingerichtet von `deploy.sh`; Snapshots um 02:00 UTC
 
 ## Docker
 - `Dockerfile` im Projektordner, mehrstufig: Build mit `eclipse-temurin` JDK 21 (Alpine) und Maven-Wrapper ohne Tests (die laufen im CI-Job `backend`), Runtime mit `eclipse-temurin` JRE 21 (Alpine); beide Tags fest gepinnt und für amd64 und arm64 (Graviton) verfügbar
 - Spring-Boot-Layered-Jar (`-Djarmode=tools extract --layers`), Nicht-Root-Benutzer `app` (UID 10001), keine Secrets im Image (`.dockerignore` lässt nur Wrapper, `pom.xml` und `src/main` durch), `HEALTHCHECK` gegen den internen Actuator, `-XX:MaxRAMPercentage=75`
 - Frontend-Build als eigenes Image oder Artefakt für Caddy
 - `docker-compose.yml` für lokal: PostgreSQL, Mailpit (lokaler Mailserver zum Ansehen der Mails), Gotenberg, Keycloak mit Realm-Import und Testbenutzern (nur lokal); S3-Ersatz nur nach Rückfrage
-- `docker-compose.prod.yml` für den Server: App, Caddy, PostgreSQL, Gotenberg; Keycloak, Backup-Job und Log-Treiber `awslogs` folgen in Schritt 11
+- `docker-compose.prod.yml` für den Server: App (Profil `prod`: KI-Keys aus dem Secrets Manager, PDFs in S3, SES-SMTP), Caddy, PostgreSQL, Gotenberg; Backup-Job und Log-Treiber `awslogs` folgen in Schritt 11b, Keycloak in Schritt 20
   - Werte aus einer nicht eingecheckten Env-Datei (Vorlage `.env.prod.example`), Pflichtwerte mit `${VAR:?}`; das App-Image kommt per `APP_IMAGE` mit festem Tag
   - Netze: `edge` (Caddy, App; Internet für KI-Anbieter und Mail) und `backend` (`internal: true`: App, PostgreSQL, Gotenberg ohne Internetzugang); veröffentlicht sind nur 80/443 von Caddy
   - Caddy (`docker/caddy/Caddyfile`): HTTPS für `DOMAIN`, `/health` auf `/actuator/health` der App, alles andere auf die Platzhalterseite `docker/caddy/site/`; Security-Header (HSTS, CSP, `nosniff`, `DENY`)
@@ -77,13 +78,15 @@ Stand nach Roadmap-Schritt 2: Job `backend` (Punkt 1 und 5, Formatierung über S
 - Branch-Schutz und GitHub Environments richte ich selbst ein
 
 ## Infrastruktur als Code (Terraform, siehe ADR-011)
-- Ordner `infra/terraform/`, Terraform- und Provider-Versionen fest gepinnt (`required_version`, `.terraform.lock.hcl` eingecheckt)
-- Remote State in einem S3-Bucket (versioniert, verschlüsselt, mit State-Locking); den Bucket lege ich einmalig von Hand an (Bootstrap), alles andere entsteht per Terraform
+- Ordner `infra/terraform/` (im Projektordner), Terraform 1.17 und AWS-Provider fest gepinnt (`required_version`, `.terraform.lock.hcl` mit Hashes für Linux und Windows eingecheckt)
+- Remote State im S3-Bucket `fuechslexd-newsdigest-tfstate` (versioniert, verschlüsselt, natives S3-Locking über `use_lockfile`, kein DynamoDB); den Bucket lege ich einmalig von Hand an, alles andere entsteht per Terraform (`docs/betrieb/aws-bootstrap.md`)
 - Inhalt: VPC bzw. Subnetz, Security Groups (nur 80/443 eingehend), EC2 mit Elastic IP und IAM-Rolle (minimale Rechte für S3, Secrets Manager, SES, CloudWatch, ECR, SSM), EBS-Volume für Daten, S3-Buckets (PDFs, Backups) mit Lifecycle-Regeln, ECR-Repositories, Secrets-Container, SES-Domain-Identität mit DKIM, Route 53 (Domain-Einträge), DLM-Snapshots, CloudWatch-Alarme und SNS, GitHub-OIDC-Provider mit Rollen für CD und Terraform
 - Secrets: Terraform legt nur die leeren Secrets an; die Werte trage ich von Hand ein, damit sie nie im Terraform-State oder im Repo landen
 - Kleine, lesbare Struktur: wenige Dateien nach Thema (`network.tf`, `compute.tf`, `storage.tf`, `security.tf`, `dns-mail.tf`, `monitoring.tf`, `github-oidc.tf`), Module erst, wenn sich etwas wiederholt
 - Variablen ohne Secrets in `prod.tfvars` (eingecheckt), keine Zugangsdaten in Dateien
-- Workflow `infra.yml`: bei Pull Requests mit Änderungen unter `infra/` `terraform fmt -check`, `validate`, `tflint` und `plan` (Ergebnis als Kommentar bzw. Job-Zusammenfassung, nur Leserechte); `apply` nur manuell gestartet und mit Freigabe über die Umgebung `prod`
+- Workflow `infra.yml`: bei Pull Requests mit Änderungen unter `infra/` `terraform fmt -check`, `validate`, `tflint` (AWS-Ruleset) und `shellcheck` für die Server-Skripte; `plan` mit der Leserolle, sobald die Variable `AWS_PLAN_ROLE_ARN` gesetzt ist (Ergebnis nur im Job-Log, weil das Repo öffentlich ist; sensible Werte sind verborgen); `apply` nur manuell (`workflow_dispatch`) mit Freigabe über die Umgebung `prod`
+- Server (ADR-016): Amazon Linux 2023 arm64, IMDSv2 Pflicht, Datenvolume als `/var/lib/docker`, Docker und Compose-Plugin beim ersten Start (`templates/user-data.sh.tftpl`); Deploy-Dateien je Release im Deploy-Bucket (`infra/server/upload-deploy-files.sh`), `infra/server/deploy.sh <tag>` holt sie, liest die Start-Secrets nach `/run` und startet `docker-compose.prod.yml` mit dem Override `docker-compose.aws.yml` (Log-Treiber `awslogs`)
+- AWS-Kosten: Budget 40 USD im Monat mit Meldung bei 80 % (tatsächlich) und 100 % (Prognose); Alarme und Budget-Meldungen an die Adresse aus `TF_VAR_alarm_email` bzw. dem GitHub-Secret `ALARM_EMAIL`, nie im Repo
 - Ressourcen mit Daten (EBS, S3-Buckets) sind gegen versehentliches Löschen geschützt (`prevent_destroy`)
 
 ## Früh deployen
