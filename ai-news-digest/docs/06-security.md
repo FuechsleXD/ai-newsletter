@@ -101,4 +101,5 @@ Die Prüfung der Quellen ruft URLs auf, die ein LLM geliefert hat. Daher:
 - Keine Stacktraces in Antworten, keine Secrets oder Mailadressen in Logs
 - API-Keys tauchen in keiner API-Antwort auf
 - Abhängigkeiten und Images werden in der CI auf Schwachstellen geprüft (Dependency Review, Trivy; siehe `11-deployment-cicd.md`)
+- Server: kein SSH-Port, Zugang nur per SSM; IMDSv2 Pflicht; verschlüsselte Volumes; S3-Buckets privat, nur TLS, versioniert; Instanzrolle nur mit den Rechten aus `infra/terraform/security.tf`; GitHub nur per OIDC (`github-oidc.tf`, ADR-016)
 - Container: App läuft als Nicht-Root-Benutzer, das Image enthält keine Secrets; PostgreSQL und Gotenberg liegen in einem Docker-Netz ohne Internetzugang, öffentlich ist nur Caddy (80/443)

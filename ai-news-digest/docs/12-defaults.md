@@ -92,7 +92,9 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 | Läufe mit Meldungen, Ergebnissen und Mail-Protokoll | 2 Jahre |
 | PDFs in S3 | 2 Jahre (Lifecycle-Regel) |
 | Datenbank-Backups in S3 | 30 Tage |
-| Container-Logs in CloudWatch | 30 Tage |
+| Container-Logs in CloudWatch | 30 Tage (`log_retention_days`) |
+| EBS-Snapshots des Datenvolumes | täglich 02:00 UTC, 7 Stück (`snapshot_retention_count`) |
+| AWS-Budget (Infrastruktur) | 40 USD im Monat (`monthly_budget_usd`), Meldung bei 80 % und Prognose 100 % |
 
 ## API
 | Einstellung | Default |

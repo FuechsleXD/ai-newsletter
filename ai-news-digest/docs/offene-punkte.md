@@ -4,7 +4,6 @@ Claude baut einen betroffenen Bereich erst, wenn der Punkt entschieden ist, und 
 
 | # | Thema | Optionen / Vorschlag | Betrifft | Benötigt ab Schritt |
 |---|---|---|---|---|
-| 2 | Domainname | Neue Domain wird registriert (entschieden), Registrar Route 53 (entschieden, dort liegen auch DNS für Elastic IP und SES-Verifizierung); Name noch offen | Deployment | 11b |
 | 4 | Microsoft Copilot als zweiter Anbieter | Nur über die Microsoft 365 Copilot Chat API (Preview, M365-Copilot-Lizenz, Entra-Konto, nur delegierte Benutzerrechte); Eignung für einen zeitgesteuerten Backend-Prozess prüfen | Provider | später |
 | 5 | `cibseven-keycloak` mit CIB seven 3.0 | Neueste Version ist 2.1.0 (für CIB seven 2.x). Vor Schritt 25 prüfen, ob es eine Version für CIB seven 3.0 gibt oder ob 2.1.0 funktioniert; sonst SSO der Engine-UI anders lösen (ADR-010 anpassen) | Engine-UI, Security | 25 |
 

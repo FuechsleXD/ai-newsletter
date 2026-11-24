@@ -1,0 +1,20 @@
+# Override for the server only (deploy.sh): container logs go to CloudWatch (awslogs) with the
+# instance role. Not used locally and in the CI smoke test, where there is no AWS.
+#   docker compose -f docker-compose.prod.yml -f docker-compose.aws.yml ...
+
+x-cloudwatch-logs: &cloudwatch-logs
+  driver: awslogs
+  options:
+    awslogs-region: ${AWS_REGION:?set AWS_REGION}
+    awslogs-group: ${LOG_GROUP:?set LOG_GROUP}
+    tag: "{{.Name}}"
+
+services:
+  caddy:
+    logging: *cloudwatch-logs
+  app:
+    logging: *cloudwatch-logs
+  postgres:
+    logging: *cloudwatch-logs
+  gotenberg:
+    logging: *cloudwatch-logs

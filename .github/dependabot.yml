@@ -1,8 +1,19 @@
-# Dependency updates (docs/11-deployment-cicd.md). npm and Terraform are added once their
-# directories exist (steps 22, 11).
+# Dependency updates (docs/11-deployment-cicd.md). npm is added once its directory exists (step 22).
 version: 2
 
 updates:
+  # Terraform providers (.terraform.lock.hcl); the plan in the PR shows what an update changes
+  - package-ecosystem: terraform
+    directory: /ai-news-digest/infra/terraform
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: "build"
+    groups:
+      terraform-providers:
+        patterns: ["*"]
+
   - package-ecosystem: maven
     directory: /ai-news-digest
     schedule:
