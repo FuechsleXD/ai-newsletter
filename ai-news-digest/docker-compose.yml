@@ -34,7 +34,7 @@ services:
   # Renders the PDF (ADR-008). Chromium only reads the files sent with the request: public and
   # private IPs are denied, JavaScript, downloadFrom and webhooks are disabled.
   gotenberg:
-    image: gotenberg/gotenberg:8.40.0-chromium
+    image: gotenberg/gotenberg:9.9.1-chromium
     command:
       - gotenberg
       - --chromium-deny-public-ips=true

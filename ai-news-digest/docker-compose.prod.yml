@@ -78,7 +78,7 @@ services:
 
   # Renders the PDF (ADR-008); same restrictions as locally, no internet access (backend network)
   gotenberg:
-    image: gotenberg/gotenberg:8.40.0-chromium
+    image: gotenberg/gotenberg:9.9.1-chromium
     restart: unless-stopped
     command:
       - gotenberg
