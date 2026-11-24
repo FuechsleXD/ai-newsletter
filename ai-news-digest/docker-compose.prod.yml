@@ -33,18 +33,21 @@ services:
     # Graceful stop: running jobs may finish before the container is killed (docs/11)
     stop_grace_period: 60s
     environment:
+      # Secrets Manager for the AI keys, S3 for the PDFs, SES SMTP with STARTTLS (ADR-015)
+      SPRING_PROFILES_ACTIVE: prod
+      AWS_REGION: ${AWS_REGION:-eu-central-1}
+      NEWSDIGEST_AWS_REGION: ${AWS_REGION:-eu-central-1}
+      NEWSDIGEST_STORAGE_S3BUCKET: ${NEWSDIGEST_STORAGE_S3BUCKET:?set NEWSDIGEST_STORAGE_S3BUCKET}
       DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-newsdigest}
       DB_MIGRATION_PASSWORD: ${DB_MIGRATION_PASSWORD:?set DB_MIGRATION_PASSWORD}
       DB_APP_PASSWORD: ${DB_APP_PASSWORD:?set DB_APP_PASSWORD}
       NEWSDIGEST_RENDER_GOTENBERGURL: http://gotenberg:3000
       SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:?set SPRING_MAIL_HOST}
-      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:?set SPRING_MAIL_PORT}
+      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-587}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:?set SPRING_MAIL_USERNAME}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:?set SPRING_MAIL_PASSWORD}
       NEWSDIGEST_MAIL_FROM: ${NEWSDIGEST_MAIL_FROM:?set NEWSDIGEST_MAIL_FROM}
       NEWSDIGEST_MAIL_OPERATOR: ${NEWSDIGEST_MAIL_OPERATOR:?set NEWSDIGEST_MAIL_OPERATOR}
-      # Until AWS Secrets Manager is connected (step 11) the AI keys come from the environment
-      NEWSDIGEST_PROD_AI_ANTHROPIC: ${NEWSDIGEST_PROD_AI_ANTHROPIC:-}
-    volumes:
-      - app-data:/app/data
     # edge: reachable by Caddy and outbound internet (AI providers, mail);
     # backend: database and Gotenberg
     networks: [edge, backend]
@@ -95,5 +98,4 @@ networks:
 volumes:
   caddy-data:
   caddy-config:
-  app-data:
   postgres-data:

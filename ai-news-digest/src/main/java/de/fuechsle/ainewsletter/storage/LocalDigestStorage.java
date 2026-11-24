@@ -5,18 +5,20 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.regex.Pattern;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
- * {@link DigestStorage} in a local directory ({@code newsdigest.storage.local-directory}) until S3
- * follows in roadmap step 11. Files are written to a temporary file first and then moved, so a
- * reader never sees a half-written PDF.
+ * {@link DigestStorage} in a local directory ({@code newsdigest.storage.local-directory}); the
+ * default locally and in tests, in AWS {@link S3DigestStorage} is used (ADR-015). Files are written
+ * to a temporary file first and then moved, so a reader never sees a half-written PDF.
  */
 @Component
+@ConditionalOnProperty(
+    name = "newsdigest.storage.type",
+    havingValue = "local",
+    matchIfMissing = true)
 public class LocalDigestStorage implements DigestStorage {
-
-  private static final Pattern SAFE_KEY = Pattern.compile("[a-z0-9-]+(/[a-z0-9-]+)*\\.[a-z]+");
 
   private final Path baseDirectory;
 
@@ -48,11 +50,7 @@ public class LocalDigestStorage implements DigestStorage {
     }
   }
 
-  /** Only simple keys like {@code runs/12/digest.pdf}; no path traversal. */
   private Path resolve(String key) {
-    if (key == null || !SAFE_KEY.matcher(key).matches()) {
-      throw new IllegalArgumentException("Invalid storage key: " + key);
-    }
-    return baseDirectory.resolve(key);
+    return baseDirectory.resolve(StorageKeys.requireSafe(key));
   }
 }

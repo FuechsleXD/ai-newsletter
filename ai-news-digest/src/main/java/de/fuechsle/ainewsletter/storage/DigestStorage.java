@@ -2,8 +2,8 @@ package de.fuechsle.ainewsletter.storage;
 
 /**
  * Storage of the rendered PDFs. The key is deterministic per run ({@link #pdfKey(long)}), so a
- * repeated render job overwrites the same object (docs/04-prozess-bpmn.md, "Idempotenz"). Until
- * roadmap step 11 the PDFs are stored in a local directory; then S3 follows.
+ * repeated render job overwrites the same object (docs/04-prozess-bpmn.md, "Idempotenz").
+ * Implementations: {@link LocalDigestStorage} (default) and {@link S3DigestStorage} (AWS).
  */
 public interface DigestStorage {
 

@@ -1,6 +1,7 @@
 package de.fuechsle.ainewsletter.config;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
@@ -42,7 +43,8 @@ public record NewsDigestProperties(
     @Valid @NotNull @DefaultValue Storage storage,
     @Valid @NotNull @DefaultValue Retention retention,
     @Valid @NotNull @DefaultValue Api api,
-    @Valid @NotNull @DefaultValue Eval eval) {
+    @Valid @NotNull @DefaultValue Eval eval,
+    @Valid @NotNull @DefaultValue Aws aws) {
 
   /** Run defaults. */
   public record Run(
@@ -81,8 +83,24 @@ public record NewsDigestProperties(
   /** Token validation defaults (Keycloak). */
   public record Auth(@NotNull @DefaultValue("30s") Duration clockSkew) {}
 
-  /** Secrets Manager defaults. */
-  public record Secrets(@NotNull @DefaultValue("15m") Duration cacheTtl) {}
+  /**
+   * Where secrets come from (ADR-015).
+   *
+   * @param source {@code environment} (default, locally from {@code .env}) or {@code aws} (AWS
+   *     Secrets Manager, profile {@code prod})
+   * @param cacheTtl how long a secret read from AWS Secrets Manager is kept in memory; a rotated
+   *     key takes effect after this time without a restart
+   */
+  public record Secrets(
+      @NotNull @DefaultValue("environment") SecretSource source,
+      @NotNull @DefaultValue("15m") Duration cacheTtl) {
+
+    /** Source of the secrets. */
+    public enum SecretSource {
+      ENVIRONMENT,
+      AWS
+    }
+  }
 
   /** URL check defaults. */
   public record UrlCheck(
@@ -127,11 +145,38 @@ public record NewsDigestProperties(
   public record Mail(@NotBlank @Email String from, @NotBlank @Email String operator) {}
 
   /**
-   * Storage of the rendered PDFs until S3 follows in roadmap step 11: a local directory.
+   * Storage of the rendered PDFs (ADR-015).
    *
-   * @param localDirectory base directory; the key {@code runs/<runId>/digest.pdf} is resolved in it
+   * @param type {@code local} (default, local directory) or {@code s3} (private S3 bucket, profile
+   *     {@code prod})
+   * @param localDirectory base directory for {@code local}; the key {@code runs/<runId>/digest.pdf}
+   *     is resolved in it
+   * @param s3Bucket bucket for {@code s3}; required then
    */
-  public record Storage(@NotBlank @DefaultValue("data/pdfs") String localDirectory) {}
+  public record Storage(
+      @NotNull @DefaultValue("local") StorageType type,
+      @NotBlank @DefaultValue("data/pdfs") String localDirectory,
+      String s3Bucket) {
+
+    /** Kind of storage. */
+    public enum StorageType {
+      LOCAL,
+      S3
+    }
+
+    @AssertTrue(message = "newsdigest.storage.s3-bucket must be set for storage type s3")
+    public boolean isS3BucketSetForS3() {
+      return type != StorageType.S3 || (s3Bucket != null && !s3Bucket.isBlank());
+    }
+  }
+
+  /**
+   * AWS settings (ADR-015). Credentials are not configured: the SDK takes them from its default
+   * chain, on the EC2 instance from the instance role.
+   *
+   * @param region region of Secrets Manager and S3
+   */
+  public record Aws(@NotBlank @DefaultValue("eu-central-1") String region) {}
 
   /** Retention periods. */
   public record Retention(

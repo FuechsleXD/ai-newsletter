@@ -28,14 +28,14 @@ Hosting ohne Load Balancer, Details in `11-deployment-cicd.md`.
 | `scheduling` | Laden der Zeitpläne, Reload, Start der Läufe |
 | `render` | HTML-Mail- und PDF-Erzeugung aus demselben Aggregat (`DigestView`, Thymeleaf-Templates in `templates/pdf/` und `templates/mail/`, Klartext-Teil), Längenbegrenzung (`TextShortener`), Gotenberg-Client |
 | `mail` | Mailversand per SMTP über `JavaMailSender` (lokal Mailpit, in AWS SES); ein Code-Pfad für alle Umgebungen; Digest-Versand mit Protokoll je Empfänger, Betreiber-Mail |
-| `storage` | Ablage der PDFs (`DigestStorage`): bis Schritt 11 lokales Verzeichnis, danach S3 |
+| `storage` | Ablage der PDFs (`DigestStorage`): `LocalDigestStorage` (Default, lokales Verzeichnis) oder `S3DigestStorage` (Profil `prod`), gemeinsame Schlüsselprüfung `StorageKeys` (ADR-015) |
 | `metrics` | Micrometer-Metriken |
 | `repository` | Spring-Data-Repositories |
 | `domain` | JPA-Entities |
 | `migration` | Flyway-Java-Migrationen (offizielle CIB-seven-Skripte im Schema `bpm`, siehe `03-datenmodell.md`) |
 | `prompt` | Laden der versionierten Prompt-Templates, `PromptRenderer` |
 | `eval` | Prompt-Eval im Profil `eval`: Topics durch den normalen Prozess laufen lassen und Ergebnisse nach `data/eval/` exportieren |
-| `secret` | `SecretProvider` (bis Schritt 11 aus Umgebungsvariablen, danach AWS Secrets Manager) |
+| `secret` | `SecretProvider`: `EnvironmentSecretProvider` (Default) oder `AwsSecretsManagerSecretProvider` mit Cache (Profil `prod`); die AWS-Clients legt `config.AwsClientConfig` nur bei Bedarf an (ADR-015) |
 
 ## Schichten
 - Controller -> Service -> Repository; keine Logik und kein try/catch im Controller

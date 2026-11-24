@@ -10,7 +10,7 @@
 | Anmeldung | Keycloak-Container (Version gepinnt) hinter Caddy unter `/auth`, Datenbank `keycloak` in derselben PostgreSQL-Instanz |
 | Datenbank | PostgreSQL-Container auf der EC2 (Version fest gepinnt), Daten auf eigenem verschlüsseltem EBS-Volume, nicht nach außen veröffentlicht; Backups siehe unten |
 | PDFs | S3 (privat), Zugriff über IAM-Rolle der Instanz |
-| Mail | SES über die SMTP-Schnittstelle (`spring-boot-starter-mail`); SES-SMTP-Zugangsdaten im Secrets Manager; Absender-Domain mit SPF, DKIM und DMARC verifiziert |
+| Mail | SES über die SMTP-Schnittstelle (`spring-boot-starter-mail`, Port 587, STARTTLS Pflicht, Profil `prod`); SES-SMTP-Zugangsdaten im Secrets Manager, vom Deploy-Skript als Umgebungsvariablen übergeben; Absender-Domain mit SPF, DKIM und DMARC verifiziert; Start in der SES-Sandbox mit verifizierten Empfängern, Produktionszugang parallel beantragt (ADR-015) |
 | Secrets | AWS Secrets Manager (Key Vault), Zugriff nur über die IAM-Rolle der Instanz; Details in `06-security.md` |
 | KI-Abrechnung | Eigenes Claude-Console-Konto mit Prepaid-Guthaben (getrennt vom Claude-Pro-Abo); API-Key nur im Secrets Manager |
 | Zugriff auf den Server | AWS Systems Manager (kein offener SSH-Port) |
@@ -35,7 +35,7 @@
 - Spring-Boot-Layered-Jar (`-Djarmode=tools extract --layers`), Nicht-Root-Benutzer `app` (UID 10001), keine Secrets im Image (`.dockerignore` lässt nur Wrapper, `pom.xml` und `src/main` durch), `HEALTHCHECK` gegen den internen Actuator, `-XX:MaxRAMPercentage=75`
 - Frontend-Build als eigenes Image oder Artefakt für Caddy
 - `docker-compose.yml` für lokal: PostgreSQL, Mailpit (lokaler Mailserver zum Ansehen der Mails), Gotenberg, Keycloak mit Realm-Import und Testbenutzern (nur lokal); S3-Ersatz nur nach Rückfrage
-- `docker-compose.prod.yml` für den Server: App, Caddy, PostgreSQL, Gotenberg; Keycloak, Backup-Job und Log-Treiber `awslogs` folgen in Schritt 11
+- `docker-compose.prod.yml` für den Server: App (Profil `prod`: KI-Keys aus dem Secrets Manager, PDFs in S3, SES-SMTP), Caddy, PostgreSQL, Gotenberg; Backup-Job und Log-Treiber `awslogs` folgen in Schritt 11b, Keycloak in Schritt 20
   - Werte aus einer nicht eingecheckten Env-Datei (Vorlage `.env.prod.example`), Pflichtwerte mit `${VAR:?}`; das App-Image kommt per `APP_IMAGE` mit festem Tag
   - Netze: `edge` (Caddy, App; Internet für KI-Anbieter und Mail) und `backend` (`internal: true`: App, PostgreSQL, Gotenberg ohne Internetzugang); veröffentlicht sind nur 80/443 von Caddy
   - Caddy (`docker/caddy/Caddyfile`): HTTPS für `DOMAIN`, `/health` auf `/actuator/health` der App, alles andere auf die Platzhalterseite `docker/caddy/site/`; Security-Header (HSTS, CSP, `nosniff`, `DENY`)

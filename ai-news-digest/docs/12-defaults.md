@@ -35,7 +35,8 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 ## Secrets
 | Einstellung | Default |
 |---|---|
-| Lebensdauer gecachter Secrets im Speicher | 15 min |
+| Quelle | Umgebungsvariablen (`newsdigest.secrets.source=environment`); Profil `prod`: AWS Secrets Manager (`aws`) |
+| Lebensdauer gecachter Secrets im Speicher | 15 min (`newsdigest.secrets.cache-ttl`) |
 
 ## URL-Prüfung
 | Einstellung | Default |
@@ -66,7 +67,8 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 | Gotenberg-URL | `http://localhost:3000` (`newsdigest.render.gotenberg-url`), in Produktion der interne Docker-Name |
 | Timeout Gotenberg | 30 s |
 | Nachkürzen bei mehr als einer Seite | 1 Versuch (ab Schritt 17) |
-| PDF-Ablage bis Schritt 11 | lokales Verzeichnis `data/pdfs` (`newsdigest.storage.local-directory`) |
+| PDF-Ablage | lokal `data/pdfs` (`newsdigest.storage.type=local`, `.local-directory`); Profil `prod`: S3 (`type=s3`, Bucket `newsdigest.storage.s3-bucket` aus Terraform) |
+| AWS-Region | `eu-central-1` (`newsdigest.aws.region`, ADR-015) |
 
 ## Ausgabe
 | Einstellung | Default |

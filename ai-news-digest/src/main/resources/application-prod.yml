@@ -1,0 +1,22 @@
+# Production on AWS (docker-compose.prod.yml, ADR-015). Activated with SPRING_PROFILES_ACTIVE=prod.
+# Start secrets (database, SES SMTP) are passed as environment variables by the deploy script,
+# which reads them from AWS Secrets Manager; AI keys are read by the app itself at runtime.
+spring:
+  mail:
+    # SES SMTP interface: STARTTLS on port 587 is mandatory, no plain-text fallback
+    username: ${SPRING_MAIL_USERNAME}
+    password: ${SPRING_MAIL_PASSWORD}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+      mail.smtp.connectiontimeout: 10000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
+
+newsdigest:
+  secrets:
+    source: aws
+  storage:
+    type: s3
+    # Bucket name from Terraform, e.g. NEWSDIGEST_STORAGE_S3BUCKET=newsdigest-prod-pdfs-...
