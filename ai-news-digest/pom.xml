@@ -29,11 +29,11 @@
     <!-- cibseven-keycloak (org.cibseven.bpm.extension): latest 2.1.0, no CIB seven 3.0 release yet; needed from step 25 -->
     <cibseven-keycloak.version>2.1.0</cibseven-keycloak.version>
     <!-- Spring AI 2.0.x supports Spring Boot 4.0.x and 4.1.x -->
-    <spring-ai.version>2.0.3</spring-ai.version>
+    <spring-ai.version>2.1.0</spring-ai.version>
     <!-- springdoc 3.1.x targets Spring Boot 4.1 -->
     <springdoc.version>3.1.1</springdoc.version>
     <!-- AWS SDK v2 (ADR-015): Secrets Manager and S3, with the lightweight URL connection client -->
-    <awssdk.version>2.57.13</awssdk.version>
+    <awssdk.version>2.59.7</awssdk.version>
     <!-- Test only: HTML checks of the mail (jsoup) and page count of the PDF (PDFBox) -->
     <jsoup.version>1.24.1</jsoup.version>
     <pdfbox.version>3.0.8</pdfbox.version>
