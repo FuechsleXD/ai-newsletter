@@ -1,0 +1,67 @@
+{
+  "title": "KI-Briefing: GPT-6.2, Gemini 4 Neon, US-Regulierung",
+  "summary": "OpenAI und Google bringen neue Modelle auf den Markt: GPT-6.2 und Gemini 4 Neon. In den USA ringen Bund und Bundesstaaten um die ZustÃ¤ndigkeit fÃ¼r die KI-Regulierung, die Gouverneure haben dazu Prinzipien vorgelegt.",
+  "sections": [
+    {
+      "text": "OpenAI hat am 17. November GPT-6.2 Astra fÃ¼r komplexe Aufgaben wie Finanzmodelle und wissenschaftliche Arbeit vorgestellt. Seit dem 23. November lÃ¤uft eine Sol-Variante im ChatGPT-Chat fÃ¼r Plus, Pro, Business und Enterprise. Sie versteht Fotos besser, verfehlt Vorgaben aber noch teils.",
+      "heading": "OpenAI verÃ¶ffentlicht GPT-6.2 Astra und Sol",
+      "iconKey": "ai",
+      "flowSteps": [],
+      "sourceIds": [
+        "7",
+        "9"
+      ],
+      "highlightNumber": {
+        "label": "der FÃ¤lle, in denen Vorgaben weiterhin verfehlt werden",
+        "value": "6â€“9 %"
+      }
+    },
+    {
+      "text": "Google hat am 19. November Gemini 4 Neon verÃ¶ffentlicht. Das Modell liegt zwischen Hydrogen und Carbon und verarbeitet Text, Bild und Video. Abonnenten von AI Pro und Ultra wÃ¤hlen es in der Gemini-App, Entwickler nutzen es in Google AI Studio, Android Studio und Antigravity.",
+      "heading": "Google startet Gemini 4 Neon",
+      "iconKey": "cloud",
+      "flowSteps": [],
+      "sourceIds": [
+        "8"
+      ],
+      "highlightNumber": null
+    },
+    {
+      "text": "Die National Governors Association legte am 22. November Prinzipien vor: Der Bund soll Frontier-Modelle, kritische Infrastruktur und internationale KI-Fragen regeln. Die Bundesstaaten bleiben fÃ¼r Verbraucherschutz, Arbeitnehmer, Kinder und Datenschutz zustÃ¤ndig. Am 19. November wurde ein Entwurf des SAFE AI Act vorgestellt.",
+      "heading": "US-Gouverneure legen KI-Prinzipien vor",
+      "iconKey": "law",
+      "flowSteps": [],
+      "sourceIds": [
+        "10"
+      ],
+      "highlightNumber": null
+    }
+  ],
+  "subtitle": "Die wichtigsten KI-Meldungen vom 17. bis 24. November 2026",
+  "watchOut": "Bei GPT-6.2 bleibt abzuwarten, ob die Quote verfehlter Vorgaben sinkt und wann die Sol-Variante auch fÃ¼r kostenlose Nutzer kommt. In der US-Regulierung ist offen, wie es mit dem SAFE-AI-Act-Entwurf weitergeht.",
+  "keyPoints": [
+    {
+      "text": "GPT-6.2 Astra erschien am 17. November, die Sol-Variante folgt im ChatGPT-Chat",
+      "iconKey": "ai"
+    },
+    {
+      "text": "Gemini 4 Neon verarbeitet Text, Bild und Video",
+      "iconKey": "rocket"
+    },
+    {
+      "text": "US-Gouverneure fordern eine klare Aufgabenteilung bei der KI-Regulierung",
+      "iconKey": "law"
+    },
+    {
+      "text": "Gemini 4 Neon steht in AI Studio, Android Studio und Antigravity bereit",
+      "iconKey": "code"
+    }
+  ],
+  "takeaways": [
+    "OpenAI bringt GPT-6.2 knapp zwei Monate nach einem zurÃ¼ckgezogenen Update, das stÃ¤rkere SchutzmaÃŸnahmen brauchte.",
+    "Die ChatGPT-Variante von GPT-6.2 steht zunÃ¤chst nur zahlenden Nutzern zur VerfÃ¼gung.",
+    "Gemini 4 Neon ist ein multimodales Modell fÃ¼r Endnutzer und Entwickler.",
+    "Die US-Gouverneure wollen Frontier-Modelle beim Bund und den Verbraucherschutz bei den Bundesstaaten ansiedeln.",
+    "Der SAFE AI Act liegt bisher nur als Entwurf vor."
+  ]
+}

@@ -15,11 +15,13 @@ Leitidee: erst ein schmaler Durchstich von Anfang bis Ende, dann früh deployen,
 - [x] 6. BPMN `digestRun` vollständig modelliert (inkl. Parallel-Gateways und paralleler Multi-Instance), zunächst mit einem Modell
 - [x] 7. Einfache Prüfung (Zeitraum, Duplikate im Lauf), Aggregator mit JSON-Vertrag
 - [x] 8. Gotenberg im Compose, einfaches PDF und HTML-Mail (noch ohne fertiges Design), Versand über Mailpit
-- [~] 9. Manueller Start per Dev-Endpunkt (nur Profil `dev`) oder Testlauf; erstes echtes Ergebnis ansehen und Prompts nachschärfen (Eval-Profil)
+- [x] 9. Manueller Start per Dev-Endpunkt (nur Profil `dev`) oder Testlauf; erstes echtes Ergebnis ansehen und Prompts nachschärfen (Eval-Profil)
   - [x] 9a. Werkzeug: Kosten bei Antworten ohne Inhalt geschätzt, `pause_turn` abgefangen (offener Punkt 6, ADR-014), Dev-Endpunkt, Eval-Profil mit Export, Vorlagen und Runbook `betrieb/lokaler-testlauf.md`
-  - [ ] 9b. Erster echter Lauf (durch mich), Auswertung, Prompts als `v2` nachschärfen, anonymisierte echte Antworten als Fixtures
-
-## Phase 3 – Früh deployen
+  - [x] 9b. Erster echter Lauf (durch mich), Auswertung, Prompts als `v2` nachschärfen, anonymisierte echte Antworten als Fixtures
+    - Vier Läufe mit Claude Sonnet 5.5 (Topic "KI-News", 17.–24.11.2026), Vergleich in `src/main/resources/prompts/README.md`: Recherche `v1` 0 Meldungen, `v2` 3 gültige nur von Trackern, `v3` mit 5 Suchen 1, `v3` mit 10 Suchen 4 gültige aus echten Artikeln (0,41 USD)
+    - Neue Defaults: Recherche `v3`, Aggregation `v2`, 10 Websuchen pro Aufruf
+    - Gefunden und behoben: Der Eval-Runner blockierte den Start des Job Executors; Eval-Export nach `data/eval` (überlebt `mvn clean`); Startmeldung mit Prozessinstanz im Log
+    - Fixtures `research/real-claude-v3.json` und `aggregate/real-claude-v2.json` (nur öffentliche URLs und Nachrichten)
 - [ ] 10. Dockerfile, `docker-compose.prod.yml` mit Caddy, Trivy in der CI
 - [ ] 11. Terraform-Grundlage (State-Bootstrap, `infra.yml`) und minimaler Betrieb auf AWS per Terraform (EC2, HTTPS, DB, Keycloak, Secrets, S3, SES, Domain); Caddy veröffentlicht bis Schritt 20 nur Platzhalter und Health-Check; Backup-Job; erster echter Mailversand; Wiederherstellung einmal üben
 - [ ] 12. CD-Pipeline: ECR, SSM-Deployment, Freigabe, Smoke-Test, Rollback

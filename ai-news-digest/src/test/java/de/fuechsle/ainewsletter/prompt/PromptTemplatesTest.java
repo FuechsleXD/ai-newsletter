@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.fuechsle.ainewsletter.support.TestProperties;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 class PromptTemplatesTest {
 
@@ -28,8 +30,20 @@ class PromptTemplatesTest {
     assertThat(PromptRenderer.placeholders(templates.repairJson().text()))
         .containsExactlyInAnyOrder("parseError", "expectedFormat", "previousResponse");
 
-    assertThat(templates.research().version()).isEqualTo("v1");
+    assertThat(templates.research().version()).isEqualTo("v3");
     assertThat(templates.research().name()).isEqualTo("research");
+  }
+
+  @ParameterizedTest
+  @CsvSource({"research, v2", "research, v3", "aggregate, v2"})
+  void newerVersionsKeepThePlaceholdersAndTheOutputFormatOfV1(String name, String version) {
+    PromptTemplate v1 = templates.load(name, "v1");
+    PromptTemplate newer = templates.load(name, version);
+
+    // The services pass the same values to every version; the renderer rejects extra ones
+    assertThat(PromptRenderer.placeholders(newer.text()))
+        .containsExactlyInAnyOrderElementsOf(PromptRenderer.placeholders(v1.text()));
+    assertThat(newer.outputSection()).isEqualTo(v1.outputSection());
   }
 
   @Test

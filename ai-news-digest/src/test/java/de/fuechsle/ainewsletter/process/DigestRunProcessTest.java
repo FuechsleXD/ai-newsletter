@@ -53,7 +53,7 @@ class DigestRunProcessTest extends ProcessTestSupport {
     LocalDate today = LocalDate.now(ZoneId.of("Europe/Berlin"));
     assertThat(run.get("period_to").toString()).isEqualTo(today.toString());
     assertThat(run.get("period_from").toString()).isEqualTo(today.minusDays(7).toString());
-    assertThat(run.get("prompt_version")).isEqualTo("v1");
+    assertThat(run.get("prompt_version")).isEqualTo("v3");
     assertThat(run.get("finished_at")).isNotNull();
 
     Map<String, Object> result =

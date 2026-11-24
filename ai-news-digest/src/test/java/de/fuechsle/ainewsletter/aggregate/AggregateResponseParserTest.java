@@ -7,6 +7,7 @@ import de.fuechsle.ainewsletter.aggregate.DigestAggregate.HighlightNumber;
 import de.fuechsle.ainewsletter.aggregate.DigestAggregate.KeyPoint;
 import de.fuechsle.ainewsletter.aggregate.DigestAggregate.Section;
 import de.fuechsle.ainewsletter.support.Fixtures;
+import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
@@ -17,6 +18,24 @@ class AggregateResponseParserTest {
 
   private final AggregateResponseParser parser =
       new AggregateResponseParser(new JsonMapper(), new IconKeys());
+
+  @Test
+  void realAnswerIsParsedWithoutCorrections() {
+    // Aggregate of Claude Sonnet 5.5 for aggregate prompt v2 (eval run 4, docs/13-roadmap.md 9b),
+    // without the sources and models the app adds afterwards
+    DigestAggregate aggregate =
+        parser.parse(
+            Fixtures.read("aggregate/real-claude-v2.json"), Set.of("7", "8", "9", "10"), 6);
+
+    assertThat(aggregate.title()).isEqualTo("KI-Briefing: GPT-6.2, Gemini 4 Neon, US-Regulierung");
+    assertThat(aggregate.sections())
+        .extracting(Section::sourceIds)
+        .containsExactly(List.of("7", "9"), List.of("8"), List.of("10"));
+    // Only allowed icon keys were used, nothing had to be replaced by the default
+    assertThat(aggregate.sections()).extracting(Section::iconKey).doesNotContain(IconKeys.DEFAULT);
+    assertThat(aggregate.keyPoints()).isNotEmpty();
+    assertThat(aggregate.watchOut()).isNotBlank();
+  }
 
   @Test
   void validAnswerIsParsedAndCorrected() {

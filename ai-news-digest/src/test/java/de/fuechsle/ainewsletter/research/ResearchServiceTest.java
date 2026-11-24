@@ -76,7 +76,7 @@ class ResearchServiceTest {
     assertThat(invocation.maxOutputTokens()).isEqualTo(4_000);
     assertThat(invocation.temperature()).isEqualByComparingTo("0.2");
     assertThat(invocation.webSearch()).isTrue();
-    assertThat(invocation.maxWebSearches()).isEqualTo(5);
+    assertThat(invocation.maxWebSearches()).isEqualTo(10);
     assertThat(invocation.timeout()).isEqualTo(Duration.ofSeconds(120));
     assertThat(invocation.prompt())
         .contains("THEMA: Java")
@@ -277,7 +277,7 @@ class ResearchServiceTest {
 
   @Test
   void promptVersionIsTheActiveResearchVersion() {
-    assertThat(service().promptVersion()).isEqualTo("v1");
+    assertThat(service().promptVersion()).isEqualTo("v3");
   }
 
   @Test

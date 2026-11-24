@@ -34,7 +34,7 @@ Hosting ohne Load Balancer, Details in `11-deployment-cicd.md`.
 | `domain` | JPA-Entities |
 | `migration` | Flyway-Java-Migrationen (offizielle CIB-seven-Skripte im Schema `bpm`, siehe `03-datenmodell.md`) |
 | `prompt` | Laden der versionierten Prompt-Templates, `PromptRenderer` |
-| `eval` | Prompt-Eval im Profil `eval`: Topics durch den normalen Prozess laufen lassen und Ergebnisse nach `target/eval/` exportieren |
+| `eval` | Prompt-Eval im Profil `eval`: Topics durch den normalen Prozess laufen lassen und Ergebnisse nach `data/eval/` exportieren |
 | `secret` | `SecretProvider` (bis Schritt 11 aus Umgebungsvariablen, danach AWS Secrets Manager) |
 
 ## Schichten

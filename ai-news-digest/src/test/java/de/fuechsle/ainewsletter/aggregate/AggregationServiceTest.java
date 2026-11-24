@@ -92,7 +92,7 @@ class AggregationServiceTest {
         .contains("nicht wiederholen, außer")
         .contains("\nkeine\n")
         .contains("default, ai, chip")
-        .contains("die 4 bis 6 wichtigsten Themen")
+        .contains("4 bis 6, aber nur so viele")
         .contains("höchstens 60 Zeichen, Texte höchstens 320 Zeichen")
         .contains("\"id\":\"1\"")
         .contains("\"models\":[\"Modell A\",\"Modell B\"]")
