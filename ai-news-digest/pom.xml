@@ -29,7 +29,7 @@
     <!-- cibseven-keycloak (org.cibseven.bpm.extension): latest 2.1.0, no CIB seven 3.0 release yet; needed from step 25 -->
     <cibseven-keycloak.version>2.1.0</cibseven-keycloak.version>
     <!-- Spring AI 2.0.x supports Spring Boot 4.0.x and 4.1.x -->
-    <spring-ai.version>2.0.3</spring-ai.version>
+    <spring-ai.version>2.1.0</spring-ai.version>
     <!-- springdoc 3.1.x targets Spring Boot 4.1 -->
     <springdoc.version>3.1.1</springdoc.version>
     <!-- Test only: HTML checks of the mail (jsoup) and page count of the PDF (PDFBox) -->
