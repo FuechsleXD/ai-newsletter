@@ -23,6 +23,9 @@ public class JsonModelCall {
 
   static final String REFUSED = "Modell hat die Anfrage abgelehnt";
   static final String NO_CONTENT = "Modell hat keine Antwort geliefert (möglicherweise abgelehnt)";
+  static final String USAGE_ESTIMATED = "; Kosten geschätzt, der Anbieter hat keine Token gemeldet";
+  static final String PAUSED =
+      "Modell hat die Websuche nicht abgeschlossen (pause_turn); Ergebnis unvollständig";
   static final String INVALID_JSON = "Antwort ist kein gültiges JSON: ";
 
   private final PromptTemplates templates;
@@ -55,7 +58,11 @@ public class JsonModelCall {
       return Outcome.failed(REFUSED);
     }
     if (response.noContent()) {
-      return Outcome.failed(NO_CONTENT);
+      return Outcome.failed(NO_CONTENT + (response.usageEstimated() ? USAGE_ESTIMATED : ""));
+    }
+    if (response.paused()) {
+      // A repair without web search could only reformat the unfinished answer
+      return Outcome.failed(PAUSED);
     }
 
     String parseError;

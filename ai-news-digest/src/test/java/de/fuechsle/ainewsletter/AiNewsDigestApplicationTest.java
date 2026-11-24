@@ -44,4 +44,18 @@ class AiNewsDigestApplicationTest extends PostgresTestSupport {
       assertThat(response.body()).contains("\"status\":\"UP\"");
     }
   }
+
+  @Test
+  void devEndpointsDoNotExistWithoutProfileDev() throws Exception {
+    try (HttpClient client = HttpClient.newHttpClient()) {
+      HttpResponse<String> response =
+          client.send(
+              HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/dev/topics/1/runs"))
+                  .POST(HttpRequest.BodyPublishers.noBody())
+                  .build(),
+              HttpResponse.BodyHandlers.ofString());
+
+      assertThat(response.statusCode()).isIn(404, 405);
+    }
+  }
 }

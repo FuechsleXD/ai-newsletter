@@ -29,6 +29,9 @@ public class AnthropicNewsProvider implements NewsProvider {
 
   public static final String CODE = "ANTHROPIC";
 
+  /** Conservative characters per token for the estimate of answers without content. */
+  static final int CHARS_PER_TOKEN = 3;
+
   private final SecretProvider secrets;
   private final String baseUrl;
   private final Clock clock;
@@ -61,6 +64,9 @@ public class AnthropicNewsProvider implements NewsProvider {
           "Anthropic call for model " + invocation.modelName() + " failed: " + e.getMessage(), e);
     }
     Duration duration = Duration.between(start, clock.instant());
+    if (response.getResults().isEmpty()) {
+      return withoutContent(invocation, duration);
+    }
     return toModelResponse(response, duration);
   }
 
@@ -99,12 +105,21 @@ public class AnthropicNewsProvider implements NewsProvider {
       webSearches = usage.serverToolUse().map(ServerToolUsage::webSearchRequests).orElse(0L);
     }
 
-    // Spring AI 2.0.3 returns no generation (and no usage) when the answer has no content,
-    // e.g. for a refusal; the stop reason is then unknown.
-    String stopReason =
-        response.getResults().isEmpty()
-            ? ModelResponse.NO_CONTENT
-            : response.getResults().getLast().getMetadata().getFinishReason();
+    String stopReason = response.getResults().getLast().getMetadata().getFinishReason();
     return new ModelResponse(text, inputTokens, outputTokens, webSearches, stopReason, duration);
+  }
+
+  /**
+   * Spring AI 2.0.3 returns no generation, no stop reason and no usage when the answer has no
+   * content, e.g. for a refusal (ADR-014). The billed input tokens are estimated from the prompt so
+   * the call is still costed (golden rule 5): one token per {@value #CHARS_PER_TOKEN} characters,
+   * rounded up, which is rather too high than too low for German and English text. Output tokens
+   * and web searches are unknown and counted as 0.
+   */
+  static ModelResponse withoutContent(ModelInvocation invocation, Duration duration) {
+    long estimatedInputTokens =
+        (invocation.prompt().length() + CHARS_PER_TOKEN - 1) / CHARS_PER_TOKEN;
+    return new ModelResponse(
+        "", estimatedInputTokens, 0, 0, ModelResponse.NO_CONTENT, duration, true);
   }
 }

@@ -10,6 +10,7 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Period;
+import java.util.List;
 import java.util.Locale;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
@@ -40,7 +41,8 @@ public record NewsDigestProperties(
     @Valid @NotNull @DefaultValue Mail mail,
     @Valid @NotNull @DefaultValue Storage storage,
     @Valid @NotNull @DefaultValue Retention retention,
-    @Valid @NotNull @DefaultValue Api api) {
+    @Valid @NotNull @DefaultValue Api api,
+    @Valid @NotNull @DefaultValue Eval eval) {
 
   /** Run defaults. */
   public record Run(
@@ -139,4 +141,16 @@ public record NewsDigestProperties(
   public record Api(
       @Min(1) @DefaultValue("20") int defaultPageSize,
       @Min(1) @DefaultValue("100") int maxPageSize) {}
+
+  /**
+   * Manual prompt evaluation with real APIs (profile {@code eval}, docs/10-tests.md).
+   *
+   * @param topics names of the topics to run; they are configured in the database like any topic
+   * @param runTimeout how long to wait for the end of one run
+   * @param outputDirectory results go to {@code <outputDirectory>/<prompt-version>/}
+   */
+  public record Eval(
+      @NotNull @DefaultValue({}) List<String> topics,
+      @NotNull @DefaultValue("15m") Duration runTimeout,
+      @NotBlank @DefaultValue("target/eval") String outputDirectory) {}
 }

@@ -11,6 +11,8 @@ public interface DigestRunRepository extends JpaRepository<DigestRun, Long> {
 
   boolean existsByTopicIdAndStatus(Long topicId, RunStatus status);
 
+  Optional<DigestRun> findByProcessInstanceId(String processInstanceId);
+
   /** Run with topic and schedule in one query. */
   @Query("select r from DigestRun r join fetch r.topic t join fetch t.schedule where r.id = :id")
   Optional<DigestRun> findWithTopic(@Param("id") Long id);

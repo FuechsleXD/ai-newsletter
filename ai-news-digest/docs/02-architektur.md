@@ -34,6 +34,7 @@ Hosting ohne Load Balancer, Details in `11-deployment-cicd.md`.
 | `domain` | JPA-Entities |
 | `migration` | Flyway-Java-Migrationen (offizielle CIB-seven-Skripte im Schema `bpm`, siehe `03-datenmodell.md`) |
 | `prompt` | Laden der versionierten Prompt-Templates, `PromptRenderer` |
+| `eval` | Prompt-Eval im Profil `eval`: Topics durch den normalen Prozess laufen lassen und Ergebnisse nach `target/eval/` exportieren |
 | `secret` | `SecretProvider` (bis Schritt 11 aus Umgebungsvariablen, danach AWS Secrets Manager) |
 
 ## Schichten
@@ -50,7 +51,7 @@ Hosting ohne Load Balancer, Details in `11-deployment-cicd.md`.
 - Interface `NewsProvider` pro Anbieter; Registry ordnet `ai_provider.code` der Implementierung zu
 - Das Modell ist ein Aufrufparameter: jeder Aufruf bekommt ein Record mit Modell-ID, Temperatur, Max-Tokens (bei Spring AI über Chat-Options pro Request)
 - Modellnamen und Preise nie fest im Code, in `application.yml` oder in Migrationen; auch das Aggregator-Modell steht nur am Topic (ADR-013)
-- Umsetzung für Anthropic: `AnthropicNewsProvider` über Spring AI (`spring-ai-anthropic`, ohne Starter); Modell-ID, Max-Tokens, Temperatur (nur wenn gesetzt), API-Key, Timeout und Websuche (`max_uses`) werden pro Aufruf gesetzt. Bekannte Lücke: Spring AI 2.0.3 liefert bei einer Antwort ohne Inhalt (z. B. Ablehnung) weder Stop-Grund noch Token-Zahlen; das Ergebnis ist dann `FAILED` mit Kosten 0 (offener Punkt 6)
+- Umsetzung für Anthropic: `AnthropicNewsProvider` über Spring AI (`spring-ai-anthropic`, ohne Starter); Modell-ID, Max-Tokens, Temperatur (nur wenn gesetzt), API-Key, Timeout und Websuche (`max_uses`) werden pro Aufruf gesetzt. Spring AI 2.0.3 liefert bei einer Antwort ohne Inhalt (z. B. Ablehnung) weder Stop-Grund noch Token-Zahlen; die Input-Token werden dann aus dem Prompt geschätzt und als Schätzung markiert. Ein pausierter Such-Turn (`pause_turn`) wird nicht fortgesetzt, das Ergebnis ist `FAILED` (ADR-014)
 - Recherche nutzt die Web-Suche bzw. Grounding des Anbieters
 - Jeder Aufruf liefert Token-Zahlen; daraus und aus den Modellpreisen werden die Kosten berechnet und gespeichert
 - Parallelität: begrenzte gleichzeitige Aufrufe pro Anbieter (Semaphore, Default in `12-defaults.md`), damit Rate-Limits nicht greifen

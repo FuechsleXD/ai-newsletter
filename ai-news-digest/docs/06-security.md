@@ -96,7 +96,7 @@ Die Prüfung der Quellen ruft URLs auf, die ein LLM geliefert hat. Daher:
 - HTML-Mail und PDF escapen alle Texte aus KI-Antworten; Links nur, wenn die URL die Prüfung bestanden hat
 
 ## Weitere Regeln
-- Dev-Endpunkte (z. B. manueller Start im Durchstich) gibt es nur im Profil `dev`
+- Dev-Endpunkte (z. B. manueller Start im Durchstich: `POST /dev/topics/{id}/runs`) gibt es nur im Profil `dev`; ein Test prüft, dass sie ohne das Profil nicht existieren
 - Keine Stacktraces in Antworten, keine Secrets oder Mailadressen in Logs
 - API-Keys tauchen in keiner API-Antwort auf
 - Abhängigkeiten und Images werden in der CI auf Schwachstellen geprüft

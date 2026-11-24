@@ -217,6 +217,31 @@ class ResearchServiceTest {
   }
 
   @Test
+  void estimatedUsageIsCostedAndMarkedInTheError() {
+    provider.answer(
+        new ModelResponse(
+            "", 100_000, 0, 0, ModelResponse.NO_CONTENT, Duration.ofSeconds(1), true));
+
+    ResearchResult result = service().research(request(model(null, null)));
+
+    assertThat(result.errorMessage()).contains("keine Antwort", "Kosten geschätzt");
+    // 100,000 * 3 / 1M
+    assertThat(result.costUsd()).isEqualByComparingTo("0.3");
+  }
+
+  @Test
+  void pausedSearchIsAFailedResultWithCostAndWithoutRepair() {
+    provider.answer(new ModelResponse("{\"items\": [", 1_000, 100, 5, "pause_turn", Duration.ZERO));
+
+    ResearchResult result = service().research(request(model(null, null)));
+
+    assertThat(result.status()).isEqualTo(ProviderResultStatus.FAILED);
+    assertThat(result.errorMessage()).contains("pause_turn");
+    assertThat(result.webSearches()).isEqualTo(5);
+    assertThat(provider.invocations()).hasSize(1);
+  }
+
+  @Test
   void modelWithoutWebSearchIsRejectedWithoutCall() {
     ModelSnapshot noSearch =
         new ModelSnapshot(

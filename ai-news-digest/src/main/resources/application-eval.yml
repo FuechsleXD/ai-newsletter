@@ -1,0 +1,16 @@
+# Manual prompt evaluation with real APIs (docs/10-tests.md, never in the CI). Run with
+#   ./mvnw spring-boot:run -Dspring-boot.run.profiles=eval
+# The topics are configured in the database like any topic; list their names here or in a
+# git-ignored application-local.yml, e.g.
+#   newsdigest:
+#     eval:
+#       topics:
+#         - Java
+# Results: target/eval/<prompt-version>/<time>-<topic>/ (run.json, raw answers, aggregate, PDF).
+newsdigest:
+  eval:
+    topics: []
+
+logging:
+  level:
+    de.fuechsle.ainewsletter: INFO
