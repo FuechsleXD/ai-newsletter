@@ -20,4 +20,6 @@ public interface TopicRepository extends JpaRepository<Topic, Long> {
       where t.id = :id
       """)
   Optional<Topic> findForRun(@Param("id") Long id);
+
+  Optional<Topic> findByName(String name);
 }

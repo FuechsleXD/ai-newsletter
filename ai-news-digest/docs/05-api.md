@@ -29,6 +29,8 @@
 | `POST /runs/{id}/cancel` | Laufenden Lauf abbrechen: 200; 409 wenn nicht `RUNNING` | ADMIN |
 | `POST /topics/{id}/runs` | Manueller Lauf: 202 + Run-ID; 409 wenn Lauf aktiv; 429 bei Rate-Limit; 422 wenn Budget erreicht | ADMIN |
 
+Nur im Profil `dev` (Schritt 9, ohne Rollen, nie in Produktion): `POST /dev/topics/{id}/runs` startet einen Lauf, 202 mit `runId` und `processInstanceId`; 404 bei unbekanntem Topic, 409 bei aktivem Lauf.
+
 ## Validierung
 - Cron mit Springs `CronExpression`, Zeitzone gegen `ZoneId`, E-Mail-Format, eindeutige Namen
 - Recherche-Modelle müssen `supports_web_search` haben, Aggregator-Modell `supports_structured_output`
@@ -38,7 +40,7 @@
 - Änderungen an Topics und Zeitplänen stoßen den Scheduler-Reload sofort an
 
 ## Fehlerbehandlung
-- Eine Klasse `GlobalExceptionHandler` mit `@RestControllerAdvice`, abgeleitet von `ResponseEntityExceptionHandler`
+- Eine Klasse `GlobalExceptionHandler` mit `@RestControllerAdvice`, abgeleitet von `ResponseEntityExceptionHandler` (seit Schritt 9 mit `NotFoundException` -> 404, `ConflictException` -> 409 und 500; Rest in Schritt 19)
 - Jede Fehlerantwort ist ein RFC-9457 `ProblemDetail` mit `type`, `title`, `status`, `detail`, `instance`, `traceId`; bei Validierung zusätzlich `errors` (Feld, Meldung)
 - Fachliche Fehler: unchecked Exceptions mit gemeinsamer Basisklasse, geworfen in Services
 

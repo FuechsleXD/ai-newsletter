@@ -80,6 +80,7 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 | Mail-Betreff | `[News Digest] <Topic> – <Datum>` |
 | Absender, Betreiber-Empfänger | nur über Umgebungsvariablen (`NEWSDIGEST_MAIL_FROM`, `NEWSDIGEST_MAIL_OPERATOR`); ohne sie startet die App nicht |
 | SMTP | `SPRING_MAIL_HOST`/`SPRING_MAIL_PORT`, Default `localhost:1025` (Mailpit); der Mail-Health-Check ist aus, damit ein SMTP-Ausfall die App nicht als down meldet |
+| Eval (Profil `eval`) | Topics `newsdigest.eval.topics` (leer), Wartezeit je Lauf 15 min, Ausgabe `target/eval` |
 | Aktive Prompt-Version | `v1` je Prompt (`newsdigest.prompts.research`, `.aggregate`, `.repair-json`) |
 
 ## Aufbewahrung

@@ -1,9 +1,9 @@
 package de.fuechsle.ainewsletter.service;
 
 /** A run of the topic is still RUNNING; at most one active run per topic is allowed. */
-public class RunAlreadyActiveException extends RuntimeException {
+public class RunAlreadyActiveException extends ConflictException {
 
   public RunAlreadyActiveException(long topicId) {
-    super("Topic " + topicId + " already has a running digest run");
+    super("Für Topic " + topicId + " läuft bereits ein Lauf");
   }
 }

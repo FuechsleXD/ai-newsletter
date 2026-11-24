@@ -1,9 +1,9 @@
 package de.fuechsle.ainewsletter.service;
 
 /** The topic does not exist. */
-public class TopicNotFoundException extends RuntimeException {
+public class TopicNotFoundException extends NotFoundException {
 
   public TopicNotFoundException(long topicId) {
-    super("Topic " + topicId + " does not exist");
+    super("Topic " + topicId + " existiert nicht");
   }
 }

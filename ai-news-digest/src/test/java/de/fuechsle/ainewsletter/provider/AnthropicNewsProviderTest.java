@@ -148,10 +148,41 @@ class AnthropicNewsProviderTest {
 
     ModelResponse response = provider().call(invocation(null, true));
 
-    // Spring AI 2.0.3 drops answers without content, including stop reason and usage
+    // Spring AI 2.0.3 drops answers without content, including stop reason and usage: the input
+    // tokens are estimated from the prompt (24 characters / 3), the estimate is marked
     assertThat(response.noContent()).isTrue();
     assertThat(response.text()).isEmpty();
-    assertThat(response.inputTokens()).isZero();
+    assertThat(response.inputTokens()).isEqualTo(8);
+    assertThat(response.outputTokens()).isZero();
+    assertThat(response.usageEstimated()).isTrue();
+  }
+
+  @Test
+  void pausedTurnKeepsItsStopReasonAndUsage() {
+    answer =
+        """
+        {"id": "msg_4", "type": "message", "role": "assistant", "model": "test-model-1",
+         "content": [{"type": "text", "text": "Ich suche weiter."}],
+         "stop_reason": "pause_turn", "stop_sequence": null,
+         "usage": {"input_tokens": 900, "output_tokens": 50,
+                   "server_tool_use": {"web_search_requests": 5}}}
+        """;
+
+    ModelResponse response = provider().call(invocation(null, true));
+
+    assertThat(response.paused()).isTrue();
+    assertThat(response.usageEstimated()).isFalse();
+    assertThat(response.inputTokens()).isEqualTo(900);
+    assertThat(response.webSearches()).isEqualTo(5);
+  }
+
+  @Test
+  void estimateRoundsUp() {
+    ModelResponse response =
+        AnthropicNewsProvider.withoutContent(
+            invocation(null, false).withPrompt("1234567"), Duration.ofSeconds(1));
+
+    assertThat(response.inputTokens()).isEqualTo(3);
   }
 
   @Test

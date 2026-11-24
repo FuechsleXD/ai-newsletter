@@ -15,7 +15,9 @@ Leitidee: erst ein schmaler Durchstich von Anfang bis Ende, dann früh deployen,
 - [x] 6. BPMN `digestRun` vollständig modelliert (inkl. Parallel-Gateways und paralleler Multi-Instance), zunächst mit einem Modell
 - [x] 7. Einfache Prüfung (Zeitraum, Duplikate im Lauf), Aggregator mit JSON-Vertrag
 - [x] 8. Gotenberg im Compose, einfaches PDF und HTML-Mail (noch ohne fertiges Design), Versand über Mailpit
-- [ ] 9. Manueller Start per Dev-Endpunkt (nur Profil `dev`) oder Testlauf; erstes echtes Ergebnis ansehen und Prompts nachschärfen (Eval-Profil)
+- [~] 9. Manueller Start per Dev-Endpunkt (nur Profil `dev`) oder Testlauf; erstes echtes Ergebnis ansehen und Prompts nachschärfen (Eval-Profil)
+  - [x] 9a. Werkzeug: Kosten bei Antworten ohne Inhalt geschätzt, `pause_turn` abgefangen (offener Punkt 6, ADR-014), Dev-Endpunkt, Eval-Profil mit Export, Vorlagen und Runbook `betrieb/lokaler-testlauf.md`
+  - [ ] 9b. Erster echter Lauf (durch mich), Auswertung, Prompts als `v2` nachschärfen, anonymisierte echte Antworten als Fixtures
 
 ## Phase 3 – Früh deployen
 - [ ] 10. Dockerfile, `docker-compose.prod.yml` mit Caddy, Trivy in der CI
