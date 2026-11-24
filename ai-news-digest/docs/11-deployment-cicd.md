@@ -31,11 +31,15 @@
 - Fehlgeschlagenes Backup löst einen CloudWatch-Alarm aus
 
 ## Docker
-- `Dockerfile` im Root, mehrstufig: Build mit JDK 21 + Maven-Wrapper, Runtime mit schlankem, fest gepinntem JRE-21-Image
-- Spring-Boot-Layered-Jar, Nicht-Root-Benutzer, keine Secrets im Image, `HEALTHCHECK` gegen den internen Actuator
+- `Dockerfile` im Projektordner, mehrstufig: Build mit `eclipse-temurin` JDK 21 (Alpine) und Maven-Wrapper ohne Tests (die laufen im CI-Job `backend`), Runtime mit `eclipse-temurin` JRE 21 (Alpine); beide Tags fest gepinnt und für amd64 und arm64 (Graviton) verfügbar
+- Spring-Boot-Layered-Jar (`-Djarmode=tools extract --layers`), Nicht-Root-Benutzer `app` (UID 10001), keine Secrets im Image (`.dockerignore` lässt nur Wrapper, `pom.xml` und `src/main` durch), `HEALTHCHECK` gegen den internen Actuator, `-XX:MaxRAMPercentage=75`
 - Frontend-Build als eigenes Image oder Artefakt für Caddy
 - `docker-compose.yml` für lokal: PostgreSQL, Mailpit (lokaler Mailserver zum Ansehen der Mails), Gotenberg, Keycloak mit Realm-Import und Testbenutzern (nur lokal); S3-Ersatz nur nach Rückfrage
-- `docker-compose.prod.yml` für den Server: App, Caddy, PostgreSQL, Gotenberg, Keycloak, Backup-Job
+- `docker-compose.prod.yml` für den Server: App, Caddy, PostgreSQL, Gotenberg; Keycloak, Backup-Job und Log-Treiber `awslogs` folgen in Schritt 11
+  - Werte aus einer nicht eingecheckten Env-Datei (Vorlage `.env.prod.example`), Pflichtwerte mit `${VAR:?}`; das App-Image kommt per `APP_IMAGE` mit festem Tag
+  - Netze: `edge` (Caddy, App; Internet für KI-Anbieter und Mail) und `backend` (`internal: true`: App, PostgreSQL, Gotenberg ohne Internetzugang); veröffentlicht sind nur 80/443 von Caddy
+  - Caddy (`docker/caddy/Caddyfile`): HTTPS für `DOMAIN`, `/health` auf `/actuator/health` der App, alles andere auf die Platzhalterseite `docker/caddy/site/`; Security-Header (HSTS, CSP, `nosniff`, `DENY`)
+  - Lokal ausprobieren: `docs/betrieb/prod-compose-lokal.md`
 - Instanzgröße: Speicherbedarf von App, Keycloak, PostgreSQL und Gotenberg zusammen beachten; nach dem ersten Deployment mit echten Werten prüfen
 - Tags: Git-SHA, bei Releases zusätzlich Version; nie `latest`
 
@@ -43,7 +47,7 @@
 Workflows und `dependabot.yml` liegen im Repo-Root (`.github/`), weil GitHub sie nur dort liest; das Projekt selbst liegt im Unterordner `ai-news-digest/`, die Jobs arbeiten mit `working-directory: ai-news-digest`.
 
 ### `ci.yml` – bei Pull Requests und Push auf `main`
-Stand nach Roadmap-Schritt 2: Job `backend` (Punkt 1 und 5, Formatierung über Spotless in `verify`, Coverage-Tabelle in der Job-Zusammenfassung, Berichte als Artefakt `backend-reports`) und Job `dependency-review` (Punkt 4, nur bei Pull Requests, schlägt ab Schweregrad `high` fehl). Frontend (Punkt 2) folgt in Schritt 22, Images und Trivy (Punkt 3) in Schritt 10, CodeQL vorerst nicht.
+Stand nach Roadmap-Schritt 2: Job `backend` (Punkt 1 und 5, Formatierung über Spotless in `verify`, Coverage-Tabelle in der Job-Zusammenfassung, Berichte als Artefakt `backend-reports`) und Job `dependency-review` (Punkt 4, nur bei Pull Requests, schlägt ab Schweregrad `high` fehl). Seit Schritt 10 zusätzlich Job `image` (Punkt 3): App-Image bauen (ohne Push), Trivy-Scan (fixbare `CRITICAL`-Funde im App-Image machen die CI rot; `HIGH` des App-Images und die fremden Images aus `docker-compose.prod.yml` nur als Bericht in der Job-Zusammenfassung, weil sie nur ein Image-Update behebt) und Smoke-Test `docker/smoke-test.sh` (Compose-Verbund mit `DOMAIN=localhost` starten, `/health` und Platzhalter erreichbar, Actuator, API und Dev-Endpunkte nicht). Frontend (Punkt 2) folgt in Schritt 22, CodeQL vorerst nicht.
 
 1. Backend: JDK 21 mit Maven-Cache, `./mvnw -B clean verify`, JaCoCo-Prüfung, Berichte als Artefakt
 2. Frontend: Node laut `.nvmrc`, `npm ci`, Lint, Typecheck, Tests mit Coverage, Build
@@ -53,7 +57,7 @@ Stand nach Roadmap-Schritt 2: Job `backend` (Punkt 1 und 5, Formatierung über S
 
 ### Abhängigkeiten aktuell halten
 - `.github/dependabot.yml` für Maven, npm, Docker-Images (Dockerfile und Compose), GitHub Actions und Terraform-Provider, wöchentlich, gruppiert
-- Eingerichtet sind bisher Maven, GitHub Actions und Compose; npm, Dockerfile und Terraform kommen dazu, sobald es die Ordner gibt (Schritte 22, 10, 11)
+- Eingerichtet sind bisher Maven, GitHub Actions, Compose (beide Compose-Dateien) und Dockerfile (ohne Sprünge der Java-Hauptversion); npm und Terraform kommen dazu, sobald es die Ordner gibt (Schritte 22, 11)
 - Ignoriert werden (ADR-012): Spring-Boot-Sprünge über 4.1.x hinaus, solange CIB seven keine neuere Linie unterstützt, und Jackson 3.2+
 - Ebenfalls ignoriert: neue Hauptversionen von PostgreSQL; ein Wechsel braucht Dump und Restore der Daten und wird bewusst geplant (Image-Tag in Compose, Testcontainers und Produktion gemeinsam ändern)
 

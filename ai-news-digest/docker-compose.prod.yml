@@ -1,0 +1,99 @@
+# Production services on the EC2 instance (docs/11-deployment-cicd.md, ADR-005).
+# Keycloak, the backup job and the CloudWatch log driver follow in roadmap step 11.
+# Values come from an env file that is never checked in (template: .env.prod.example):
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+# Locally: docs/betrieb/prod-compose-lokal.md
+name: ai-news-digest-prod
+
+services:
+  # Only public service: HTTPS with automatic certificate for DOMAIN. Until the security step (20)
+  # it publishes a placeholder page and the health check only.
+  caddy:
+    image: caddy:2.11.9-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./docker/caddy/site:/srv:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [edge]
+    depends_on:
+      app:
+        condition: service_healthy
+
+  app:
+    image: ${APP_IMAGE:?set APP_IMAGE to an image with a fixed tag (Git SHA), never latest}
+    restart: unless-stopped
+    # Graceful stop: running jobs may finish before the container is killed (docs/11)
+    stop_grace_period: 60s
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-newsdigest}
+      DB_MIGRATION_PASSWORD: ${DB_MIGRATION_PASSWORD:?set DB_MIGRATION_PASSWORD}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:?set DB_APP_PASSWORD}
+      NEWSDIGEST_RENDER_GOTENBERGURL: http://gotenberg:3000
+      SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:?set SPRING_MAIL_HOST}
+      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:?set SPRING_MAIL_PORT}
+      NEWSDIGEST_MAIL_FROM: ${NEWSDIGEST_MAIL_FROM:?set NEWSDIGEST_MAIL_FROM}
+      NEWSDIGEST_MAIL_OPERATOR: ${NEWSDIGEST_MAIL_OPERATOR:?set NEWSDIGEST_MAIL_OPERATOR}
+      # Until AWS Secrets Manager is connected (step 11) the AI keys come from the environment
+      NEWSDIGEST_PROD_AI_ANTHROPIC: ${NEWSDIGEST_PROD_AI_ANTHROPIC:-}
+    volumes:
+      - app-data:/app/data
+    # edge: reachable by Caddy and outbound internet (AI providers, mail);
+    # backend: database and Gotenberg
+    networks: [edge, backend]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      gotenberg:
+        condition: service_started
+
+  postgres:
+    image: postgres:18.7-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-newsdigest}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      DB_MIGRATION_PASSWORD: ${DB_MIGRATION_PASSWORD:?set DB_MIGRATION_PASSWORD}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:?set DB_APP_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    networks: [backend]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Renders the PDF (ADR-008); same restrictions as locally, no internet access (backend network)
+  gotenberg:
+    image: gotenberg/gotenberg:8.40.0-chromium
+    restart: unless-stopped
+    command:
+      - gotenberg
+      - --chromium-deny-public-ips=true
+      - --chromium-deny-private-ips=true
+      - --chromium-disable-javascript=true
+      - --api-disable-download-from=true
+      - --webhook-disable=true
+    networks: [backend]
+
+networks:
+  edge: {}
+  # No route to the internet; only the app joins both networks
+  backend:
+    internal: true
+
+volumes:
+  caddy-data:
+  caddy-config:
+  app-data:
+  postgres-data:

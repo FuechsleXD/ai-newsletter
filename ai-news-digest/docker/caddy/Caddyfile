@@ -1,0 +1,29 @@
+# Reverse proxy and HTTPS (docs/11-deployment-cicd.md, docs/06-security.md).
+# Until the security step (roadmap 20) only the placeholder page and the health check are public;
+# the API, the engine UI, dev endpoints and the other actuator endpoints are not reachable.
+# DOMAIN=localhost (local test) uses Caddy's internal CA instead of Let's Encrypt.
+
+{$DOMAIN} {
+	encode gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		Content-Security-Policy "default-src 'none'; style-src 'self'; img-src 'self'; frame-ancestors 'none'"
+		-Server
+	}
+
+	# Public health check: status only, the app shows no details
+	handle /health {
+		rewrite * /actuator/health
+		reverse_proxy app:8080
+	}
+
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

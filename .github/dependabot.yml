@@ -1,5 +1,5 @@
-# Dependency updates (docs/11-deployment-cicd.md). npm, Dockerfile and Terraform are added
-# once their directories exist (steps 22, 10, 11).
+# Dependency updates (docs/11-deployment-cicd.md). npm and Terraform are added once their
+# directories exist (steps 22, 11).
 version: 2
 
 updates:
@@ -34,6 +34,23 @@ updates:
       github-actions:
         patterns: ["*"]
 
+  # Base images of the Dockerfile (JDK for the build, JRE for the runtime)
+  - package-ecosystem: docker
+    directory: /ai-news-digest
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: "build"
+    groups:
+      dockerfile-images:
+        patterns: ["*"]
+    ignore:
+      # Java 21 is the LTS line of the project (tech stack)
+      - dependency-name: eclipse-temurin
+        update-types: [version-update:semver-major]
+
+  # docker-compose.yml and docker-compose.prod.yml
   - package-ecosystem: docker-compose
     directory: /ai-news-digest
     schedule:

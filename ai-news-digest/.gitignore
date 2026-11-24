@@ -7,6 +7,9 @@ data/
 
 # Local configuration and secrets
 .env
+.env.*
+!.env.example
+!.env.prod.example
 *.local.yml
 application-local.yml
 

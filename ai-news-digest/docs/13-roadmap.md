@@ -22,7 +22,7 @@ Leitidee: erst ein schmaler Durchstich von Anfang bis Ende, dann früh deployen,
     - Neue Defaults: Recherche `v3`, Aggregation `v2`, 10 Websuchen pro Aufruf
     - Gefunden und behoben: Der Eval-Runner blockierte den Start des Job Executors; Eval-Export nach `data/eval` (überlebt `mvn clean`); Startmeldung mit Prozessinstanz im Log
     - Fixtures `research/real-claude-v3.json` und `aggregate/real-claude-v2.json` (nur öffentliche URLs und Nachrichten)
-- [ ] 10. Dockerfile, `docker-compose.prod.yml` mit Caddy, Trivy in der CI
+- [x] 10. Dockerfile, `docker-compose.prod.yml` mit Caddy, Trivy in der CI
 - [ ] 11. Terraform-Grundlage (State-Bootstrap, `infra.yml`) und minimaler Betrieb auf AWS per Terraform (EC2, HTTPS, DB, Keycloak, Secrets, S3, SES, Domain); Caddy veröffentlicht bis Schritt 20 nur Platzhalter und Health-Check; Backup-Job; erster echter Mailversand; Wiederherstellung einmal üben
 - [ ] 12. CD-Pipeline: ECR, SSM-Deployment, Freigabe, Smoke-Test, Rollback
 

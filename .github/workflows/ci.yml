@@ -1,5 +1,5 @@
 # CI for AI News Digest (docs/11-deployment-cicd.md).
-# Frontend job follows in roadmap step 22, image build + Trivy in step 10.
+# Frontend job follows in roadmap step 22.
 name: CI
 
 on:
@@ -70,6 +70,60 @@ jobs:
             ai-news-digest/target/surefire-reports/
           if-no-files-found: ignore
           retention-days: 14
+
+  image:
+    name: Image (build, Trivy, smoke test)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: ai-news-digest
+    env:
+      IMAGE: newsdigest:${{ github.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Not pushed; pushing to ECR follows with cd.yml (roadmap step 12)
+      - name: Build app image
+        run: docker build -t "$IMAGE" .
+
+      # Fixable critical findings in our own image fail the build
+      - name: Trivy scan of the app image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE }}
+          scanners: vuln
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
+      # Third-party images (Caddy, PostgreSQL, Gotenberg) are reported only: their findings can only
+      # be fixed by an image update (Dependabot)
+      - name: Trivy report (app image high, third-party images)
+        if: always()
+        run: |
+          images="$(DOMAIN=x APP_IMAGE=x POSTGRES_PASSWORD=x DB_MIGRATION_PASSWORD=x DB_APP_PASSWORD=x \
+            SPRING_MAIL_HOST=x SPRING_MAIL_PORT=1 NEWSDIGEST_MAIL_FROM=x NEWSDIGEST_MAIL_OPERATOR=x \
+            docker compose -f docker-compose.prod.yml config --images | grep -v '^x$' | sort -u)"
+          {
+            echo "## Trivy (HIGH, CRITICAL, behebbar)"
+            for image in "$IMAGE" $images; do
+              echo ""
+              echo "### \`$image\`"
+              echo '```'
+              # Installed by the previous step; a failed scan must not hide the other reports
+              trivy image -q --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed \
+                --format table "$image" 2>&1 | head -60 || true
+              echo '```'
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Smoke test of docker-compose.prod.yml
+        run: docker/smoke-test.sh "$IMAGE"
 
   dependency-review:
     name: Dependency review
