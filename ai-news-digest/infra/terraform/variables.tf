@@ -38,6 +38,20 @@ variable "github_repository" {
   type        = string
 }
 
+variable "github_repository_ids" {
+  description = <<-EOT
+    Numeric IDs of the GitHub owner and repository. GitHub writes them into the OIDC subject
+    ("repo:<owner>@<owner_id>/<name>@<repo_id>:..."), so a renamed or re-created repository with
+    the same name cannot assume the roles. Not secret; shown in the CloudTrail event of a failed
+    login. Null: only the subject without IDs.
+  EOT
+  type = object({
+    owner_id      = number
+    repository_id = number
+  })
+  default = null
+}
+
 variable "state_bucket" {
   description = "S3 bucket of the Terraform state (backend.hcl)."
   type        = string
