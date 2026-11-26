@@ -1,0 +1,140 @@
+# CD for AI News Digest (docs/11-deployment-cicd.md, runbook docs/betrieb/deployment.md).
+# - After a green CI on main: build the arm64 image, push it to ECR, deploy it via SSM
+# - By hand (Run workflow): the current state of a branch, or an image tag that is already in ECR
+#   (redeploy, rollback to an older release)
+# Every run waits for the approval in the environment "prod"; only there the OIDC role may be
+# assumed. A failed deployment or smoke test rolls back to the release that ran before.
+# Creates no infrastructure (infra.yml) and never starts a stopped instance.
+name: CD
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image-Tag aus ECR erneut ausrollen (z. B. Rollback); leer = Stand des gewählten Branches bauen"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cd-prod
+  # Never cancel a running deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to prod
+    # Only CI runs of pushes to main, never of pull requests
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    # Native arm64 like the Graviton instance: no emulation for the image build
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 45
+    environment:
+      name: prod
+      url: https://${{ vars.DOMAIN }}
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: ai-news-digest
+    env:
+      INSTANCE: ${{ vars.AWS_INSTANCE_ID }}
+      DEPLOY_BUCKET: ${{ vars.DEPLOY_BUCKET }}
+      ECR: ${{ vars.ECR_REPOSITORY_URL }}
+      DOMAIN: ${{ vars.DOMAIN }}
+      INPUT_TAG: ${{ inputs.tag }}
+      SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SHA }}
+          persist-credentials: false
+
+      - name: Release tag
+        run: |
+          for name in INSTANCE DEPLOY_BUCKET ECR DOMAIN; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Repository variable for $name is missing (docs/betrieb/deployment.md)"
+              exit 1
+            fi
+          done
+          if [[ -n "$INPUT_TAG" ]]; then
+            if [[ ! "$INPUT_TAG" =~ ^[A-Za-z0-9._-]+$ ]]; then
+              echo "::error::Invalid image tag: $INPUT_TAG"
+              exit 1
+            fi
+            echo "TAG=$INPUT_TAG" >>"$GITHUB_ENV"
+            echo "NEW_RELEASE=false" >>"$GITHUB_ENV"
+          else
+            echo "TAG=${SHA:0:7}" >>"$GITHUB_ENV"
+            echo "NEW_RELEASE=true" >>"$GITHUB_ENV"
+          fi
+
+      - name: AWS login
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_CD_ROLE_ARN }}
+          aws-region: eu-central-1
+
+      # Rollback target; fails if the instance is stopped
+      - name: Release running now
+        run: |
+          previous="$(infra/cd/current-tag.sh "$INSTANCE")"
+          echo "PREVIOUS=$previous" >>"$GITHUB_ENV"
+          echo "Running now: ${previous:-nothing}"
+
+      - name: Image in ECR
+        run: |
+          if aws ecr describe-images --repository-name "${ECR#*/}" \
+              --image-ids "imageTag=$TAG" >/dev/null 2>&1; then
+            echo "IMAGE_EXISTS=true" >>"$GITHUB_ENV"
+            echo "$ECR:$TAG is already in ECR (tags are immutable), no new build"
+          elif [[ "$NEW_RELEASE" == "true" ]]; then
+            echo "IMAGE_EXISTS=false" >>"$GITHUB_ENV"
+          else
+            echo "::error::$ECR:$TAG is not in ECR; for a new release leave the tag empty"
+            exit 1
+          fi
+
+      - name: Build and push the image
+        if: env.IMAGE_EXISTS == 'false'
+        run: |
+          aws ecr get-login-password | docker login --username AWS --password-stdin "${ECR%%/*}"
+          docker build -t "$ECR:$TAG" .
+          docker push "$ECR:$TAG"
+
+      # Only for a new release: a redeploy of an old tag keeps the current deploy files
+      - name: Upload deploy files
+        if: env.NEW_RELEASE == 'true'
+        run: infra/server/upload-deploy-files.sh "$DEPLOY_BUCKET" "$TAG"
+
+      - name: Deploy, smoke test, rollback on failure
+        run: |
+          summary() { echo "$1" | tee -a "$GITHUB_STEP_SUMMARY"; }
+          if infra/cd/deploy-release.sh "$INSTANCE" "$DEPLOY_BUCKET" "$TAG" \
+              && infra/cd/smoke-test-prod.sh "$DOMAIN"; then
+            summary "Deployed \`$TAG\` to https://$DOMAIN (before: \`${PREVIOUS:-nothing}\`)"
+            exit 0
+          fi
+          echo "::error::Deployment or smoke test of $TAG failed"
+          if [[ -z "$PREVIOUS" || "$PREVIOUS" == "$TAG" ]]; then
+            summary "Deployment of \`$TAG\` failed, no other release to roll back to"
+            exit 1
+          fi
+          if infra/cd/deploy-release.sh "$INSTANCE" "$DEPLOY_BUCKET" "$PREVIOUS" \
+              && infra/cd/smoke-test-prod.sh "$DOMAIN"; then
+            summary "Deployment of \`$TAG\` failed, rolled back to \`$PREVIOUS\`"
+          else
+            summary "Deployment of \`$TAG\` failed and the rollback to \`$PREVIOUS\` failed too"
+          fi
+          exit 1

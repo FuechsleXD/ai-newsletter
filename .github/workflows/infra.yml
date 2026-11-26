@@ -71,7 +71,7 @@ jobs:
 
       - name: shellcheck (server scripts)
         working-directory: ai-news-digest
-        run: shellcheck infra/server/*.sh docker/smoke-test.sh
+        run: shellcheck infra/server/*.sh infra/cd/*.sh docker/smoke-test.sh
 
   plan:
     name: Terraform plan

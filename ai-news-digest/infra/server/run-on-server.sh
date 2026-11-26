@@ -9,7 +9,9 @@ instance="${1:?usage: run-on-server.sh <instance-id> <command> [<command> ...]}"
 shift
 (($# > 0)) || { echo "No command given" >&2; exit 1; }
 
-parameters="$(python -c 'import json, sys; print(json.dumps({"commands": sys.argv[1:], "executionTimeout": ["3600"]}))' "$@")"
+# "python" first: on Windows "python3" may only be the Microsoft Store stub; Linux has python3
+python="$(command -v python || command -v python3)"
+parameters="$("$python" -c'import json, sys; print(json.dumps({"commands": sys.argv[1:], "executionTimeout": ["3600"]}))' "$@")"
 command_id="$(aws ssm send-command \
   --instance-ids "$instance" \
   --document-name AWS-RunShellScript \
