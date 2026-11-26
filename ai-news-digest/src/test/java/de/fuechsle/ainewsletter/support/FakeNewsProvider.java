@@ -4,6 +4,7 @@ import de.fuechsle.ainewsletter.provider.ModelInvocation;
 import de.fuechsle.ainewsletter.provider.ModelResponse;
 import de.fuechsle.ainewsletter.provider.NewsProvider;
 import de.fuechsle.ainewsletter.provider.ProviderException;
+import de.fuechsle.ainewsletter.provider.SearchTrace;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -162,7 +163,34 @@ public class FakeNewsProvider implements NewsProvider {
   }
 
   private static ModelResponse response(String text, int webSearches) {
-    return new ModelResponse(text, 1_000, 500, webSearches, "END_TURN", Duration.ofMillis(10));
+    return new ModelResponse(
+        text,
+        1_000,
+        500,
+        webSearches,
+        "END_TURN",
+        Duration.ofMillis(10),
+        false,
+        trace(webSearches));
+  }
+
+  /** One search per web search call; its hits include the URL of the first valid item. */
+  private static SearchTrace trace(int webSearches) {
+    if (webSearches == 0) {
+      return SearchTrace.EMPTY;
+    }
+    return new SearchTrace(
+        List.of(
+            new SearchTrace.Search(
+                "fake news November 2026",
+                List.of(
+                    new SearchTrace.Hit(
+                        "Spring Boot veröffentlicht",
+                        "https://spring.example.test/blog/release",
+                        null),
+                    new SearchTrace.Hit(
+                        "Übersicht", "https://digest.example.test/week", "1 day ago")),
+                null)));
   }
 
   private static void count(Map<String, AtomicInteger> counts, String model) {

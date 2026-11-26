@@ -35,7 +35,7 @@ class NewsDigestPropertiesTest {
       assertThat(p.run().maxManualRunsPerTopicPerHour()).isEqualTo(3);
 
       assertThat(p.ai().callTimeout()).isEqualTo(Duration.ofSeconds(120));
-      assertThat(p.prompts().research()).isEqualTo("v6");
+      assertThat(p.prompts().research()).isEqualTo("v7");
       assertThat(p.prompts().aggregate()).isEqualTo("v4");
       assertThat(p.prompts().repairJson()).isEqualTo("v2");
       assertThat(p.providers().anthropic().baseUrl()).isEqualTo("https://api.anthropic.com");

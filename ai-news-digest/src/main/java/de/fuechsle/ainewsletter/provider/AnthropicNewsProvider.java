@@ -1,12 +1,21 @@
 package de.fuechsle.ainewsletter.provider;
 
+import com.anthropic.models.messages.ContentBlock;
+import com.anthropic.models.messages.Message;
 import com.anthropic.models.messages.ServerToolUsage;
+import com.anthropic.models.messages.ServerToolUseBlock;
 import com.anthropic.models.messages.Usage;
+import com.anthropic.models.messages.WebSearchToolResultBlock;
 import de.fuechsle.ainewsletter.config.NewsDigestProperties;
 import de.fuechsle.ainewsletter.secret.SecretProvider;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.springframework.ai.anthropic.AnthropicChatModel;
@@ -28,6 +37,9 @@ import org.springframework.stereotype.Component;
 public class AnthropicNewsProvider implements NewsProvider {
 
   public static final String CODE = "ANTHROPIC";
+
+  /** Metadata key under which Spring AI keeps the complete Anthropic answer. */
+  static final String RESPONSE_METADATA = "anthropic-response";
 
   /** Conservative characters per token for the estimate of answers without content. */
   static final int CHARS_PER_TOKEN = 3;
@@ -106,7 +118,72 @@ public class AnthropicNewsProvider implements NewsProvider {
     }
 
     String stopReason = response.getResults().getLast().getMetadata().getFinishReason();
-    return new ModelResponse(text, inputTokens, outputTokens, webSearches, stopReason, duration);
+    return new ModelResponse(
+        text,
+        inputTokens,
+        outputTokens,
+        webSearches,
+        stopReason,
+        duration,
+        false,
+        searchTrace(response));
+  }
+
+  /**
+   * Searches and their results from the complete Anthropic answer, which Spring AI keeps in the
+   * metadata ({@value #RESPONSE_METADATA}): every {@code server_tool_use} block named {@code
+   * web_search} carries the query, the {@code web_search_tool_result} block with the same tool use
+   * ID the pages or an error code. Other server tool calls (e.g. the code execution with which the
+   * search tool filters its results) are only counted. Diagnosis only: if the answer is not
+   * available, the trace is empty and the call goes on.
+   */
+  static SearchTrace searchTrace(ChatResponse response) {
+    if (!(response.getMetadata().get(RESPONSE_METADATA) instanceof Message message)) {
+      return SearchTrace.EMPTY;
+    }
+    Map<String, String> queries = new LinkedHashMap<>();
+    Map<String, SearchTrace.Search> results = new HashMap<>();
+    int otherToolCalls = 0;
+    for (ContentBlock block : message.content()) {
+      if (block.isServerToolUse()) {
+        ServerToolUseBlock use = block.asServerToolUse();
+        if (ServerToolUseBlock.Name.WEB_SEARCH.equals(use.name())) {
+          queries.put(use.id(), query(use));
+        } else {
+          otherToolCalls++;
+        }
+      } else if (block.isWebSearchToolResult()) {
+        WebSearchToolResultBlock result = block.asWebSearchToolResult();
+        if (queries.containsKey(result.toolUseId())) {
+          results.put(result.toolUseId(), search(queries.get(result.toolUseId()), result));
+        }
+      }
+    }
+    List<SearchTrace.Search> searches = new ArrayList<>();
+    queries.forEach((id, query) ->
+        searches.add(results.getOrDefault(id, new SearchTrace.Search(query, List.of(), null))));
+    return new SearchTrace(searches, otherToolCalls);
+  }
+
+  private static String query(ServerToolUseBlock use) {
+    try {
+      Object query = use._input().convert(Map.class).get("query");
+      return query == null ? "" : query.toString();
+    } catch (RuntimeException e) {
+      return "";
+    }
+  }
+
+  private static SearchTrace.Search search(String text, WebSearchToolResultBlock result) {
+    if (result.content().isError()) {
+      return new SearchTrace.Search(
+          text, List.of(), result.content().asError().errorCode().toString());
+    }
+    List<SearchTrace.Hit> hits =
+        result.content().asResultBlocks().stream()
+            .map(hit -> new SearchTrace.Hit(hit.title(), hit.url(), hit.pageAge().orElse(null)))
+            .toList();
+    return new SearchTrace.Search(text, hits, null);
   }
 
   /**

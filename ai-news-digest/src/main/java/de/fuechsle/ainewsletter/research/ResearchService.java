@@ -12,6 +12,7 @@ import de.fuechsle.ainewsletter.provider.ModelCalls;
 import de.fuechsle.ainewsletter.provider.ModelInvocation;
 import de.fuechsle.ainewsletter.provider.ModelSnapshot;
 import de.fuechsle.ainewsletter.provider.NewsProviderRegistry;
+import de.fuechsle.ainewsletter.provider.SearchTrace;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
@@ -129,7 +130,8 @@ public class ResearchService {
         calls.webSearches(),
         calls.cost(),
         calls.duration(),
-        error);
+        error,
+        calls.searchTrace());
   }
 
   /** The model is not suitable for research; no call was made. */
@@ -143,6 +145,7 @@ public class ResearchService {
         0,
         BigDecimal.ZERO.setScale(CostCalculator.SCALE),
         Duration.ZERO,
-        message);
+        message,
+        SearchTrace.EMPTY);
   }
 }

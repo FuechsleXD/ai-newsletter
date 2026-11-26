@@ -60,7 +60,7 @@ public record NewsDigestProperties(
        */
       @Min(1) @DefaultValue("16000") int defaultMaxOutputTokens,
       /** Upper limit of web searches per research call (cost guard). */
-      @Min(1) @DefaultValue("10") int maxWebSearchesPerCall,
+      @Min(1) @DefaultValue("15") int maxWebSearchesPerCall,
       @Min(1) @DefaultValue("2") int maxConcurrentCallsPerProvider,
       @Min(1) @DefaultValue("10") int maxItemsPerModel,
       @Min(0) @DefaultValue("1") int jsonRepairAttempts,
@@ -69,7 +69,7 @@ public record NewsDigestProperties(
 
   /** Active prompt version per prompt (src/main/resources/prompts/<name>/<version>.txt). */
   public record Prompts(
-      @NotBlank @DefaultValue("v6") String research,
+      @NotBlank @DefaultValue("v7") String research,
       @NotBlank @DefaultValue("v4") String aggregate,
       @NotBlank @DefaultValue("v2") String repairJson) {}
 

@@ -20,7 +20,7 @@ Hosting ohne Load Balancer, Details in `11-deployment-cicd.md`.
 | `web` | Controller, Request/Response-Records, Mapper, `GlobalExceptionHandler` |
 | `security` | Security-Konfiguration, Entry Point, Access-Denied-Handler |
 | `service` | Fachlogik, fachliche Exceptions |
-| `provider` | `NewsProvider`, Implementierungen je Anbieter, Registry, `ModelSnapshot` (Modell und Preise für einen Aufruf), `ModelCalls` (Token und Kosten über Aufruf und Reparaturversuche), `JsonModelCall` (Aufruf mit JSON-Vertrag und Reparaturversuch), Parallelitätsbegrenzung |
+| `provider` | `NewsProvider`, Implementierungen je Anbieter, Registry, `ModelSnapshot` (Modell und Preise für einen Aufruf), `SearchTrace` (Suchbegriffe und Treffer eines Aufrufs zur Diagnose; bei Anthropic aus der vollständigen Antwort in den Spring-AI-Metadaten), `ModelCalls` (Token und Kosten über Aufruf und Reparaturversuche), `JsonModelCall` (Aufruf mit JSON-Vertrag und Reparaturversuch), Parallelitätsbegrenzung |
 | `aggregate` | Aggregator-Aufruf, `DigestAggregate`, Parsing und Validierung der Aggregator-Antwort, Icon-Schlüssel, Speichern des Ergebnisses |
 | `research` | Parsing der Recherche-Antworten, URL-Normalisierung, Prüfung der Meldungen (Zeitraum, URL, Duplikate) |
 | `cost` | Kostenberechnung, Budgetprüfung |
@@ -34,7 +34,7 @@ Hosting ohne Load Balancer, Details in `11-deployment-cicd.md`.
 | `domain` | JPA-Entities |
 | `migration` | Flyway-Java-Migrationen (offizielle CIB-seven-Skripte im Schema `bpm`, siehe `03-datenmodell.md`) |
 | `prompt` | Laden der versionierten Prompt-Templates, `PromptRenderer` |
-| `eval` | Prompt-Eval im Profil `eval`: Topics durch den normalen Prozess laufen lassen und Ergebnisse nach `data/eval/` exportieren |
+| `eval` | Prompt-Eval im Profil `eval`: Topics durch den normalen Prozess laufen lassen und Ergebnisse nach `data/eval/` exportieren, mit Bericht der Websuchen je Modell (`SearchTraceReport`) |
 | `secret` | `SecretProvider`: `EnvironmentSecretProvider` (Default) oder `AwsSecretsManagerSecretProvider` mit Cache (Profil `prod`); die AWS-Clients legt `config.AwsClientConfig` nur bei Bedarf an (ADR-015) |
 
 ## Schichten

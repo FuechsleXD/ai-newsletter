@@ -62,6 +62,7 @@ Für den Vergleich von Prompt-Versionen. Läuft durch den normalen Prozess (Kost
 | `summary.md` | Status, Zeitraum, Kosten und Meldungen je Modell |
 | `run.json` | Alles strukturiert: Token, Websuchen, Kosten, Fehler, Meldungen mit Prüfstatus, Zustellstatus (ohne Mailadressen) |
 | `research-<modell>.txt` | Rohantwort jedes Recherche-Modells |
+| `searches-<modell>.md` | Jede Websuche des Modells mit ihren Treffern (Titel, URL, Alter); Treffer, die als Meldung übernommen wurden, sind mit ✅ markiert; dazu die häufigsten Domains. Andere Tool-Aufrufe ohne Suchbegriff (Code-Ausführung, mit der das Suchwerkzeug filtert) werden nur gezählt. Zeigt, wo Meldungen zwischen Suche und Antwort verloren gehen |
 | `aggregate.json`, `mail.html`, `digest.pdf` | Ergebnis des Aggregators und daraus erzeugte Mail und PDF |
 
 1. Topic-Namen eintragen, am besten in einer nicht eingecheckten `application-local.yml` oder als Umgebungsvariable:

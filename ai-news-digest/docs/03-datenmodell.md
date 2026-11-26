@@ -25,7 +25,7 @@
 |---|---|---|
 | `topic_state` | topic_id, last_successful_run_at | PK = FK `topic`; 1:1 |
 | `digest_run` | id, topic_id, aggregator_model_id, process_instance_id NULL, prompt_version, period_from, period_to, status, started_at, finished_at NULL, error_message NULL, aggregate_json jsonb NULL, pdf_s3_key NULL | Status: `RUNNING`, `COMPLETED`, `NO_NEWS`, `FAILED`, `SKIPPED_BUDGET`, `CANCELLED`; Bedeutung siehe `04-prozess-bpmn.md`; Teilindex UNIQUE (topic_id) WHERE status = 'RUNNING' |
-| `provider_result` | id, digest_run_id, model_id, status, raw_response NULL, duration_ms, input_tokens NULL, output_tokens NULL, search_calls NULL, cost_usd NULL, error_message NULL | UNIQUE (digest_run_id, model_id); Status `SUCCEEDED`/`FAILED` |
+| `provider_result` | id, digest_run_id, model_id, status, raw_response NULL, duration_ms, input_tokens NULL, output_tokens NULL, search_calls NULL, cost_usd NULL, error_message NULL, search_trace jsonb NULL | UNIQUE (digest_run_id, model_id); Status `SUCCEEDED`/`FAILED`; `search_trace`: Suchbegriffe und zurückgelieferte Seiten der Recherche zur Diagnose (V6), NULL ohne Suche |
 | `news_item` | id, provider_result_id, headline, summary, url, normalized_url, published_at NULL, status | Status: `VALID`, `OUT_OF_PERIOD`, `DUPLICATE_PREVIOUS`, `DUPLICATE_RUN`, `UNREACHABLE`; Index auf `normalized_url` |
 | `aggregation_result` | digest_run_id, model_id, input_tokens, output_tokens, cost_usd, duration_ms | PK = FK `digest_run`; Kosten des Aggregator-Aufrufs |
 | `mail_delivery` | id, digest_run_id, recipient_id, status, sent_at NULL, error_message NULL | UNIQUE (digest_run_id, recipient_id); Status `PENDING`, `SENT`, `FAILED` |

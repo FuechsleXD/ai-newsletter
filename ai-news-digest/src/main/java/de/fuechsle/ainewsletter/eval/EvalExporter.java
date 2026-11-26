@@ -1,5 +1,6 @@
 package de.fuechsle.ainewsletter.eval;
 
+import de.fuechsle.ainewsletter.provider.SearchTrace;
 import de.fuechsle.ainewsletter.render.DigestRenderer;
 import de.fuechsle.ainewsletter.render.RenderDigestService;
 import de.fuechsle.ainewsletter.storage.DigestStorage;
@@ -79,12 +80,19 @@ public class EvalExporter {
     report.put("aggregation", aggregation);
     report.put("mailDeliveries", deliveries);
 
-    // Raw answers go to their own files, not into run.json
+    // Raw answers and searches go to their own files, not into run.json
     Map<String, String> rawAnswers = new LinkedHashMap<>();
     for (Map<String, Object> result : results) {
+      String model = (String) result.get("model");
       Object raw = result.remove("rawResponse");
       if (raw != null) {
-        rawAnswers.put("research-" + slug((String) result.get("model")) + ".txt", (String) raw);
+        rawAnswers.put("research-" + slug(model) + ".txt", (String) raw);
+      }
+      SearchTrace trace = (SearchTrace) result.remove("searchTrace");
+      if (!trace.isEmpty()) {
+        rawAnswers.put(
+            "searches-" + slug(model) + ".md",
+            SearchTraceReport.markdown(model, trace, itemUrls(result)));
       }
     }
 
@@ -120,7 +128,8 @@ public class EvalExporter {
     for (Map<String, Object> row :
         jdbc.queryForList(
             "SELECT p.id, m.display_name, m.model_name, p.status, p.input_tokens, p.output_tokens,"
-                + " p.search_calls, p.cost_usd, p.duration_ms, p.error_message, p.raw_response"
+                + " p.search_calls, p.cost_usd, p.duration_ms, p.error_message, p.raw_response,"
+                + " p.search_trace::text AS search_trace"
                 + " FROM provider_result p JOIN ai_model m ON m.id = p.model_id"
                 + " WHERE p.digest_run_id = ? ORDER BY m.display_name",
             runId)) {
@@ -141,6 +150,11 @@ public class EvalExporter {
                   + " WHERE provider_result_id = ? ORDER BY id",
               row.get("id")));
       result.put("rawResponse", row.get("raw_response"));
+      SearchTrace trace = SearchTrace.fromJson((String) row.get("search_trace"));
+      result.put("searchQueries", trace.searches().size());
+      result.put("searchHits", trace.hitCount());
+      result.put("otherToolCalls", trace.otherToolCalls());
+      result.put("searchTrace", trace);
       results.add(result);
     }
     return results;
@@ -216,7 +230,26 @@ public class EvalExporter {
           .append(aggregation.get("costUsd"))
           .append(" | – |");
     }
+    for (Map<String, Object> result : results) {
+      if (((Number) result.get("searchQueries")).intValue() > 0) {
+        text.append("\n- Suchen ")
+            .append(result.get("model"))
+            .append(": ")
+            .append(result.get("searchQueries"))
+            .append(" Suchbegriffe, ")
+            .append(result.get("searchHits"))
+            .append(" Treffer (searches-")
+            .append(slug((String) result.get("model")))
+            .append(".md)");
+      }
+    }
     return text.append('\n').toString();
+  }
+
+  @SuppressWarnings("unchecked")
+  private static List<String> itemUrls(Map<String, Object> result) {
+    return ((List<Map<String, Object>>) result.get("items"))
+        .stream().map(item -> (String) item.get("url")).toList();
   }
 
   /** E.g. {@code 4 (VALID 3, OUT_OF_PERIOD 1)}. */

@@ -75,6 +75,13 @@ public final class ModelCalls {
     return responses.stream().mapToLong(ModelResponse::webSearches).sum();
   }
 
+  /** Searches of all calls, in call order (repair calls do not search). */
+  public SearchTrace searchTrace() {
+    return responses.stream()
+        .map(ModelResponse::searchTrace)
+        .reduce(SearchTrace.EMPTY, SearchTrace::plus);
+  }
+
   public Duration duration() {
     return responses.stream().map(ModelResponse::duration).reduce(Duration.ZERO, Duration::plus);
   }

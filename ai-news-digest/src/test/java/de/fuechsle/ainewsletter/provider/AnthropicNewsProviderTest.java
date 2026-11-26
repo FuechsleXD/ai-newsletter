@@ -109,6 +109,13 @@ class AnthropicNewsProviderTest {
     assertThat(response.webSearches()).isEqualTo(2);
     assertThat(response.stopReason()).isEqualToIgnoringCase("end_turn");
     assertThat(response.refused()).isFalse();
+    // Query and hits come from the complete answer in the metadata
+    assertThat(response.searchTrace().searches())
+        .containsExactly(
+            new SearchTrace.Search(
+                "Java Release November 2026",
+                List.of(new SearchTrace.Hit("A", "https://news.example.test/a", null)),
+                null));
     assertThat(response.duration().isNegative()).isFalse();
   }
 
@@ -174,6 +181,60 @@ class AnthropicNewsProviderTest {
     assertThat(response.usageEstimated()).isFalse();
     assertThat(response.inputTokens()).isEqualTo(900);
     assertThat(response.webSearches()).isEqualTo(5);
+  }
+
+  @Test
+  void searchErrorsAndSearchesWithoutResultAreTraced() {
+    answer =
+        """
+        {"id": "msg_5", "type": "message", "role": "assistant", "model": "test-model-1",
+         "content": [
+           {"type": "server_tool_use", "id": "srvtoolu_1", "name": "web_search",
+            "input": {"query": "Spring AI November 2026"}},
+           {"type": "web_search_tool_result", "tool_use_id": "srvtoolu_1",
+            "content": [{"type": "web_search_result", "url": "https://spring.example.test/b",
+                         "title": "B", "encrypted_content": "x", "page_age": "2 days ago"}]},
+           {"type": "server_tool_use", "id": "srvtoolu_2", "name": "web_search",
+            "input": {"query": "Copilot November 2026"}},
+           {"type": "web_search_tool_result", "tool_use_id": "srvtoolu_2",
+            "content": {"type": "web_search_tool_result_error", "error_code": "max_uses_exceeded"}},
+           {"type": "server_tool_use", "id": "srvtoolu_3", "name": "web_search",
+            "input": {"query": "ohne Ergebnis"}},
+           {"type": "server_tool_use", "id": "srvtoolu_4", "name": "code_execution",
+            "input": {"code": "print(1)"}},
+           {"type": "text", "text": "{\\"items\\": []}"}
+         ],
+         "stop_reason": "end_turn", "stop_sequence": null,
+         "usage": {"input_tokens": 100, "output_tokens": 10,
+                   "server_tool_use": {"web_search_requests": 3}}}
+        """;
+
+    SearchTrace trace = provider().call(invocation(null, true)).searchTrace();
+
+    assertThat(trace.searches())
+        .containsExactly(
+            new SearchTrace.Search(
+                "Spring AI November 2026",
+                List.of(new SearchTrace.Hit("B", "https://spring.example.test/b", "2 days ago")),
+                null),
+            new SearchTrace.Search("Copilot November 2026", List.of(), "max_uses_exceeded"),
+            new SearchTrace.Search("ohne Ergebnis", List.of(), null));
+    assertThat(trace.hitCount()).isEqualTo(1);
+    // The code execution of the search tool is no search, it is only counted
+    assertThat(trace.otherToolCalls()).isEqualTo(1);
+  }
+
+  @Test
+  void callWithoutSearchHasAnEmptyTrace() {
+    answer =
+        """
+        {"id": "msg_6", "type": "message", "role": "assistant", "model": "test-model-1",
+         "content": [{"type": "text", "text": "{}"}],
+         "stop_reason": "end_turn", "stop_sequence": null,
+         "usage": {"input_tokens": 10, "output_tokens": 2}}
+        """;
+
+    assertThat(provider().call(invocation(null, false)).searchTrace().isEmpty()).isTrue();
   }
 
   @Test

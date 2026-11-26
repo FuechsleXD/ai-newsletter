@@ -35,7 +35,7 @@ class PromptTemplatesTest {
     assertThat(PromptRenderer.placeholders(templates.repairJson().text()))
         .containsExactlyInAnyOrder("parseError", "expectedFormat", "previousResponse");
 
-    assertThat(templates.research().version()).isEqualTo("v6");
+    assertThat(templates.research().version()).isEqualTo("v7");
     assertThat(templates.research().name()).isEqualTo("research");
   }
 
@@ -46,6 +46,7 @@ class PromptTemplatesTest {
     "research, v4",
     "research, v5",
     "research, v6",
+    "research, v7",
     "aggregate, v2",
     "aggregate, v3",
     "aggregate, v4",
