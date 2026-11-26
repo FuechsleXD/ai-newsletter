@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Deploys a release on the server (run as root, via SSM; docs/betrieb/aws-bootstrap.md).
 #   deploy.sh <image-tag>     e.g. deploy.sh 4a7a43e
-# 1. Fetches the deploy files of the release from S3 (upload-deploy-files.sh)
+# 1. Fetches the deploy files of the release from S3 (upload-deploy-files.sh): releases/<tag>/,
+#    otherwise current/
 # 2. Reads the start secrets from AWS Secrets Manager into an env file in /run (memory only,
 #    never on disk) and starts docker-compose.prod.yml with the AWS override
 # 3. Installs the backup timer
@@ -23,9 +24,15 @@ secret() {
     --query SecretString --output text
 }
 
-echo "Fetching deploy files from s3://$DEPLOY_BUCKET/current/"
+# The deploy files of exactly this release if they exist (cd.yml, rollback), otherwise the
+# latest ones (releases deployed by hand before roadmap step 12)
+files="s3://$DEPLOY_BUCKET/releases/$tag/"
+if ! aws s3 ls "${files}infra/server/deploy.sh" >/dev/null 2>&1; then
+  files="s3://$DEPLOY_BUCKET/current/"
+fi
+echo "Fetching deploy files from $files"
 mkdir -p "$app_dir"
-aws s3 sync "s3://$DEPLOY_BUCKET/current/" "$app_dir/" --delete --only-show-errors
+aws s3 sync "$files" "$app_dir/" --delete --only-show-errors
 chmod 0755 "$app_dir"/infra/server/*.sh
 
 echo "Reading start secrets"

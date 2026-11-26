@@ -69,6 +69,8 @@ Stand nach Roadmap-Schritt 2: Job `backend` (Punkt 1 und 5, Formatierung über S
 4. Smoke-Test über HTTPS (öffentlicher Health-Check von Caddy bzw. Startseite) und intern per SSM gegen Actuator
 5. Bei Fehlschlag Rollback auf die vorherigen Image-Tags
 
+Stand nach Roadmap-Schritt 12: `cd.yml` startet nach grüner CI eines Pushes auf `main` (`workflow_run`) oder von Hand (`workflow_dispatch`, optional mit einem Image-Tag aus ECR für Redeploy und Rollback). Ein einziger Job in der Umgebung `prod` (Freigabe vor jedem Schritt mit AWS-Zugriff) auf einem nativen arm64-Runner: laufendes Tag per SSM vom Server lesen (gestoppte Instanz: Abbruch, kein automatischer Start), Image als kurzer Commit-SHA bauen und pushen (vorhandene Tags werden nicht neu gebaut, ECR-Tags sind unveränderlich), Deploy-Dateien nach `current/` und `releases/<tag>/`, `deploy.sh` per SSM, Smoke-Test über HTTPS (`infra/cd/smoke-test-prod.sh`), bei Fehlschlag Rollback auf das vorher laufende Tag mit dessen Deploy-Dateien. Die interne Prüfung gegen Actuator übernimmt `docker compose up --wait` über den Health-Check des App-Containers. Einstellungen als Repository-Variablen, Bedienung im Runbook `docs/betrieb/deployment.md`.
+
 ### Regeln
 - AWS-Anmeldung nur per OIDC (IAM-Rolle mit minimalen Rechten), keine AWS-Keys in GitHub
 - App-Secrets im AWS Secrets Manager

@@ -80,7 +80,7 @@ Die übrigen Werte in der AWS-Konsole (Secrets Manager → Secret → Retrieve s
   - Variables `AWS_PLAN_ROLE_ARN`, `AWS_APPLY_ROLE_ARN`, `AWS_CD_ROLE_ARN` aus `terraform output github_role_arns`
 - Ab dann läuft bei Pull Requests unter `infra/` ein `plan`; `apply` über Actions → Infra → Run workflow mit "apply"
 
-## 8. Erstes Deployment (von Hand, bis `cd.yml` in Schritt 12)
+## 8. Erstes Deployment (von Hand; seit Schritt 12 über `cd.yml`, siehe `deployment.md`, dieser Weg bleibt als Rückfallebene)
 In **Git Bash** im Ordner `ai-news-digest` (die Skripte sind Bash, die Anführungszeichen für SSM sind dort einfacher als in Windows PowerShell). Werte aus Terraform holen:
 
 ```bash
