@@ -36,7 +36,7 @@ Die Umgebung `prod` mit "Required reviewers" gibt es seit Schritt 11c. Nur Jobs 
 |---|---|
 | `Repository variable for ... is missing` | Variable aus der Tabelle oben anlegen |
 | `not reachable via SSM. Is it stopped?` | Instanz starten (`aws ec2 start-instances --instance-ids <id>`), etwa 2 Minuten warten, Lauf neu starten |
-| `Could not assume role` | Lauf nicht in der Umgebung `prod` oder Repository-Name in `prod.tfvars` falsch |
+| `Could not assume role` | Lauf nicht in der Umgebung `prod`, oder der OIDC-Subject passt nicht zur Trust Policy: CloudTrail → Event `AssumeRoleWithWebIdentity` zeigt den gesendeten Subject (GitHub schreibt die IDs von Besitzer und Repo hinein, `repo:<owner>@<id>/<name>@<id>:...`); `github_repository` und `github_repository_ids` in `prod.tfvars` prüfen und lokal applyen (die Apply-Rolle in GitHub ist dann ebenfalls betroffen) |
 | `... is not in ECR` | Beim Rollback von Hand ein Tag gewählt, das es nicht gibt; Tag prüfen |
 | `deploy.sh` schlägt fehl, Rollback grün | Logs des fehlgeschlagenen Containers in CloudWatch (`/newsdigest/prod`); häufig ein Secret im falschen Format (`aws-bootstrap.md` §5) |
 | Rollback auch rot | Von Hand nach `aws-bootstrap.md` §8 prüfen und ausrollen |

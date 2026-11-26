@@ -9,11 +9,21 @@ resource "aws_iam_openid_connect_provider" "github" {
 }
 
 locals {
-  github_sub_prefix = "repo:${var.github_repository}"
+  # Subject with immutable IDs (current GitHub format) and, as before, without them
+  github_repository_parts = split("/", var.github_repository)
+  github_sub_prefixes = compact([
+    "repo:${var.github_repository}",
+    var.github_repository_ids == null ? "" : format(
+      "repo:%s@%d/%s@%d",
+      local.github_repository_parts[0], var.github_repository_ids.owner_id,
+      local.github_repository_parts[1], var.github_repository_ids.repository_id,
+    ),
+  ])
   github_subjects = {
-    plan  = ["${local.github_sub_prefix}:pull_request", "${local.github_sub_prefix}:ref:refs/heads/main"]
-    apply = ["${local.github_sub_prefix}:environment:prod"]
-    cd    = ["${local.github_sub_prefix}:environment:prod"]
+    plan = flatten([for prefix in local.github_sub_prefixes :
+    ["${prefix}:pull_request", "${prefix}:ref:refs/heads/main"]])
+    apply = [for prefix in local.github_sub_prefixes : "${prefix}:environment:prod"]
+    cd    = [for prefix in local.github_sub_prefixes : "${prefix}:environment:prod"]
   }
 }
 
