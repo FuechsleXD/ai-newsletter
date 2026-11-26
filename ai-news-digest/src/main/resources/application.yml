@@ -2,6 +2,13 @@ spring:
   application:
     name: ai-news-digest
 
+  # Fixed texts of the digest per output language (render.DigestLanguage, ADR-017); without a file
+  # for the language the English base file is used, never the locale of the server
+  messages:
+    basename: messages/digest
+    encoding: UTF-8
+    fallback-to-system-locale: false
+
   # SMTP: locally Mailpit (docker-compose.yml), in AWS SES with credentials from the environment
   mail:
     host: ${SPRING_MAIL_HOST:localhost}

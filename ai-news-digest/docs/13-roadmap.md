@@ -18,6 +18,7 @@ Leitidee: erst ein schmaler Durchstich von Anfang bis Ende, dann früh deployen,
 - [x] 9. Manueller Start per Dev-Endpunkt (nur Profil `dev`) oder Testlauf; erstes echtes Ergebnis ansehen und Prompts nachschärfen (Eval-Profil)
   - [x] 9a. Werkzeug: Kosten bei Antworten ohne Inhalt geschätzt, `pause_turn` abgefangen (offener Punkt 6, ADR-014), Dev-Endpunkt, Eval-Profil mit Export, Vorlagen und Runbook `betrieb/lokaler-testlauf.md`
   - [x] 9b. Erster echter Lauf (durch mich), Auswertung, Prompts als `v2` nachschärfen, anonymisierte echte Antworten als Fixtures
+  - [x] 9c. Prompts und Ausgabe auf Englisch (ADR-017): Recherche `v4`, Aggregation `v3`, Reparatur `v2`; PDF und Mail in der Ausgabesprache (Default `en`); nach Lauf 5 Recherche `v5` und Aggregation `v4` für bessere Quellen (Lauf 6: nur Primärquellen, aber 3 Meldungen, 1,49 USD mit Sonnet und Opus), dann Recherche `v6` (Lauf 7: Primärquellen, 0,59 USD, aber weiter nur 3 Meldungen); offen: Diagnose der Suchen im Eval-Export, danach mehr Abdeckung
     - Vier Läufe mit Claude Sonnet 5.5 (Topic "KI-News", 17.–24.11.2026), Vergleich in `src/main/resources/prompts/README.md`: Recherche `v1` 0 Meldungen, `v2` 3 gültige nur von Trackern, `v3` mit 5 Suchen 1, `v3` mit 10 Suchen 4 gültige aus echten Artikeln (0,41 USD)
     - Neue Defaults: Recherche `v3`, Aggregation `v2`, 10 Websuchen pro Aufruf
     - Gefunden und behoben: Der Eval-Runner blockierte den Start des Job Executors; Eval-Export nach `data/eval` (überlebt `mvn clean`); Startmeldung mit Prozessinstanz im Log

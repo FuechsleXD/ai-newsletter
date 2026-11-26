@@ -115,7 +115,7 @@ public class ResearchService {
         "periodTo", DateTimeFormatter.ISO_LOCAL_DATE.format(request.periodTo()),
         "timezone", request.timezone().getId(),
         "maxItems", Integer.toString(ai.maxItemsPerModel()),
-        "language", language.getDisplayLanguage(Locale.GERMAN));
+        "language", language.getDisplayLanguage(Locale.ENGLISH));
   }
 
   private static ResearchResult result(

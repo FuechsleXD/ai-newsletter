@@ -73,7 +73,7 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 ## Ausgabe
 | Einstellung | Default |
 |---|---|
-| Sprache | Deutsch |
+| Sprache | Englisch (`newsdigest.output.language=en`; `de` möglich, feste Texte aus `messages/digest*.properties`, ADR-017) |
 | Themen-Karten | 4–6, je 2–3 Sätze (`newsdigest.output.min-topic-cards`, `.max-topic-cards`); weniger sind erlaubt, wenn die Meldungen nicht für mehr Themen reichen |
 | Längengrenzen | Überschriften 60 Zeichen, Texte 320 Zeichen (`newsdigest.output.max-heading-chars`, `.max-text-chars`); stehen im Prompt, gekürzt wird vor dem Rendern |
 | Icon-Schlüssel | feste Liste in `src/main/resources/pdf/icon-keys.txt`, unbekannte werden `default` |
@@ -83,7 +83,7 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 | Absender, Betreiber-Empfänger | nur über Umgebungsvariablen (`NEWSDIGEST_MAIL_FROM`, `NEWSDIGEST_MAIL_OPERATOR`); ohne sie startet die App nicht |
 | SMTP | `SPRING_MAIL_HOST`/`SPRING_MAIL_PORT`, Default `localhost:1025` (Mailpit); der Mail-Health-Check ist aus, damit ein SMTP-Ausfall die App nicht als down meldet |
 | Eval (Profil `eval`) | Topics `newsdigest.eval.topics` (leer), Wartezeit je Lauf 15 min, Ausgabe `data/eval` |
-| Aktive Prompt-Version | Recherche `v3`, Aggregation `v2`, JSON-Reparatur `v1` (`newsdigest.prompts.research`, `.aggregate`, `.repair-json`); Begründung in `src/main/resources/prompts/README.md` |
+| Aktive Prompt-Version | Recherche `v6`, Aggregation `v4`, JSON-Reparatur `v2` (englisch, ADR-017) (`newsdigest.prompts.research`, `.aggregate`, `.repair-json`); Begründung in `src/main/resources/prompts/README.md` |
 
 ## Aufbewahrung
 | Daten | Frist |

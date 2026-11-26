@@ -128,7 +128,8 @@ public class AggregationService {
 
   /**
    * The news items as JSON for the data block of the prompt. Angle brackets are escaped (still
-   * valid JSON), so text from a research model cannot close the {@code <MELDUNGEN>} block.
+   * valid JSON), so text from a research model cannot close the data block ({@code <NEWS>}, in
+   * older versions {@code <MELDUNGEN>}).
    */
   String newsItemsJson(List<AggregationItem> items) {
     return objectMapper.writeValueAsString(items).replace("<", "\\u003c").replace(">", "\\u003e");
@@ -144,7 +145,7 @@ public class AggregationService {
         Map.entry("topicDescription", description),
         Map.entry("periodFrom", DateTimeFormatter.ISO_LOCAL_DATE.format(request.periodFrom())),
         Map.entry("periodTo", DateTimeFormatter.ISO_LOCAL_DATE.format(request.periodTo())),
-        Map.entry("language", output.language().getDisplayLanguage(Locale.GERMAN)),
+        Map.entry("language", output.language().getDisplayLanguage(Locale.ENGLISH)),
         Map.entry("previousHeadlines", NO_PREVIOUS_HEADLINES),
         Map.entry("allowedIconKeys", String.join(", ", iconKeys.keys())),
         Map.entry("newsItemsJson", newsItemsJson(request.items())),

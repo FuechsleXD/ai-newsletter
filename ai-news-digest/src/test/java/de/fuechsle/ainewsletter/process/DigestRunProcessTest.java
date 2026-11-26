@@ -14,7 +14,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.pdfbox.Loader;
@@ -53,7 +55,7 @@ class DigestRunProcessTest extends ProcessTestSupport {
     LocalDate today = LocalDate.now(ZoneId.of("Europe/Berlin"));
     assertThat(run.get("period_to").toString()).isEqualTo(today.toString());
     assertThat(run.get("period_from").toString()).isEqualTo(today.minusDays(7).toString());
-    assertThat(run.get("prompt_version")).isEqualTo("v3");
+    assertThat(run.get("prompt_version")).isEqualTo("v6");
     assertThat(run.get("finished_at")).isNotNull();
 
     Map<String, Object> result =
@@ -96,10 +98,12 @@ class DigestRunProcessTest extends ProcessTestSupport {
             "[News Digest] Happy "
                 + suffix
                 + " – "
-                + today.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")));
+                + today.format(
+                    DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+                        .withLocale(Locale.ENGLISH)));
     assertThat(mail.from()).isEqualTo(MAIL_FROM);
-    assertThat(mail.html()).contains("Fake-Digest", "Kurzfazit");
-    assertThat(mail.text()).contains("KURZFAZIT", "Fake-Digest");
+    assertThat(mail.html()).contains("Fake-Digest", "Summary");
+    assertThat(mail.text()).contains("SUMMARY", "Fake-Digest");
     assertThat(mail.attachments()).hasSize(1);
     Mailpit.Attachment attachment = mail.attachments().getFirst();
     assertThat(attachment.fileName()).isEqualTo("news-digest.pdf");

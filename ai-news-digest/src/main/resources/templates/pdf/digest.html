@@ -4,7 +4,7 @@
   (docs/09-pdf-design.md). Rendered by Gotenberg (Chromium). No external resources: everything the
   page needs is in this file. All texts come from an LLM and are escaped by th:text.
 -->
-<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" th:lang="${lang}" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
   <title th:text="${digest.title}">Titel</title>
@@ -50,11 +50,11 @@
 
   <div class="row">
     <div class="card">
-      <h2>Kurzfazit</h2>
+      <h2 th:text="#{digest.summary}">Summary</h2>
       <p th:text="${digest.summary}">Kurzfazit</p>
     </div>
     <div class="card">
-      <h2>Kernpunkte</h2>
+      <h2 th:text="#{digest.keyPoints}">Key points</h2>
       <ul>
         <li th:each="point : ${digest.keyPoints}" th:text="${point.text}">Kernpunkt</li>
       </ul>
@@ -70,30 +70,30 @@
       </p>
       <p class="flow" th:if="${!section.flowSteps.isEmpty()}" th:text="${#strings.listJoin(section.flowSteps, ' → ')}">Ablauf</p>
       <p class="meta">
-        Quellen: <span th:each="source, it : ${section.sourceNumbers}" th:text="${'[' + source + ']' + (it.last ? '' : ' ')}">[1]</span>
-        · Modelle: <span th:text="${#strings.listJoin(section.models, ', ')}">Modell</span>
-        <span class="unconfirmed" th:if="${section.unconfirmed}">· unbestätigt</span>
+        <span th:text="#{digest.sources}">Sources</span>: <span th:each="source, it : ${section.sourceNumbers}" th:text="${'[' + source + ']' + (it.last ? '' : ' ')}">[1]</span>
+        · <span th:text="#{digest.models}">Models</span>: <span th:text="${#strings.listJoin(section.models, ', ')}">Modell</span>
+        <span class="unconfirmed" th:if="${section.unconfirmed}" th:text="${'· ' + #messages.msg('digest.unconfirmed')}">· unconfirmed</span>
       </p>
     </div>
   </div>
 
   <div class="closing">
     <div>
-      <h2>Key Takeaways</h2>
+      <h2 th:text="#{digest.takeaways}">Key takeaways</h2>
       <ul>
         <li th:each="takeaway : ${digest.takeaways}" th:text="${takeaway}">Takeaway</li>
       </ul>
     </div>
     <div th:if="${!#strings.isEmpty(digest.watchOut)}">
-      <h2>Worauf achten</h2>
+      <h2 th:text="#{digest.watchOut}">What to watch</h2>
       <p th:text="${digest.watchOut}">Ausblick</p>
     </div>
   </div>
 
   <div class="footer">
     <p>
-      Erstellt am <span th:text="${digest.createdOn}">Datum</span> · Zeitraum <span th:text="${digest.period}">Zeitraum</span>
-      · <span th:text="${digest.modelCount}">2</span> Modelle · <span th:text="${digest.sources.size()}">5</span> Quellen
+      <span th:text="#{digest.createdOn(${digest.createdOn})}">Created on</span> · <span th:text="#{digest.period(${digest.period})}">Period</span>
+      · <span th:text="#{digest.modelCount(${digest.modelCount})}">2 models</span> · <span th:text="#{digest.sourceCount(${digest.sources.size()})}">5 sources</span>
     </p>
     <p>
       <span th:each="source : ${digest.sources}">[<span th:text="${source.number}">1</span>] <a th:href="${source.url}" th:text="${source.domain}">domain</a> </span>

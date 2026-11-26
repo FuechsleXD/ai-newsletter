@@ -79,11 +79,11 @@ class ResearchServiceTest {
     assertThat(invocation.maxWebSearches()).isEqualTo(10);
     assertThat(invocation.timeout()).isEqualTo(Duration.ofSeconds(120));
     assertThat(invocation.prompt())
-        .contains("THEMA: Java")
-        .contains("SCHWERPUNKT: Releases und JEPs")
-        .contains("ZEITRAUM: 2026-11-16 bis 2026-11-22 (Zeitzone Europe/Berlin)")
-        .contains("höchstens 10 Meldungen")
-        .contains("auf Deutsch")
+        .contains("TOPIC: Java")
+        .contains("FOCUS: Releases und JEPs")
+        .contains("PERIOD: 2026-11-16 to 2026-11-22 (time zone Europe/Berlin)")
+        .contains("5 to 10 items")
+        .contains("at most 60 words in English")
         .doesNotContain("{{");
   }
 
@@ -104,7 +104,7 @@ class ResearchServiceTest {
     ModelInvocation invocation = provider.invocations().getFirst();
     assertThat(invocation.maxOutputTokens()).isEqualTo(16_000);
     assertThat(invocation.temperature()).isNull();
-    assertThat(invocation.prompt()).contains("SCHWERPUNKT: keiner");
+    assertThat(invocation.prompt()).contains("FOCUS: keiner");
   }
 
   @Test
@@ -121,8 +121,8 @@ class ResearchServiceTest {
     assertThat(repair.webSearch()).isFalse();
     assertThat(repair.modelName()).isEqualTo("test-model-1");
     assertThat(repair.prompt())
-        .contains("FEHLER: Invalid JSON")
-        .contains("ERWARTETES FORMAT:\nAUSGABE")
+        .contains("ERROR: Invalid JSON")
+        .contains("EXPECTED FORMAT:\nOUTPUT")
         .contains("Abgeschnittene Antwort");
     // Both calls are costed: (13,000 * 3 + 3,000 * 15) / 1M + 2 * 0.01
     assertThat(result.inputTokens()).isEqualTo(13_000);
@@ -277,7 +277,7 @@ class ResearchServiceTest {
 
   @Test
   void promptVersionIsTheActiveResearchVersion() {
-    assertThat(service().promptVersion()).isEqualTo("v3");
+    assertThat(service().promptVersion()).isEqualTo("v6");
   }
 
   @Test

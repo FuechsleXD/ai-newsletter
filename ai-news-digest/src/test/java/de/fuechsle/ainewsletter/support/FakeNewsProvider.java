@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  *   <li>{@code slow-}: waits until {@link #release()} is called, then two valid items
  * </ul>
  *
- * <p>Aggregation calls (prompt with the {@code <MELDUNGEN>} block): {@code fail-} is a provider
+ * <p>Aggregation calls (prompt with the data block of the aggregation): {@code fail-} is a provider
  * error, {@code garbage-} answers without JSON (also in the repair attempt), every other model
  * answers a valid aggregate with one section per news item ID found in the prompt.
  */
@@ -41,7 +41,12 @@ public class FakeNewsProvider implements NewsProvider {
 
   public static final String CODE = "FAKE";
 
-  private static final String AGGREGATE_MARKER = "<MELDUNGEN>";
+  /**
+   * Data block of the aggregation prompt: {@code <NEWS>} from version v3, before {@code
+   * <MELDUNGEN>}.
+   */
+  private static final List<String> AGGREGATE_MARKERS = List.of("<NEWS>", "<MELDUNGEN>");
+
   private static final Pattern ITEM_ID = Pattern.compile("\"id\":\"(\\d+)\"");
 
   private final Map<String, AtomicInteger> researchCalls = new ConcurrentHashMap<>();
@@ -139,7 +144,7 @@ public class FakeNewsProvider implements NewsProvider {
   }
 
   private static boolean isAggregation(ModelInvocation invocation) {
-    return invocation.prompt().contains(AGGREGATE_MARKER);
+    return AGGREGATE_MARKERS.stream().anyMatch(invocation.prompt()::contains);
   }
 
   private static String item(String headline, String url, String publishedAt) {

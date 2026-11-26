@@ -35,9 +35,9 @@ class NewsDigestPropertiesTest {
       assertThat(p.run().maxManualRunsPerTopicPerHour()).isEqualTo(3);
 
       assertThat(p.ai().callTimeout()).isEqualTo(Duration.ofSeconds(120));
-      assertThat(p.prompts().research()).isEqualTo("v3");
-      assertThat(p.prompts().aggregate()).isEqualTo("v2");
-      assertThat(p.prompts().repairJson()).isEqualTo("v1");
+      assertThat(p.prompts().research()).isEqualTo("v6");
+      assertThat(p.prompts().aggregate()).isEqualTo("v4");
+      assertThat(p.prompts().repairJson()).isEqualTo("v2");
       assertThat(p.providers().anthropic().baseUrl()).isEqualTo("https://api.anthropic.com");
       assertThat(p.ai().maxConcurrentCallsPerProvider()).isEqualTo(2);
       assertThat(p.ai().maxItemsPerModel()).isEqualTo(10);
@@ -63,7 +63,7 @@ class NewsDigestPropertiesTest {
       assertThat(p.render().gotenbergTimeout()).isEqualTo(Duration.ofSeconds(30));
       assertThat(p.render().shortenAttempts()).isEqualTo(1);
 
-      assertThat(p.output().language()).isEqualTo(Locale.GERMAN);
+      assertThat(p.output().language()).isEqualTo(Locale.ENGLISH);
       assertThat(p.output().minTopicCards()).isEqualTo(4);
       assertThat(p.output().maxTopicCards()).isEqualTo(6);
       assertThat(p.output().mailSubjectPattern()).isEqualTo("[News Digest] {topic} – {date}");

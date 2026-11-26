@@ -69,9 +69,9 @@ public record NewsDigestProperties(
 
   /** Active prompt version per prompt (src/main/resources/prompts/<name>/<version>.txt). */
   public record Prompts(
-      @NotBlank @DefaultValue("v3") String research,
-      @NotBlank @DefaultValue("v2") String aggregate,
-      @NotBlank @DefaultValue("v1") String repairJson) {}
+      @NotBlank @DefaultValue("v6") String research,
+      @NotBlank @DefaultValue("v4") String aggregate,
+      @NotBlank @DefaultValue("v2") String repairJson) {}
 
   /** Technical endpoints of the provider APIs (not secrets, not model choices). */
   public record Providers(@Valid @NotNull @DefaultValue Anthropic anthropic) {
@@ -128,7 +128,7 @@ public record NewsDigestProperties(
 
   /** Output defaults. Sender and operator addresses come only from environment variables. */
   public record Output(
-      @NotNull @DefaultValue("de") Locale language,
+      @NotNull @DefaultValue("en") Locale language,
       @Min(1) @DefaultValue("4") int minTopicCards,
       @Min(1) @DefaultValue("6") int maxTopicCards,
       /** Upper limit for headings in the digest (prompt and shortening before rendering). */

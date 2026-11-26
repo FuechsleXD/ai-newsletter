@@ -8,6 +8,11 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 
 class PromptTemplatesTest {
 
@@ -30,12 +35,22 @@ class PromptTemplatesTest {
     assertThat(PromptRenderer.placeholders(templates.repairJson().text()))
         .containsExactlyInAnyOrder("parseError", "expectedFormat", "previousResponse");
 
-    assertThat(templates.research().version()).isEqualTo("v3");
+    assertThat(templates.research().version()).isEqualTo("v6");
     assertThat(templates.research().name()).isEqualTo("research");
   }
 
   @ParameterizedTest
-  @CsvSource({"research, v2", "research, v3", "aggregate, v2"})
+  @CsvSource({
+    "research, v2",
+    "research, v3",
+    "research, v4",
+    "research, v5",
+    "research, v6",
+    "aggregate, v2",
+    "aggregate, v3",
+    "aggregate, v4",
+    "repair-json, v2"
+  })
   void newerVersionsKeepThePlaceholdersAndTheOutputFormatOfV1(String name, String version) {
     PromptTemplate v1 = templates.load(name, "v1");
     PromptTemplate newer = templates.load(name, version);
@@ -43,7 +58,46 @@ class PromptTemplatesTest {
     // The services pass the same values to every version; the renderer rejects extra ones
     assertThat(PromptRenderer.placeholders(newer.text()))
         .containsExactlyInAnyOrderElementsOf(PromptRenderer.placeholders(v1.text()));
-    assertThat(newer.outputSection()).isEqualTo(v1.outputSection());
+    // Same JSON structure; the example values may be in another language
+    assertThat(jsonShape(newer)).isEqualTo(jsonShape(v1));
+  }
+
+  @Test
+  void outputSectionOfTheEnglishVersionsStartsAtOutput() {
+    assertThat(templates.load("research", "v4").outputSection())
+        .startsWith("OUTPUT" + "\nReply only");
+    assertThat(new PromptTemplate("x", "v9", "TASK\nOUTPUT\n{}\n").outputSection())
+        .isEqualTo("OUTPUT\n{}");
+  }
+
+  /** The example answer of the output section with every text value replaced by "". */
+  private static String jsonShape(PromptTemplate template) {
+    String section = template.outputSection();
+    int start = section.indexOf('{');
+    // repair-json has no output section of its own (it shows the one of the failed prompt)
+    if (section.equals(template.text()) || start < 0) {
+      return "";
+    }
+    JsonNode example =
+        new JsonMapper().readTree(section.substring(start, section.lastIndexOf('}') + 1));
+    return blank(example).toString();
+  }
+
+  private static JsonNode blank(JsonNode node) {
+    if (node.isString()) {
+      return JsonNodeFactory.instance.stringNode("");
+    }
+    if (node.isObject()) {
+      ObjectNode copy = JsonNodeFactory.instance.objectNode();
+      node.properties().forEach(entry -> copy.set(entry.getKey(), blank(entry.getValue())));
+      return copy;
+    }
+    if (node.isArray()) {
+      ArrayNode copy = JsonNodeFactory.instance.arrayNode();
+      node.forEach(element -> copy.add(blank(element)));
+      return copy;
+    }
+    return node;
   }
 
   @Test

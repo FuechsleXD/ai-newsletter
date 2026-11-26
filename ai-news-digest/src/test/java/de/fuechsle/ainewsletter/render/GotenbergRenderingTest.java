@@ -30,7 +30,7 @@ class GotenbergRenderingTest {
 
   private static final Path PREVIEW = Path.of("target", "pdf-preview");
 
-  private final DigestRenderer renderer = new DigestRenderer(RenderTestData.templateEngine());
+  private final DigestRenderer renderer = RenderTestData.renderer("en");
 
   /**
    * The simple layout of step 8 fits short and normal digests on one page; the maximally long one
@@ -48,7 +48,7 @@ class GotenbergRenderingTest {
     try (PDDocument document = Loader.loadPDF(pdf)) {
       assertThat(document.getNumberOfPages()).isBetween(1, maxPages);
       String text = new PDFTextStripper().getText(document);
-      assertThat(text).contains("Kurzfazit", "Key Takeaways");
+      assertThat(text).contains("Summary", "Key takeaways");
       assertThat(text.replaceAll("\\s+", " ")).contains(view.sections().getFirst().heading());
     }
   }
