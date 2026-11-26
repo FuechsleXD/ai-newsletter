@@ -27,7 +27,7 @@ Leitidee: erst ein schmaler Durchstich von Anfang bis Ende, dann früh deployen,
 - [~] 11. Terraform-Grundlage (State-Bootstrap, `infra.yml`) und minimaler Betrieb auf AWS per Terraform (EC2, HTTPS, DB, Secrets, S3, SES, Domain); Caddy veröffentlicht bis Schritt 20 nur Platzhalter und Health-Check; Backup-Job; erster echter Mailversand; Wiederherstellung einmal üben. Keycloak kommt erst mit Schritt 20 auf den Server (ohne JWT-Prüfung kostet er nur Speicher und vergrößert die Angriffsfläche)
   - [x] 11a. App an AWS anbinden: AWS SDK v2, Secrets aus dem Secrets Manager mit Cache, PDFs in S3, Profil `prod` mit SES-SMTP (STARTTLS), Region `eu-central-1` (ADR-015)
   - [x] 11b. Infrastruktur als Code: `infra/terraform/` (Netz, EC2 `t4g.medium`, EBS, S3, ECR, leere Secrets, SES mit DKIM, Route 53, DLM, SNS, Budget-Alarm, GitHub-OIDC), `infra.yml`, Deploy-Skript für Start-Secrets, Backup-Job, Log-Treiber `awslogs`, Runbook Bootstrap
-  - [ ] 11c. Erstes Deployment (durch mich, begleitet): State-Bucket, Apply, Secrets eintragen, Image nach ECR, Start per SSM, HTTPS, erster echter Mailversand, Wiederherstellung üben
+  - [~] 11c. Erstes Deployment (durch mich, begleitet): State-Bucket, Apply, Secrets eintragen, Image nach ECR, Start per SSM, HTTPS, erster echter Mailversand, Wiederherstellung üben
 - [ ] 12. CD-Pipeline: ECR, SSM-Deployment, Freigabe, Smoke-Test, Rollback
 
 ## Phase 4 – Breite im Backend

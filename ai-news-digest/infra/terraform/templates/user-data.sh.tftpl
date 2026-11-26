@@ -14,7 +14,8 @@ done
 
 # Format only a new, empty volume; an existing file system (restore from snapshot) is kept
 if ! blkid "$device" >/dev/null 2>&1; then
-  mkfs.xfs -L newsdigest-data "$device"
+  # XFS labels have at most 12 characters
+  mkfs.xfs -L newsdigest "$device"
 fi
 mkdir -p /var/lib/docker
 uuid="$(blkid -s UUID -o value "$device")"

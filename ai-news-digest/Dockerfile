@@ -2,7 +2,9 @@
 # Tests are not run here: the CI job "backend" runs ./mvnw verify before the image is built.
 
 # --- Build: JDK 21 + Maven wrapper, layered jar extracted for better layer caching ---
-FROM eclipse-temurin:21.0.13.1_2-jdk-alpine-3.24 AS build
+# Runs on the platform of the build machine: the jar is platform independent, so an arm64 image
+# (Graviton) is built without emulating Maven (docker buildx build --platform linux/arm64)
+FROM --platform=$BUILDPLATFORM eclipse-temurin:21.0.13.1_2-jdk-alpine-3.24 AS build
 WORKDIR /build
 
 # Dependencies first: this layer is only rebuilt when the pom or the wrapper changes

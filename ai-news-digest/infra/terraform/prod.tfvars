@@ -2,4 +2,4 @@
 # TF_VAR_alarm_email or the GitHub secret ALARM_EMAIL).
 domain_name       = "fuechslexd.com"
 github_repository = "FuechsleXD/ai-newsletter"
-state_bucket      = "fuechslexd-newsdigest-tfstate"
+state_bucket      = "newsdigest-tfstate-172033175227"

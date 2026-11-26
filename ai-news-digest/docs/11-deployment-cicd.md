@@ -79,7 +79,7 @@ Stand nach Roadmap-Schritt 2: Job `backend` (Punkt 1 und 5, Formatierung über S
 
 ## Infrastruktur als Code (Terraform, siehe ADR-011)
 - Ordner `infra/terraform/` (im Projektordner), Terraform 1.17 und AWS-Provider fest gepinnt (`required_version`, `.terraform.lock.hcl` mit Hashes für Linux und Windows eingecheckt)
-- Remote State im S3-Bucket `fuechslexd-newsdigest-tfstate` (versioniert, verschlüsselt, natives S3-Locking über `use_lockfile`, kein DynamoDB); den Bucket lege ich einmalig von Hand an, alles andere entsteht per Terraform (`docs/betrieb/aws-bootstrap.md`)
+- Remote State im S3-Bucket `newsdigest-tfstate-172033175227` (versioniert, verschlüsselt, natives S3-Locking über `use_lockfile`, kein DynamoDB); den Bucket lege ich einmalig von Hand an, alles andere entsteht per Terraform (`docs/betrieb/aws-bootstrap.md`)
 - Inhalt: VPC bzw. Subnetz, Security Groups (nur 80/443 eingehend), EC2 mit Elastic IP und IAM-Rolle (minimale Rechte für S3, Secrets Manager, SES, CloudWatch, ECR, SSM), EBS-Volume für Daten, S3-Buckets (PDFs, Backups) mit Lifecycle-Regeln, ECR-Repositories, Secrets-Container, SES-Domain-Identität mit DKIM, Route 53 (Domain-Einträge), DLM-Snapshots, CloudWatch-Alarme und SNS, GitHub-OIDC-Provider mit Rollen für CD und Terraform
 - Secrets: Terraform legt nur die leeren Secrets an; die Werte trage ich von Hand ein, damit sie nie im Terraform-State oder im Repo landen
 - Kleine, lesbare Struktur: wenige Dateien nach Thema (`network.tf`, `compute.tf`, `storage.tf`, `security.tf`, `dns-mail.tf`, `monitoring.tf`, `github-oidc.tf`), Module erst, wenn sich etwas wiederholt
