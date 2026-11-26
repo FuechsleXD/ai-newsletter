@@ -1,11 +1,11 @@
 # Runbook: Erster echter Lauf in Produktion
 
-Bis es Scheduler (Schritt 16) und API (Schritt 19) gibt, wird ein Lauf in Produktion über das Eval-Profil gestartet: ein zusätzlicher, kurzlebiger App-Container startet den Lauf durch den normalen Prozess, wartet auf das Ende und beendet sich. Die laufende App bleibt an. Kosten wie lokal (Claude Sonnet 5.5, 10 Websuchen: etwa 0,41 USD).
+Bis es Scheduler (Schritt 16) und API (Schritt 19) gibt, wird ein Lauf in Produktion über das Eval-Profil gestartet: ein zusätzlicher, kurzlebiger App-Container startet den Lauf durch den normalen Prozess, wartet auf das Ende und beendet sich. Die laufende App bleibt an. Kosten wie lokal (Claude Sonnet 5.5, Recherche `v7` mit 15 Websuchen: etwa 1 USD, Eval-Lauf 9).
 
 Voraussetzungen: Deployment nach `aws-bootstrap.md` §8, SES-Domain verifiziert, Empfängeradresse in SES verifiziert (Sandbox), Anthropic-Key im Secret `newsdigest/prod/ai/anthropic`. Befehle in **Git Bash** im Ordner `ai-news-digest`, Variablen wie in `aws-bootstrap.md` §8.
 
 ## 1. Modell und Topic anlegen
-Die SQL-Dateien aus dem lokalen Testlauf (`lokaler-testlauf.md`) verwenden, außerhalb des Repos. In der Topic-Datei statt `empfaenger@example.test` die eigene, in SES verifizierte Adresse eintragen (sie steht dann nur in der Produktionsdatenbank, nie im Repo).
+Die SQL-Dateien aus dem lokalen Testlauf (`lokaler-testlauf.md`) verwenden, außerhalb des Repos. Für Produktion eine eigene Topic-Datei `my-topic-prod.sql` mit Name und Beschreibung des Topics und der eigenen, in SES verifizierten Adresse als Empfänger (sie steht dann nur in der Produktionsdatenbank, nie im Repo).
 
 Über den Deploy-Bucket auf den Server bringen und einspielen:
 
@@ -26,10 +26,10 @@ Ohne das AWS-Override, damit die Ausgabe in der SSM-Antwort landet statt in Clou
 
 ```bash
 infra/server/run-on-server.sh "$INSTANCE" \
-  'cd /opt/newsdigest && docker compose -f docker-compose.prod.yml --env-file /run/newsdigest/prod.env run --rm -e SPRING_PROFILES_ACTIVE=prod,eval -e NEWSDIGEST_EVAL_TOPICS=KI-News app 2>&1 | grep -E "Started process instance|Eval run|ERROR" '
+  'cd /opt/newsdigest && docker compose -f docker-compose.prod.yml --env-file /run/newsdigest/prod.env run --rm -e SPRING_PROFILES_ACTIVE=prod,eval -e NEWSDIGEST_EVAL_TOPICS="AI for Java & Cloud Development" app 2>&1 | grep -E "Started process instance|Eval run|ERROR" '
 ```
 
-Erwartet: `Eval run 1 of topic 'KI-News' ended with COMPLETED` (nach etwa einer Minute). Der Export des Eval-Profils bleibt im kurzlebigen Container und wird nicht gebraucht; alle Daten stehen in der Datenbank.
+Erwartet: `Eval run 1 of topic 'AI for Java & Cloud Development' ended with COMPLETED` (nach etwa zwei Minuten). Der Export des Eval-Profils bleibt im kurzlebigen Container und wird nicht gebraucht; alle Daten stehen in der Datenbank.
 
 ## 3. Prüfen
 - Mail mit PDF-Anhang im eigenen Postfach (Absender `digest@fuechslexd.com`); im Mail-Header `dkim=pass` und `spf=pass`

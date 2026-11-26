@@ -65,12 +65,12 @@ Die übrigen Werte in der AWS-Konsole (Secrets Manager → Secret → Retrieve s
 | Secret | Wert |
 |---|---|
 | `newsdigest/prod/ai/anthropic` | Anthropic-API-Key als Plaintext, nicht als Key/value (eigener Key für Produktion, nicht der lokale) |
-| `newsdigest/prod/mail/smtp` | SES → SMTP settings → Create SMTP credentials; im Reiter Key/value `username` und `password` aus den CSV-Spalten **ohne** "(Base64)" (Spring Mail kodiert selbst) |
+| `newsdigest/prod/mail/smtp` | SES → SMTP settings → Create SMTP credentials (legt den IAM-User `ses-smtp-user.<Datum>` an; nicht Mail Manager → Ingress endpoints, das ist für eingehende Mails); im Reiter Key/value `username` und `password` aus den CSV-Spalten **ohne** "(Base64)" (Spring Mail kodiert selbst): SMTP user name `AKIA…` (20 Zeichen) und SMTP password (44 Zeichen, nicht der Secret access key) |
 | `newsdigest/prod/mail/operator` | Meine Adresse für Fehler-Mails |
 
 ## 6. SES
 - Domain-Identität `fuechslexd.com` wird per DKIM automatisch verifiziert, sobald die DNS-Einträge aus Terraform greifen (SES → Identities, Status "Verified")
-- Sandbox: Empfängeradressen unter Identities → Create identity → Email address verifizieren (mindestens die Operator-Adresse)
+- Sandbox: Empfängeradressen unter Identities → Create identity → Email address verifizieren (mindestens die Operator-Adresse). Die Adresse **in Kleinbuchstaben** eintragen: die App speichert Empfänger klein geschrieben, und SES prüft die Identität mit genau dieser Schreibweise (`554 Email address is not verified`)
 - Produktionszugang parallel beantragen: SES → Account dashboard → Request production access (Anwendungsfall: wöchentlicher Newsletter an wenige eingetragene Empfänger, Bounces und Beschwerden werden bearbeitet)
 
 ## 7. GitHub einrichten
