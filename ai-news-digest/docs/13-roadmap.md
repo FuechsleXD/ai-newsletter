@@ -28,7 +28,8 @@ Leitidee: erst ein schmaler Durchstich von Anfang bis Ende, dann früh deployen,
   - [x] 11a. App an AWS anbinden: AWS SDK v2, Secrets aus dem Secrets Manager mit Cache, PDFs in S3, Profil `prod` mit SES-SMTP (STARTTLS), Region `eu-central-1` (ADR-015)
   - [x] 11b. Infrastruktur als Code: `infra/terraform/` (Netz, EC2 `t4g.medium`, EBS, S3, ECR, leere Secrets, SES mit DKIM, Route 53, DLM, SNS, Budget-Alarm, GitHub-OIDC), `infra.yml`, Deploy-Skript für Start-Secrets, Backup-Job, Log-Treiber `awslogs`, Runbook Bootstrap
   - [x] 11c. Erstes Deployment (durch mich, begleitet): State-Bucket, Apply, Secrets eintragen, Image nach ECR, Start per SSM, HTTPS, erster echter Mailversand, Wiederherstellung üben
-- [x] 12. CD-Pipeline: ECR, SSM-Deployment, Freigabe, Smoke-Test, Rollback
+  - [x] 12. CD-Pipeline: ECR, SSM-Deployment, Freigabe, Smoke-Test, Rollback
+
 
 ## Phase 4 – Breite im Backend
 - [ ] 13. Weitere Anbieter/Modelle, echte Parallelität (nicht-exklusive Jobs, Semaphore pro Anbieter), Parallelitäts-Tests

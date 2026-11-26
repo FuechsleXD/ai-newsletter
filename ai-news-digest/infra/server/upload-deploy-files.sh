@@ -35,3 +35,4 @@ for target in "${targets[@]}"; do
   aws s3 sync "$source_dir" "s3://$bucket/$target/" --delete --only-show-errors
   echo "Uploaded deploy files to s3://$bucket/$target/"
 done
+
