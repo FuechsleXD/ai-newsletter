@@ -4,6 +4,7 @@ import de.fuechsle.ainewsletter.aggregate.DigestAggregate;
 import de.fuechsle.ainewsletter.support.Fixtures;
 import de.fuechsle.ainewsletter.support.TestProperties;
 import java.time.LocalDate;
+import java.util.Map;
 import org.thymeleaf.ITemplateEngine;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.templatemode.TemplateMode;
@@ -29,8 +30,23 @@ final class RenderTestData {
   }
 
   static DigestView view(DigestAggregate aggregate) {
-    return new DigestViewFactory(TestProperties.defaults())
+    return view(aggregate, language("en"));
+  }
+
+  static DigestView view(DigestAggregate aggregate, DigestLanguage language) {
+    return new DigestViewFactory(TestProperties.defaults(), language)
         .create(aggregate, "Java", FROM, TO, CREATED);
+  }
+
+  /** Output language like newsdigest.output.language, with the real message files. */
+  static DigestLanguage language(String tag) {
+    return new DigestLanguage(
+        TestProperties.with(Map.of("newsdigest.output.language", tag)),
+        DigestLanguage.messageSource());
+  }
+
+  static DigestRenderer renderer(String tag) {
+    return new DigestRenderer(templateEngine(), language(tag));
   }
 
   /** Same resolver settings as the Spring Boot default (classpath:templates/, .html). */
@@ -42,6 +58,7 @@ final class RenderTestData {
     resolver.setCharacterEncoding("UTF-8");
     SpringTemplateEngine engine = new SpringTemplateEngine();
     engine.setTemplateResolver(resolver);
+    engine.setTemplateEngineMessageSource(DigestLanguage.messageSource());
     return engine;
   }
 }

@@ -5,6 +5,7 @@ import de.fuechsle.ainewsletter.domain.DigestRun;
 import de.fuechsle.ainewsletter.domain.MailDelivery;
 import de.fuechsle.ainewsletter.domain.MailDeliveryStatus;
 import de.fuechsle.ainewsletter.domain.Recipient;
+import de.fuechsle.ainewsletter.render.DigestLanguage;
 import de.fuechsle.ainewsletter.render.DigestRenderer;
 import de.fuechsle.ainewsletter.render.DigestView;
 import de.fuechsle.ainewsletter.render.RenderDigestService;
@@ -13,9 +14,7 @@ import de.fuechsle.ainewsletter.repository.MailDeliveryRepository;
 import de.fuechsle.ainewsletter.repository.RecipientRepository;
 import de.fuechsle.ainewsletter.storage.DigestStorage;
 import java.time.Clock;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.mail.MailException;
@@ -45,8 +44,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class DigestMailService {
 
   private static final Logger log = LoggerFactory.getLogger(DigestMailService.class);
-  private static final DateTimeFormatter SUBJECT_DATE =
-      DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.GERMAN);
   private static final int MAX_ERROR_LENGTH = 1000;
 
   private final DigestRunRepository runs;
@@ -57,6 +54,7 @@ public class DigestMailService {
   private final DigestStorage storage;
   private final MailService mailService;
   private final String subjectPattern;
+  private final DigestLanguage language;
   private final Clock clock;
   private final TransactionTemplate newTransaction;
 
@@ -69,6 +67,7 @@ public class DigestMailService {
       DigestStorage storage,
       MailService mailService,
       NewsDigestProperties properties,
+      DigestLanguage language,
       Clock clock,
       PlatformTransactionManager transactionManager) {
     this.runs = runs;
@@ -79,6 +78,7 @@ public class DigestMailService {
     this.storage = storage;
     this.mailService = mailService;
     this.subjectPattern = properties.output().mailSubjectPattern();
+    this.language = language;
     this.clock = clock;
     this.newTransaction = new TransactionTemplate(transactionManager);
     this.newTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
@@ -131,7 +131,7 @@ public class DigestMailService {
   String subject(DigestRun run) {
     return subjectPattern
         .replace("{topic}", run.getTopic().getName())
-        .replace("{date}", SUBJECT_DATE.format(run.getPeriodTo()));
+        .replace("{date}", language.date(run.getPeriodTo()));
   }
 
   private MailContent content(long runId) {

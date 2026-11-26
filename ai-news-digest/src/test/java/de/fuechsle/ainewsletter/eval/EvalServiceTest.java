@@ -36,9 +36,16 @@ class EvalServiceTest extends ProcessTestSupport {
     EvalResult result = results.getFirst();
     assertThat(result.status()).isEqualTo("COMPLETED");
     Path directory = result.directory();
-    assertThat(directory.getParent().getFileName().toString()).isEqualTo("v3");
+    assertThat(directory.getParent().getFileName().toString()).isEqualTo("v7");
     assertThat(directory.getFileName().toString()).endsWith("-eval-ae-" + suffix);
     assertThat(directory.resolve("research-ok-research-" + suffix + ".txt")).exists();
+    // Searches are stored with the research result and exported with the used hit marked
+    assertThat(directory.resolve("searches-ok-research-" + suffix + ".md"))
+        .content()
+        .contains("`fake news November 2026`")
+        .contains("✅ Spring Boot veröffentlicht – https://spring.example.test/blog/release")
+        .contains("- Übersicht – https://digest.example.test/week (1 day ago)");
+    assertThat(directory.resolve("summary.md")).content().contains("1 Suchbegriffe, 2 Treffer");
     assertThat(directory.resolve("aggregate.json")).content().contains("Fake-Digest");
     assertThat(directory.resolve("mail.html")).content().contains("Fake-Digest");
     assertThat(Files.size(directory.resolve("digest.pdf"))).isPositive();
@@ -46,7 +53,7 @@ class EvalServiceTest extends ProcessTestSupport {
     String runJson = Files.readString(directory.resolve("run.json"), StandardCharsets.UTF_8);
     JsonNode run = new JsonMapper().readTree(runJson);
     assertThat(run.get("status").asString()).isEqualTo("COMPLETED");
-    assertThat(run.get("promptVersion").asString()).isEqualTo("v3");
+    assertThat(run.get("promptVersion").asString()).isEqualTo("v7");
     // research 0.0205 + aggregation 0.0105
     assertThat(run.get("totalCostUsd").decimalValue()).isEqualByComparingTo("0.031");
     JsonNode research = run.get("research").get(0);

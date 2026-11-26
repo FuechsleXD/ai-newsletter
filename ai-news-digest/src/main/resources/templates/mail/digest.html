@@ -4,7 +4,7 @@
   one column, table layout, inline CSS, no external images or scripts. All texts come from an LLM
   and are escaped by th:text; only checked source URLs are linked.
 -->
-<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" th:lang="${lang}" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -25,14 +25,14 @@
         <tr><td style="height:10px;"></td></tr>
         <tr>
           <td style="background:#eff6ff;border:1px solid #93c5fd;border-radius:6px;padding:10px 14px;font-size:14px;">
-            <div style="font-weight:bold;margin-bottom:4px;">Kurzfazit</div>
+            <div style="font-weight:bold;margin-bottom:4px;" th:text="#{digest.summary}">Summary</div>
             <div th:text="${digest.summary}">Kurzfazit</div>
           </td>
         </tr>
         <tr><td style="height:10px;"></td></tr>
         <tr>
           <td style="background:#ffffff;border:1px solid #d1d5db;border-radius:6px;padding:10px 14px;font-size:14px;">
-            <div style="font-weight:bold;margin-bottom:4px;">Kernpunkte</div>
+            <div style="font-weight:bold;margin-bottom:4px;" th:text="#{digest.keyPoints}">Key points</div>
             <div th:each="point : ${digest.keyPoints}" style="margin:2px 0;">• <span th:text="${point.text}">Kernpunkt</span></div>
           </td>
         </tr>
@@ -45,8 +45,8 @@
               <div style="margin-top:4px;font-weight:bold;" th:if="${section.highlightValue != null}"><span th:text="${section.highlightValue}">42</span> <span th:text="${section.highlightLabel}">Label</span></div>
               <div style="margin-top:4px;" th:if="${!section.flowSteps.isEmpty()}" th:text="${#strings.listJoin(section.flowSteps, ' → ')}">Ablauf</div>
               <div style="margin-top:6px;font-size:12px;color:#4b5563;">
-                Quellen: <span th:each="source, it : ${section.sourceNumbers}" th:text="${'[' + source + ']' + (it.last ? '' : ' ')}">[1]</span>
-                · Modelle: <span th:text="${#strings.listJoin(section.models, ', ')}">Modell</span><span style="color:#b45309;" th:if="${section.unconfirmed}"> · unbestätigt</span>
+                <span th:text="#{digest.sources}">Sources</span>: <span th:each="source, it : ${section.sourceNumbers}" th:text="${'[' + source + ']' + (it.last ? '' : ' ')}">[1]</span>
+                · <span th:text="#{digest.models}">Models</span>: <span th:text="${#strings.listJoin(section.models, ', ')}">Modell</span><span style="color:#b45309;" th:if="${section.unconfirmed}" th:text="${' · ' + #messages.msg('digest.unconfirmed')}"> · unconfirmed</span>
               </div>
             </td>
           </tr>
@@ -54,10 +54,10 @@
         <tr><td style="height:10px;"></td></tr>
         <tr>
           <td style="background:#1e3a8a;color:#ffffff;border-radius:6px;padding:10px 14px;font-size:14px;">
-            <div style="font-weight:bold;margin-bottom:4px;">Key Takeaways</div>
+            <div style="font-weight:bold;margin-bottom:4px;" th:text="#{digest.takeaways}">Key takeaways</div>
             <div th:each="takeaway : ${digest.takeaways}" style="margin:2px 0;">✓ <span th:text="${takeaway}">Takeaway</span></div>
             <th:block th:if="${!#strings.isEmpty(digest.watchOut)}">
-              <div style="font-weight:bold;margin:8px 0 4px;">Worauf achten</div>
+              <div style="font-weight:bold;margin:8px 0 4px;" th:text="#{digest.watchOut}">What to watch</div>
               <div th:text="${digest.watchOut}">Ausblick</div>
             </th:block>
           </td>
@@ -65,7 +65,7 @@
         <tr><td style="height:10px;"></td></tr>
         <tr>
           <td style="font-size:12px;color:#4b5563;padding:0 4px;">
-            <div>Erstellt am <span th:text="${digest.createdOn}">Datum</span> · <span th:text="${digest.modelCount}">2</span> Modelle · <span th:text="${digest.sources.size()}">5</span> Quellen · PDF im Anhang</div>
+            <div><span th:text="#{digest.createdOn(${digest.createdOn})}">Created on</span> · <span th:text="#{digest.modelCount(${digest.modelCount})}">2 models</span> · <span th:text="#{digest.sourceCount(${digest.sources.size()})}">5 sources</span> · <span th:text="#{digest.pdfAttached}">PDF attached</span></div>
             <div th:each="source : ${digest.sources}" style="margin-top:2px;">[<span th:text="${source.number}">1</span>] <a th:href="${source.url}" style="color:#1e3a8a;" th:text="${source.title}">Quelle</a> (<span th:text="${source.domain}">domain</span>)</div>
           </td>
         </tr>

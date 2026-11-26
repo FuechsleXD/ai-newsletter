@@ -4,6 +4,7 @@ import de.fuechsle.ainewsletter.provider.ModelInvocation;
 import de.fuechsle.ainewsletter.provider.ModelResponse;
 import de.fuechsle.ainewsletter.provider.NewsProvider;
 import de.fuechsle.ainewsletter.provider.ProviderException;
+import de.fuechsle.ainewsletter.provider.SearchTrace;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -33,7 +34,7 @@ import java.util.stream.Collectors;
  *   <li>{@code slow-}: waits until {@link #release()} is called, then two valid items
  * </ul>
  *
- * <p>Aggregation calls (prompt with the {@code <MELDUNGEN>} block): {@code fail-} is a provider
+ * <p>Aggregation calls (prompt with the data block of the aggregation): {@code fail-} is a provider
  * error, {@code garbage-} answers without JSON (also in the repair attempt), every other model
  * answers a valid aggregate with one section per news item ID found in the prompt.
  */
@@ -41,7 +42,12 @@ public class FakeNewsProvider implements NewsProvider {
 
   public static final String CODE = "FAKE";
 
-  private static final String AGGREGATE_MARKER = "<MELDUNGEN>";
+  /**
+   * Data block of the aggregation prompt: {@code <NEWS>} from version v3, before {@code
+   * <MELDUNGEN>}.
+   */
+  private static final List<String> AGGREGATE_MARKERS = List.of("<NEWS>", "<MELDUNGEN>");
+
   private static final Pattern ITEM_ID = Pattern.compile("\"id\":\"(\\d+)\"");
 
   private final Map<String, AtomicInteger> researchCalls = new ConcurrentHashMap<>();
@@ -139,7 +145,7 @@ public class FakeNewsProvider implements NewsProvider {
   }
 
   private static boolean isAggregation(ModelInvocation invocation) {
-    return invocation.prompt().contains(AGGREGATE_MARKER);
+    return AGGREGATE_MARKERS.stream().anyMatch(invocation.prompt()::contains);
   }
 
   private static String item(String headline, String url, String publishedAt) {
@@ -157,7 +163,34 @@ public class FakeNewsProvider implements NewsProvider {
   }
 
   private static ModelResponse response(String text, int webSearches) {
-    return new ModelResponse(text, 1_000, 500, webSearches, "END_TURN", Duration.ofMillis(10));
+    return new ModelResponse(
+        text,
+        1_000,
+        500,
+        webSearches,
+        "END_TURN",
+        Duration.ofMillis(10),
+        false,
+        trace(webSearches));
+  }
+
+  /** One search per web search call; its hits include the URL of the first valid item. */
+  private static SearchTrace trace(int webSearches) {
+    if (webSearches == 0) {
+      return SearchTrace.EMPTY;
+    }
+    return new SearchTrace(
+        List.of(
+            new SearchTrace.Search(
+                "fake news November 2026",
+                List.of(
+                    new SearchTrace.Hit(
+                        "Spring Boot veröffentlicht",
+                        "https://spring.example.test/blog/release",
+                        null),
+                    new SearchTrace.Hit(
+                        "Übersicht", "https://digest.example.test/week", "1 day ago")),
+                null)));
   }
 
   private static void count(Map<String, AtomicInteger> counts, String model) {

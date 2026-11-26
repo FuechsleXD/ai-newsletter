@@ -85,15 +85,15 @@ class AggregationServiceTest {
     assertThat(invocation.maxWebSearches()).isZero();
     assertThat(invocation.modelName()).isEqualTo("test-aggregator");
     assertThat(invocation.prompt())
-        .contains("THEMA: Java")
-        .contains("SCHWERPUNKT: keiner")
-        .contains("ZEITRAUM: 2026-11-16 bis 2026-11-22")
-        .contains("SPRACHE: Deutsch")
-        .contains("nicht wiederholen, außer")
+        .contains("TOPIC: Java")
+        .contains("FOCUS: keiner")
+        .contains("PERIOD: 2026-11-16 to 2026-11-22")
+        .contains("LANGUAGE: English")
+        .contains("do not repeat them, unless")
         .contains("\nkeine\n")
         .contains("default, ai, chip")
-        .contains("4 bis 6, aber nur so viele")
-        .contains("höchstens 60 Zeichen, Texte höchstens 320 Zeichen")
+        .contains("4 to 6, but only as many")
+        .contains("headings at most 60 characters, texts at most 320 characters")
         .contains("\"id\":\"1\"")
         .contains("\"models\":[\"Modell A\",\"Modell B\"]")
         .contains("\"publishedAt\":null");
@@ -119,8 +119,8 @@ class AggregationServiceTest {
     assertThat(outcome.succeeded()).isTrue();
     assertThat(provider.invocations()).hasSize(2);
     assertThat(provider.invocations().get(1).prompt())
-        .contains("FEHLER: Invalid JSON")
-        .contains("ERWARTETES FORMAT:\nAUSGABE");
+        .contains("ERROR: Invalid JSON")
+        .contains("EXPECTED FORMAT:\nOUTPUT");
     assertThat(outcome.inputTokens()).isEqualTo(10_000);
     assertThat(outcome.costUsd()).isEqualByComparingTo("0.060");
   }

@@ -18,6 +18,7 @@ Leitidee: erst ein schmaler Durchstich von Anfang bis Ende, dann früh deployen,
 - [x] 9. Manueller Start per Dev-Endpunkt (nur Profil `dev`) oder Testlauf; erstes echtes Ergebnis ansehen und Prompts nachschärfen (Eval-Profil)
   - [x] 9a. Werkzeug: Kosten bei Antworten ohne Inhalt geschätzt, `pause_turn` abgefangen (offener Punkt 6, ADR-014), Dev-Endpunkt, Eval-Profil mit Export, Vorlagen und Runbook `betrieb/lokaler-testlauf.md`
   - [x] 9b. Erster echter Lauf (durch mich), Auswertung, Prompts als `v2` nachschärfen, anonymisierte echte Antworten als Fixtures
+  - [x] 9c. Prompts und Ausgabe auf Englisch (ADR-017): Recherche `v4`, Aggregation `v3`, Reparatur `v2`; PDF und Mail in der Ausgabesprache (Default `en`); nach Lauf 5 Recherche `v5` und Aggregation `v4` für bessere Quellen (Lauf 6: nur Primärquellen, aber 3 Meldungen, 1,49 USD mit Sonnet und Opus), dann Recherche `v6` (Lauf 7: Primärquellen, 0,59 USD, aber weiter nur 3 Meldungen); offen: Diagnose der Suchen im Eval-Export, danach mehr Abdeckung
     - Vier Läufe mit Claude Sonnet 5.5 (Topic "KI-News", 17.–24.11.2026), Vergleich in `src/main/resources/prompts/README.md`: Recherche `v1` 0 Meldungen, `v2` 3 gültige nur von Trackern, `v3` mit 5 Suchen 1, `v3` mit 10 Suchen 4 gültige aus echten Artikeln (0,41 USD)
     - Neue Defaults: Recherche `v3`, Aggregation `v2`, 10 Websuchen pro Aufruf
     - Gefunden und behoben: Der Eval-Runner blockierte den Start des Job Executors; Eval-Export nach `data/eval` (überlebt `mvn clean`); Startmeldung mit Prozessinstanz im Log
@@ -26,7 +27,7 @@ Leitidee: erst ein schmaler Durchstich von Anfang bis Ende, dann früh deployen,
 - [~] 11. Terraform-Grundlage (State-Bootstrap, `infra.yml`) und minimaler Betrieb auf AWS per Terraform (EC2, HTTPS, DB, Secrets, S3, SES, Domain); Caddy veröffentlicht bis Schritt 20 nur Platzhalter und Health-Check; Backup-Job; erster echter Mailversand; Wiederherstellung einmal üben. Keycloak kommt erst mit Schritt 20 auf den Server (ohne JWT-Prüfung kostet er nur Speicher und vergrößert die Angriffsfläche)
   - [x] 11a. App an AWS anbinden: AWS SDK v2, Secrets aus dem Secrets Manager mit Cache, PDFs in S3, Profil `prod` mit SES-SMTP (STARTTLS), Region `eu-central-1` (ADR-015)
   - [x] 11b. Infrastruktur als Code: `infra/terraform/` (Netz, EC2 `t4g.medium`, EBS, S3, ECR, leere Secrets, SES mit DKIM, Route 53, DLM, SNS, Budget-Alarm, GitHub-OIDC), `infra.yml`, Deploy-Skript für Start-Secrets, Backup-Job, Log-Treiber `awslogs`, Runbook Bootstrap
-  - [ ] 11c. Erstes Deployment (durch mich, begleitet): State-Bucket, Apply, Secrets eintragen, Image nach ECR, Start per SSM, HTTPS, erster echter Mailversand, Wiederherstellung üben
+  - [x] 11c. Erstes Deployment (durch mich, begleitet): State-Bucket, Apply, Secrets eintragen, Image nach ECR, Start per SSM, HTTPS, erster echter Mailversand, Wiederherstellung üben
 - [ ] 12. CD-Pipeline: ECR, SSM-Deployment, Freigabe, Smoke-Test, Rollback
 
 ## Phase 4 – Breite im Backend

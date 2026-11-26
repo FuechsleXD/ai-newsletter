@@ -12,6 +12,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /** Result of one research model within a run (one row per run and model). */
 @Entity
@@ -56,6 +58,11 @@ public class ProviderResult {
 
   @Column(name = "error_message", columnDefinition = "text")
   private String errorMessage;
+
+  /** Searches and their results (diagnosis, provider.SearchTrace as JSON), null without search. */
+  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(name = "search_trace", columnDefinition = "jsonb")
+  private String searchTrace;
 
   protected ProviderResult() {}
 
@@ -141,5 +148,13 @@ public class ProviderResult {
 
   public void setErrorMessage(String errorMessage) {
     this.errorMessage = errorMessage;
+  }
+
+  public String getSearchTrace() {
+    return searchTrace;
+  }
+
+  public void setSearchTrace(String searchTrace) {
+    this.searchTrace = searchTrace;
   }
 }

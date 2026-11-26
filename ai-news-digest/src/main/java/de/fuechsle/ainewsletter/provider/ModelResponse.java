@@ -22,10 +22,35 @@ public record ModelResponse(
     long webSearches,
     String stopReason,
     Duration duration,
-    boolean usageEstimated) {
+    boolean usageEstimated,
+    SearchTrace searchTrace) {
 
   /** Stop reason when the provider returned no content at all (reason unknown). */
   public static final String NO_CONTENT = "NO_CONTENT";
+
+  public ModelResponse {
+    searchTrace = searchTrace == null ? SearchTrace.EMPTY : searchTrace;
+  }
+
+  /** Answer without search trace. */
+  public ModelResponse(
+      String text,
+      long inputTokens,
+      long outputTokens,
+      long webSearches,
+      String stopReason,
+      Duration duration,
+      boolean usageEstimated) {
+    this(
+        text,
+        inputTokens,
+        outputTokens,
+        webSearches,
+        stopReason,
+        duration,
+        usageEstimated,
+        SearchTrace.EMPTY);
+  }
 
   /** Answer with usage reported by the provider. */
   public ModelResponse(
@@ -35,7 +60,15 @@ public record ModelResponse(
       long webSearches,
       String stopReason,
       Duration duration) {
-    this(text, inputTokens, outputTokens, webSearches, stopReason, duration, false);
+    this(
+        text,
+        inputTokens,
+        outputTokens,
+        webSearches,
+        stopReason,
+        duration,
+        false,
+        SearchTrace.EMPTY);
   }
 
   /** The provider returned no content; usage may be missing as well. */

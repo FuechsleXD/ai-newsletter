@@ -1,5 +1,9 @@
 package de.fuechsle.ainewsletter.prompt;
 
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * A versioned prompt template, e.g. {@code research/v1}.
  *
@@ -9,15 +13,23 @@ package de.fuechsle.ainewsletter.prompt;
  */
 public record PromptTemplate(String name, String version, String text) {
 
-  /** Heading of the section that describes the expected answer format. */
-  static final String OUTPUT_SECTION = "AUSGABE";
+  /**
+   * Headings of the section that describes the expected answer format: {@code OUTPUT} in the
+   * English templates, {@code AUSGABE} in the older German ones.
+   */
+  static final List<String> OUTPUT_SECTIONS = List.of("OUTPUT", "AUSGABE");
 
   /**
-   * The output section of the template (from {@code AUSGABE} to the end), shown again in the repair
-   * prompt; the whole text if the template has no such section.
+   * The output section of the template (from the line {@code OUTPUT} or {@code AUSGABE} to the
+   * end), shown again in the repair prompt; the whole text if the template has no such section.
    */
   public String outputSection() {
-    int index = text.indexOf(OUTPUT_SECTION);
-    return index < 0 ? text : text.substring(index).strip();
+    for (String heading : OUTPUT_SECTIONS) {
+      Matcher matcher = Pattern.compile("(?m)^" + heading + "$").matcher(text);
+      if (matcher.find()) {
+        return text.substring(matcher.start()).strip();
+      }
+    }
+    return text;
   }
 }

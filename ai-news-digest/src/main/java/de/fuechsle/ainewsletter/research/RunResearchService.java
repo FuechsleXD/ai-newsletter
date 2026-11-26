@@ -92,6 +92,7 @@ public class RunResearchService {
 
     row.setStatus(result.status());
     row.setRawResponse(result.rawResponse());
+    row.setSearchTrace(result.searchTrace().toJson());
     row.setErrorMessage(result.errorMessage());
     row.setDurationMs(row.getDurationMs() + result.duration().toMillis());
     row.setInputTokens(sum(row.getInputTokens(), result.inputTokens()));

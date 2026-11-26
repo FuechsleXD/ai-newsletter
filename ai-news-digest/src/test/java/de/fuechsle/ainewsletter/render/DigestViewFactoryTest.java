@@ -13,8 +13,8 @@ class DigestViewFactoryTest {
     DigestView view = RenderTestData.view("normal");
 
     assertThat(view.topicName()).isEqualTo("Java");
-    assertThat(view.period()).isEqualTo("16.11.2026 – 22.11.2026");
-    assertThat(view.createdOn()).isEqualTo("23.11.2026");
+    assertThat(view.period()).isEqualTo("Nov 16, 2026 – Nov 22, 2026");
+    assertThat(view.createdOn()).isEqualTo("Nov 23, 2026");
     assertThat(view.sections()).extracting(SectionView::number).containsExactly(1, 2, 3, 4, 5);
     assertThat(view.sections())
         .extracting(SectionView::color)

@@ -17,7 +17,7 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 | Erster Anbieter | `ANTHROPIC` (Claude), auch für die Recherche; Modelle und Preise nur in der DB, keine Seed-Daten | `ai_provider`, `ai_model` |
 | Temperatur | Anbieter-Standard (nicht gesendet, wenn NULL); nur pflegbar, wenn `ai_model.supports_temperature` (Default `false`, aktuelle Claude-Modelle lehnen sie ab) | `ai_model.temperature` |
 | Max-Tokens | 16000 (`newsdigest.ai.default-max-output-tokens`) | `ai_model.max_output_tokens` |
-| Websuchen pro Recherche-Aufruf | max. 10 (`newsdigest.ai.max-web-searches-per-call`, Kostenbremse). Im Eval lieferte Recherche `v3` mit 5 Suchen nur 1 Meldung, mit 10 Suchen 4 gültige aus echten Artikeln; Kosten mit Claude Sonnet 5.5 etwa 0,41 USD je Lauf (rund 1,80 USD im Monat für ein wöchentliches Topic) | – |
+| Websuchen pro Recherche-Aufruf | max. 15 (`newsdigest.ai.max-web-searches-per-call`, Kostenbremse). Im Eval lieferte Recherche `v3` mit 5 Suchen nur 1 Meldung, mit 10 Suchen 4 gültige aus echten Artikeln; Lauf 8 zeigte, dass 10 Suchen für einen breiten Schwerpunkt mit 6-10 Aspekten nicht reichen, deshalb ab `v7` 15. Kosten mit Claude Sonnet 5.5 bei 10 Suchen etwa 0,41-0,59 USD je Lauf, bei 15 geschätzt 0,55-0,80 USD (rund 2,50-3,50 USD im Monat für ein wöchentliches Topic) | – |
 | Timeout pro Modellaufruf | 120 s | – |
 | Gleichzeitige Aufrufe pro Anbieter | 2 | `ai_provider.max_concurrent_calls` |
 | Meldungen pro Modell | max. 10 | – |
@@ -73,7 +73,7 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 ## Ausgabe
 | Einstellung | Default |
 |---|---|
-| Sprache | Deutsch |
+| Sprache | Englisch (`newsdigest.output.language=en`; `de` möglich, feste Texte aus `messages/digest*.properties`, ADR-017) |
 | Themen-Karten | 4–6, je 2–3 Sätze (`newsdigest.output.min-topic-cards`, `.max-topic-cards`); weniger sind erlaubt, wenn die Meldungen nicht für mehr Themen reichen |
 | Längengrenzen | Überschriften 60 Zeichen, Texte 320 Zeichen (`newsdigest.output.max-heading-chars`, `.max-text-chars`); stehen im Prompt, gekürzt wird vor dem Rendern |
 | Icon-Schlüssel | feste Liste in `src/main/resources/pdf/icon-keys.txt`, unbekannte werden `default` |
@@ -83,7 +83,7 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 | Absender, Betreiber-Empfänger | nur über Umgebungsvariablen (`NEWSDIGEST_MAIL_FROM`, `NEWSDIGEST_MAIL_OPERATOR`); ohne sie startet die App nicht |
 | SMTP | `SPRING_MAIL_HOST`/`SPRING_MAIL_PORT`, Default `localhost:1025` (Mailpit); der Mail-Health-Check ist aus, damit ein SMTP-Ausfall die App nicht als down meldet |
 | Eval (Profil `eval`) | Topics `newsdigest.eval.topics` (leer), Wartezeit je Lauf 15 min, Ausgabe `data/eval` |
-| Aktive Prompt-Version | Recherche `v3`, Aggregation `v2`, JSON-Reparatur `v1` (`newsdigest.prompts.research`, `.aggregate`, `.repair-json`); Begründung in `src/main/resources/prompts/README.md` |
+| Aktive Prompt-Version | Recherche `v7`, Aggregation `v4`, JSON-Reparatur `v2` (englisch, ADR-017) (`newsdigest.prompts.research`, `.aggregate`, `.repair-json`); Begründung in `src/main/resources/prompts/README.md` |
 
 ## Aufbewahrung
 | Daten | Frist |

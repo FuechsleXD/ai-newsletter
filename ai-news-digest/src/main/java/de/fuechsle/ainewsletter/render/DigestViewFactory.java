@@ -9,11 +9,9 @@ import de.fuechsle.ainewsletter.render.DigestView.SectionView;
 import de.fuechsle.ainewsletter.render.DigestView.SourceView;
 import java.net.URI;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import org.springframework.stereotype.Component;
@@ -25,8 +23,6 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class DigestViewFactory {
-
-  static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.GERMAN);
 
   /** Accent colors of the topic cards in this order (docs/09-pdf-design.md). */
   static final List<String> COLORS = List.of("blue", "green", "purple", "orange", "red", "teal");
@@ -42,10 +38,12 @@ public class DigestViewFactory {
 
   private final int headingChars;
   private final int textChars;
+  private final DigestLanguage language;
 
-  public DigestViewFactory(NewsDigestProperties properties) {
+  public DigestViewFactory(NewsDigestProperties properties, DigestLanguage language) {
     this.headingChars = properties.output().maxHeadingChars();
     this.textChars = properties.output().maxTextChars();
+    this.language = language;
   }
 
   public DigestView create(
@@ -72,8 +70,8 @@ public class DigestViewFactory {
         heading(topicName),
         heading(aggregate.title()),
         heading(aggregate.subtitle()),
-        DATE.format(periodFrom) + " – " + DATE.format(periodTo),
-        DATE.format(createdOn),
+        language.date(periodFrom) + " – " + language.date(periodTo),
+        language.date(createdOn),
         text(aggregate.summary()),
         aggregate.keyPoints().stream()
             .map(point -> new KeyPointView(point.iconKey(), heading(point.text())))

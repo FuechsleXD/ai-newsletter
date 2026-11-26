@@ -1,6 +1,7 @@
 package de.fuechsle.ainewsletter.research;
 
 import de.fuechsle.ainewsletter.domain.ProviderResultStatus;
+import de.fuechsle.ainewsletter.provider.SearchTrace;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
@@ -27,9 +28,11 @@ public record ResearchResult(
     long webSearches,
     BigDecimal costUsd,
     Duration duration,
-    String errorMessage) {
+    String errorMessage,
+    SearchTrace searchTrace) {
 
   public ResearchResult {
     items = List.copyOf(items);
+    searchTrace = searchTrace == null ? SearchTrace.EMPTY : searchTrace;
   }
 }

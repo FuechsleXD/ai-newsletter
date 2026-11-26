@@ -60,6 +60,7 @@ class SchemaMigrationTest extends PostgresTestSupport {
             "de.fuechsle.ainewsletter.migration.V3__bpm_create_engine_3_0",
             "V4__app_topic_aggregator_required.sql",
             "V5__app_model_supports_temperature.sql",
+            "V6__app_provider_result_search_trace.sql",
             "R__monthly_cost.sql");
     assertThat(Arrays.stream(applied).map(MigrationInfo::getState))
         .allMatch(MigrationState::isApplied)

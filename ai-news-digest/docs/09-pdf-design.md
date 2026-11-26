@@ -6,7 +6,7 @@ Stilvorlage: `design/pdf-referenz.jpg`. Übernommen werden nur Aufbau und Stil, 
 
 ## Aufbau (von oben nach unten)
 1. **Kopfbanner** (dunkelblau): Titel = Topic, Untertitel mit Zeitraum und Datum, rechts ein generisches Icon/Badge (kein Fremdlogo)
-2. **Obere Reihe, zwei Karten**: links "Kurzfazit" (hellblau, 2–3 Sätze), rechts "Kernpunkte" (3–4 Zeilen mit kleinen Icons)
+2. **Obere Reihe, zwei Karten**: links "Summary"/"Kurzfazit" (hellblau, 2–3 Sätze), rechts "Key points"/"Kernpunkte" (3–4 Zeilen mit kleinen Icons); alle festen Texte kommen in der Ausgabesprache aus `messages/digest*.properties` (ADR-017)
 3. **Themen-Karten** (4–6, zwei pro Reihe): nummeriert, eigene Farbe (Blau, Grün, Lila, Orange, Rot, Türkis im Wechsel), Icon, Überschrift, 2–3 Sätze, optional kleines Ablaufdiagramm oder Zahlen-Highlight, unten Quellen-Kürzel
 4. **Konsens-Leiste**: welche Modelle ein Thema gemeldet haben (farbige Punkte je Modell); Meldung nur eines Modells = "unbestätigt"
 5. **Fazit-Banner** (dunkelblau): "Key Takeaways" mit 4–5 Häkchen-Punkten, daneben Kasten "Worauf achten" (1–2 Sätze Ausblick)
