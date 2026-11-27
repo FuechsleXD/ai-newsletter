@@ -27,7 +27,7 @@ Hosting ohne Load Balancer, Details in `11-deployment-cicd.md`.
 | `process` | BPMN-Delegates, `DigestProcessStarter` |
 | `scheduling` | `DigestScheduler`: Zeitpläne der aktiven Topics aus der DB, Reload ohne Neustart, Start der Läufe über `DigestProcessStarter`, Nachholen verpasster Starts beim Start der App (ADR-019); nur mit `newsdigest.scheduler.enabled` (Profil `prod`) |
 | `maintenance` | Wartungsjob (`MaintenanceJob`) kurz nach dem Start und dann alle 24 h: überfällige Läufe abbrechen (`OverdueRunCanceller`), Aufbewahrungsfristen und History-Cleanup der Engine (`RetentionService`) |
-| `render` | HTML-Mail- und PDF-Erzeugung aus demselben Aggregat (`DigestView`, Thymeleaf-Templates in `templates/pdf/` und `templates/mail/`, Klartext-Teil), Längenbegrenzung (`TextShortener`), Ausgabesprache mit festen Texten und Datumsformat (`DigestLanguage`, `messages/digest*.properties`), Gotenberg-Client |
+| `render` | HTML-Mail- und PDF-Erzeugung aus demselben Aggregat (`DigestView`, Thymeleaf-Templates in `templates/pdf/` und `templates/mail/`, Klartext-Teil), Längenbegrenzung (`TextShortener`), Ausgabesprache mit festen Texten und Datumsformat (`DigestLanguage`, `messages/digest*.properties`), Gotenberg-Client; eingebettete Schrift und Icons (`DigestAssets`), Seitenprüfung mit Nachkürzen (`OnePagePdfRenderer`, PDFBox) |
 | `mail` | Mailversand per SMTP über `JavaMailSender` (lokal Mailpit, in AWS SES); ein Code-Pfad für alle Umgebungen; Digest-Versand mit Protokoll je Empfänger, Betreiber-Mail |
 | `storage` | Ablage der PDFs (`DigestStorage`): `LocalDigestStorage` (Default, lokales Verzeichnis) oder `S3DigestStorage` (Profil `prod`), gemeinsame Schlüsselprüfung `StorageKeys` (ADR-015) |
 | `metrics` | Micrometer-Metriken |
@@ -93,7 +93,7 @@ Umsetzung (Stand Schritt 14): `NewsItemChecker` prüft nach dem Join alle Meldun
 - Weiche Verstöße werden korrigiert: unbekannte `sourceIds` entfernt, Sections ohne bekannte Quelle, Überschrift oder Text verworfen, mehr als das Maximum abgeschnitten, unbekannter `iconKey` wird `default`, bei `flowSteps` und `highlightNumber` zugleich bleibt nur `highlightNumber`; weniger Sections als das Minimum sind erlaubt
 - Texte werden beim Parsen nicht gekürzt, sondern erst vor dem Rendern
 - `sources` und `models` setzt die App aus den geprüften Meldungen, nie aus der Antwort des Modells
-- Icon-Schlüssel stehen in `src/main/resources/pdf/icon-keys.txt` (mit `default`); die SVGs folgen in Schritt 17
+- Icon-Schlüssel stehen in `src/main/resources/pdf/icon-keys.txt` (mit `default`); zu jedem gehört eine Lucide-SVG in `pdf/icons/` (`DigestAssets`, seit Schritt 17)
 - `RunAggregationService` speichert direkt nach dem Aufruf in eigener Transaktion: Inhalt in `digest_run.aggregate_json`, Token und Kosten in `aggregation_result` (bei Wiederholung addiert), bei Fehlschlag den Grund in `digest_run.error_message`
 
 Zeitzonen: Der Zeitraum eines Laufs wird in der Zeitzone seines Zeitplans berechnet und als Datum (Anfang bis Ende inklusive) an die Modelle gegeben; `publishedAt` wird als lokales Datum dieser Zeitzone verglichen. Gespeichert wird immer in UTC.

@@ -22,10 +22,13 @@ public class DigestRenderer {
 
   private final ITemplateEngine templateEngine;
   private final DigestLanguage language;
+  private final DigestAssets assets;
 
-  public DigestRenderer(ITemplateEngine templateEngine, DigestLanguage language) {
+  public DigestRenderer(
+      ITemplateEngine templateEngine, DigestLanguage language, DigestAssets assets) {
     this.templateEngine = templateEngine;
     this.language = language;
+    this.assets = assets;
   }
 
   public String pdfHtml(DigestView digest) {
@@ -112,6 +115,7 @@ public class DigestRenderer {
     Context context = new Context(language.locale());
     context.setVariable("digest", digest);
     context.setVariable("lang", language.tag());
+    context.setVariable("assets", assets);
     return context;
   }
 }

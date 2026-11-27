@@ -69,4 +69,13 @@ Stilvorlage: `design/pdf-referenz.jpg`. Übernommen werden nur Aufbau und Stil, 
 ## Vorgehen
 Zuerst mit festem Beispiel-JSON (kurz, normal, maximal lang) das Layout bauen und PNG-Vorschauen erzeugen, bevor Anbieter angebunden werden.
 
-Stand Schritt 8: einfaches Layout mit allen Teilen in der richtigen Reihenfolge (`templates/pdf/digest.html`, `templates/mail/digest.html`), ohne Icons und eigene Schriften; Beispiel-JSON in `src/test/resources/fixtures/digest/`, Vorschauen (HTML, PDF, PNG) erzeugt `GotenbergRenderingTest` unter `target/pdf-preview/`. Das finale Infografik-Design, Icons, Schriften und die Seitenprüfung mit Nachkürzen folgen in Schritt 17.
+## Umsetzung (Stand Schritt 17)
+- Templates: `templates/pdf/digest.html` (Infografik nach dem Aufbau oben) und `templates/mail/digest.html` (gleicher Stil, einspaltig); Beispiel-JSON in `src/test/resources/fixtures/digest/` (kurz, normal, maximal lang)
+- Schrift: **Inter** v4.1 (SIL Open Font License) in vier Schnitten (400, 600, 700, 800) unter `src/main/resources/pdf/fonts/`, als base64-`@font-face` in die Seite eingebettet; im PDF eingebettet (Test prüft das)
+- Icons: **Lucide** 1.80.0 (ISC-Lizenz), Umriss-Stil, eine SVG je Icon-Schlüssel unter `pdf/icons/<key>.svg` plus Layout-Icons unter `pdf/icons/ui/`; inline in die Seite eingefügt, Farbe über CSS. Fehlt zu einem Schlüssel die SVG, startet die App nicht. Zuordnung Schlüssel → Lucide-Icon und Lizenzen in `src/main/resources/pdf/README.md`
+- `DigestAssets` lädt Schrift und Icons einmal beim Start; Texte aus KI-Antworten bleiben escaped (`th:text`), nur eigene Dateien werden unescaped eingefügt (`th:utext`)
+- Konsens: jedes Modell bekommt eine feste Punktfarbe (Reihenfolge des ersten Auftretens), Punkte je Karte und Legende in der Fußzeile; Karten mit nur einem Modell tragen das Badge "unconfirmed"/"unbestätigt"
+- Seitenprüfung (`OnePagePdfRenderer`): PDFBox zählt die Seiten; bei mehr als einer Seite wird mit 70 % der Längengrenzen neu gerendert (`newsdigest.render.shorten-attempts`, Default 1; Untergrenzen 20 Zeichen für Überschriften, 60 für Texte), danach `DigestTooLongException` (Job-Retry, dann Incident). Das maximal lange Beispiel passt erst im zweiten Versuch, kurzes und normales im ersten
+- Die Mail nutzt immer die normalen Längengrenzen; nur das PDF wird bei Bedarf stärker gekürzt
+- Mail ohne Icons (SVG zeigen die meisten Mailprogramme nicht): farbige Nummern-Badges, Kartenfarben mit Seitenrand, Konsens als farbige Punkte (Zeichen), Häkchen als Zeichen; Schrift Inter, falls installiert, sonst Systemschrift
+- Vorschauen: `GotenbergRenderingTest` schreibt HTML, PDF und PNG (kurz, normal, normal deutsch, lang) nach `target/pdf-preview/`, `DigestRendererTest` die Mail als `normal-mail.html`

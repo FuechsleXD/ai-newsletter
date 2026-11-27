@@ -2,6 +2,7 @@ package de.fuechsle.ainewsletter.render;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.fuechsle.ainewsletter.aggregate.DigestAggregate;
 import de.fuechsle.ainewsletter.render.DigestView.SectionView;
 import de.fuechsle.ainewsletter.render.DigestView.SourceView;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,36 @@ class DigestViewFactoryTest {
     assertThat(view.sections().get(0).models()).containsExactly("Claude Test A");
     assertThat(view.sections().get(0).unconfirmed()).isTrue();
     assertThat(view.sections().get(1).unconfirmed()).isFalse();
+  }
+
+  @Test
+  void everyModelKeepsItsDotColorAcrossTheCards() {
+    DigestView view = RenderTestData.view("normal");
+
+    assertThat(view.models())
+        .containsExactly(
+            new DigestView.ModelBadge("Claude Test A", "#2563eb"),
+            new DigestView.ModelBadge("Claude Test B", "#16a34a"));
+    assertThat(view.sections().get(1).modelBadges()).isEqualTo(view.models());
+    assertThat(view.sections().getFirst().lightHex()).isEqualTo("#eff6ff");
+    assertThat(view.sections().getFirst().darkHex()).isEqualTo("#1d4ed8");
+  }
+
+  @Test
+  void lengthFactorShortensTextsForTheSecondAttemptButNotBelowTheMinimum() {
+    DigestAggregate aggregate = RenderTestData.aggregate("long");
+    DigestLanguage language = RenderTestData.language("en");
+
+    DigestView full = RenderTestData.view(aggregate, language, 1.0);
+    DigestView shorter = RenderTestData.view(aggregate, language, 0.7);
+    DigestView tiny = RenderTestData.view(aggregate, language, 0.01);
+
+    assertThat(full.summary()).hasSize(320);
+    assertThat(shorter.summary()).hasSizeLessThanOrEqualTo(224).endsWith(TextShortener.ELLIPSIS);
+    assertThat(shorter.sections().getFirst().heading()).hasSizeLessThanOrEqualTo(42);
+    assertThat(tiny.summary()).hasSizeLessThanOrEqualTo(DigestViewFactory.MIN_TEXT_CHARS);
+    assertThat(tiny.title()).hasSizeLessThanOrEqualTo(DigestViewFactory.MIN_HEADING_CHARS);
+    assertThat(tiny.title()).hasSizeGreaterThan(DigestViewFactory.MIN_HEADING_CHARS / 2);
   }
 
   @Test

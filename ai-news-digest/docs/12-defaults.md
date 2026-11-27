@@ -76,7 +76,8 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 |---|---|
 | Gotenberg-URL | `http://localhost:3000` (`newsdigest.render.gotenberg-url`), in Produktion der interne Docker-Name |
 | Timeout Gotenberg | 30 s |
-| Nachkürzen bei mehr als einer Seite | 1 Versuch (ab Schritt 17) |
+| Nachkürzen bei mehr als einer Seite | 1 Versuch mit 70 % der Längengrenzen (`newsdigest.render.shorten-attempts`), mindestens 20 Zeichen für Überschriften und 60 für Texte; danach Fehler |
+| Schrift und Icons | Inter v4.1 (OFL), Lucide 1.80.0 (ISC), eingebettet (`src/main/resources/pdf/`) |
 | PDF-Ablage | lokal `data/pdfs` (`newsdigest.storage.type=local`, `.local-directory`); Profil `prod`: S3 (`type=s3`, Bucket `newsdigest.storage.s3-bucket` aus Terraform) |
 | AWS-Region | `eu-central-1` (`newsdigest.aws.region`, ADR-015) |
 

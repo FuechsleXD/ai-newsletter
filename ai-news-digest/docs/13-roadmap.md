@@ -41,7 +41,7 @@ Leitidee: erst ein schmaler Durchstich von Anfang bis Ende, dann früh deployen,
 - [x] 16. Scheduler aus der DB mit Reload; Abbrechen hängender Läufe; nächtlicher Aufräumjob (Aufbewahrungsfristen); Instanz nur zum Lauf hochfahren (EventBridge-Schedule in Terraform startet die EC2-Instanz vor dem frühesten Topic-Zeitplan und stoppt sie nach dem Lauf, Backup beim Start, Alarm `backup-missing` ohne Fehlalarm bei gestoppter Instanz, Runbook; Ziel etwa 12 statt 40 USD im Monat)
   - [x] 16a. In der App: Scheduler aus der DB mit Reload und Nachholen verpasster Starts (6 h, ADR-019), Abbrechen hängender Läufe (manuell per Dev-Endpunkt, automatisch nach 3 h mit Betreiber-Mail), Wartungsjob nach dem Start und alle 24 h (Aufbewahrungsfristen, History-Cleanup der Engine); keine Migration
   - [x] 16b. Infrastruktur: EC2-Instanz per EventBridge Scheduler nur im Zeitfenster (Mo 06:30-08:00 Berlin, `run_window`), Backups nach dem Start und vor dem Stopp, Backup-Alarm nach 7 Tagen, Snapshot wöchentlich, CD startet und stoppt eine gestoppte Instanz, Runbook `betrieb/zeitfenster.md`
-- [ ] 17. PDF im finalen Infografik-Design (Gotenberg, Icon-Satz und Schrift festlegen), HTML-Mail im gleichen Stil
+- [x] 17. PDF im finalen Infografik-Design (Gotenberg, Icon-Satz und Schrift festlegen), HTML-Mail im gleichen Stil: Inter (OFL) und Lucide-Icons (ISC) eingebettet, Konsens-Punkte je Modell, Seitenprüfung mit PDFBox und Nachkürzen auf 70 %, Mail mit Kartenfarben und Nummern-Badges ohne Icons
 - [ ] 18. Metriken, CloudWatch-Alarme, SES-Bounce-Meldungen
 
 ## Phase 5 – API und Security
