@@ -9,6 +9,10 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 | Standard-Zeitplan (Seed) | Montags 07:00, `Europe/Berlin` | `schedule` |
 | Konfiguration neu laden | alle 60 s (zusätzlich sofort nach Änderung per API) | – |
 | Manueller Lauf | max. 3 pro Topic und Stunde | – |
+| Start nach Zeitplan | nur im Profil `prod` (`newsdigest.scheduler.enabled`) | – |
+| Verpassten Start nachholen | innerhalb von 6 h nach dem geplanten Zeitpunkt, einmal beim Start der App (`newsdigest.scheduler.misfire-grace`) | – |
+| Höchstdauer eines Laufs | 3 h, danach Abbruch (`CANCELLED`) mit Betreiber-Mail (`newsdigest.run.max-duration`) | – |
+| Wartungsjob | 10 min nach dem Start der App, dann alle 24 h (`newsdigest.maintenance.initial-delay`, `.interval`; aus mit `.enabled=false`) | – |
 
 ## Modelle und Recherche
 | Einstellung | Default | Überschreibbar in |
@@ -98,6 +102,8 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 | Läufe mit Meldungen, Ergebnissen und Mail-Protokoll | 2 Jahre |
 | PDFs in S3 | 2 Jahre (Lifecycle-Regel) |
 | Datenbank-Backups in S3 | 30 Tage |
+| Budgetwarnungen (`budget_warning`) | wie Läufe, 2 Jahre |
+| Engine-Historie | `historyTimeToLive` (30 Tage); der Wartungsjob startet den History-Cleanup der Engine |
 | Container-Logs in CloudWatch | 30 Tage (`log_retention_days`) |
 | EBS-Snapshots des Datenvolumes | täglich 02:00 UTC, 7 Stück (`snapshot_retention_count`) |
 | AWS-Budget (Infrastruktur) | 40 USD im Monat (`monthly_budget_usd`), Meldung bei 80 % und Prognose 100 % |

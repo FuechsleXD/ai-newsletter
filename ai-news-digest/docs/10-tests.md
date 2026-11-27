@@ -13,7 +13,7 @@
 | Migration | Testcontainers | Alle Migrationen auf leerer DB; UNIQUE, FK, CHECK, Teilindizes; Hibernate-Validierung grün |
 | Repository | `@DataJpaTest` + Testcontainers | Abfragen, Filter, Pagination, Monatskosten, Duplikatsuche |
 | Prozess | `@SpringBootTest` + Testcontainers, eingebettete Engine | Pflichtfälle unten |
-| Scheduler | `@SpringBootTest` | Konfigurationsänderung wirkt nach Reload ohne Neustart |
+| Scheduler | Unit + `@SpringBootTest` | Konfigurationsänderung wirkt nach Reload ohne Neustart, Nachholen verpasster Starts, Zeit über `Clock` |
 | API | `@WebMvcTest` / MockMvc | CRUD, Validierung -> 400, 404, 409, 422 (Budget), 429, Pagination, keine API-Keys in Antworten |
 | Fehlerbehandlung | `@WebMvcTest` | Jede Zuordnung im `GlobalExceptionHandler`, 500 ohne Stacktrace |
 | Security | Spring Security Test, selbst signierte Test-JWTs (eigener Schlüssel, lokaler JWKS) | Kein Token 401; abgelaufen, falscher Issuer, falsche Audience, falsche Signatur, ID Token statt Access Token jeweils 401; VIEWER schreibend 403; ADMIN erlaubt; Rollen-Mapping aus `realm_access.roles`; Engine nur ADMIN; Actuator nicht öffentlich; Security-Header |
@@ -56,7 +56,7 @@ Stand nach Roadmap-Schritt 8: Prozesstests laufen mit echtem Gotenberg und Mailp
 | Bereich | Mindestwert |
 |---|---|
 | Backend gesamt (JaCoCo) | 80 % Zeilen, 70 % Branches |
-| `service`, `process`, `scheduling`, `research`, `cost`, `aggregate` | 85 % Zeilen |
+| `service`, `process`, `scheduling`, `maintenance`, `research`, `cost`, `aggregate` | 85 % Zeilen |
 | Frontend `src/` ohne generierten Client (Vitest v8) | 80 % Zeilen |
 
 - Ausnahmen nur für Records, reine Konfigurationsklassen, `main`-Klasse, generierten Code; jede Ausnahme explizit
@@ -68,3 +68,4 @@ Schritt 14 (Prüfung der Meldungen): `NewsItemCheckerTest` (Reihenfolge der Stat
 
 Schritt 15 (Budget und Kosten): `CostCalculatorTest` (Preisstufe an, über und ohne Schwelle), `ModelCallsTest` (abgebrochener Aufruf mit Schätzung), `AnthropicNewsProviderTest` (Timeout ergibt Schätzung, beantworteter HTTP-Fehler keine), `BudgetWarningServiceTest` (unter der Schwelle, einmal pro Monat, bereits gewarnt, Mail scheitert, Text), `BudgetProcessTest` (Kostenauswertung nach Topic, Modell und Monat mit getrennt ausgewiesenen Schätzungen; Lauf erreicht die Warnschwelle, genau eine Warnung, nächster Lauf `SKIPPED_BUDGET` ohne zweite Warnung).
 
+Schritt 16a (Zeitplan, Abbruch, Wartung): `DigestSchedulerTest` (letzter Zeitpunkt an den Grenzen der Nachholfrist und in der Zeitzone des Zeitplans, Nachholen einmal, kein Nachholen nach erfolgtem Start oder außerhalb der Frist, ungültiger Cron/Zeitzone, Reload fügt hinzu, ändert und entfernt, übersprungener Start wird gezählt), `SchedulerWiringTest` (Scheduler und Wartungsjob nur mit Schalter; ohne Nachholfrist startet nichts), `RunLifecycleProcessTest` (nachgeholter Start mit echtem Lauf und kein zweites Mal; Abbruch eines laufenden Laufs beendet die Prozessinstanz, der wartende Job ändert den Status nicht mehr, das Topic läuft danach wieder; überfälliger Lauf wird abgebrochen, Betreiber-Mail in Mailpit), `RetentionServiceTest` (Fristen knapp davor und danach, Kaskade, laufender Lauf bleibt, alte Budgetwarnung, History-Cleanup-Job), `MaintenanceJobTest`, `DevRunControllerTest` (Abbruch 204, 409, 404). In allen Spring-Tests ist der Wartungsjob aus (`PostgresTestSupport`); Tests rufen seine Dienste direkt auf.

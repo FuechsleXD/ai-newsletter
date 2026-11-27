@@ -99,6 +99,7 @@ Metriken mit Micrometer, Export nach CloudWatch:
 | Metrik | Art | Tags |
 |---|---|---|
 | `digest.run` | Zähler | topic, status |
+| `digest.run.skipped` | Zähler | topic, reason (`already_running`); seit Schritt 16 |
 | `digest.run.duration` | Timer | topic |
 | `ai.call.duration` | Timer | provider, model, phase (research/aggregate), outcome |
 | `ai.tokens` | Zähler | provider, model, direction (input/output) |

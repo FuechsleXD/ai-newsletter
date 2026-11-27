@@ -74,11 +74,34 @@ class DevRunControllerTest extends ProcessTestSupport {
     awaitEnd(json.readTree(first.body()).get("processInstanceId").asString());
   }
 
+  @Test
+  void cancelsARunningRunOnceAndThenAnswersWithAConflict() throws Exception {
+    String suffix = unique();
+    long model = model("slow-" + suffix);
+    long topic = topic("Dev cancel " + suffix, model("ok-aggregator-" + suffix), model);
+
+    JsonNode run = json.readTree(post(topic).body());
+    long runId = run.get("runId").asLong();
+    try {
+      fakeProvider.awaitSlowCall();
+
+      assertThat(send("/dev/runs/" + runId + "/cancel").statusCode()).isEqualTo(204);
+      assertThat(runStatus(run.get("processInstanceId").asString())).isEqualTo("CANCELLED");
+      assertThat(send("/dev/runs/" + runId + "/cancel").statusCode()).isEqualTo(409);
+      assertThat(send("/dev/runs/" + Long.MAX_VALUE + "/cancel").statusCode()).isEqualTo(404);
+    } finally {
+      fakeProvider.release();
+    }
+  }
+
   private HttpResponse<String> post(long topicId) throws IOException, InterruptedException {
+    return send("/dev/topics/" + topicId + "/runs");
+  }
+
+  private HttpResponse<String> send(String path) throws IOException, InterruptedException {
     try (HttpClient client = HttpClient.newHttpClient()) {
       return client.send(
-          HttpRequest.newBuilder(
-                  URI.create("http://localhost:" + port + "/dev/topics/" + topicId + "/runs"))
+          HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
               .POST(HttpRequest.BodyPublishers.noBody())
               .build(),
           HttpResponse.BodyHandlers.ofString());

@@ -39,7 +39,7 @@
 - Duplikatprüfung über `news_item.normalized_url` zusammen mit Topic und Status `VALID` früherer erfolgreicher Läufe
 - PDFs liegen in S3, in der DB nur der Schlüssel
 - `topic_state.last_successful_run_at` wird nur bei `COMPLETED` und `NO_NEWS` auf `period_to` gesetzt
-- Aufbewahrung: `raw_response` wird nach einer Frist geleert, Läufe samt Meldungen nach einer längeren Frist gelöscht, PDFs in S3 per Lifecycle-Regel (Fristen in `12-defaults.md`); ein nächtlicher Aufräumjob übernimmt das, Kostenwerte bleiben für die Monatsauswertung erhalten, bis der Lauf gelöscht wird
+- Aufbewahrung: `raw_response` wird nach einer Frist geleert, Läufe samt Meldungen nach einer längeren Frist gelöscht, PDFs in S3 per Lifecycle-Regel (Fristen in `12-defaults.md`); der Wartungsjob (`RetentionService`, kurz nach dem Start der App und dann alle 24 h, ADR-019) übernimmt das, laufende Läufe bleiben unberührt, Kostenwerte bleiben für die Monatsauswertung erhalten, bis der Lauf gelöscht wird
 - Löschen heißt Deaktivieren, sobald Historie auf den Datensatz verweist
 - Validierung, die das Schema nicht abbilden kann (Recherche-Modell braucht Web-Suche, Aggregator strukturierte Ausgabe), erfolgt im Service
 - Seed-Daten: Standard-Zeitplan, Anbieter-Zeilen, Platzhalter; keine echten Mailadressen, keine geratenen Preise (Preise trage ich selbst ein). Umgesetzt in `V2__app_seed.sql`: Zeitplan „Wöchentlich montags 07:00“ (`0 0 7 * * MON`, `Europe/Berlin`) und Anbieter `ANTHROPIC` (Secret `newsdigest/prod/ai/anthropic`); keine Modelle, kein Budget
