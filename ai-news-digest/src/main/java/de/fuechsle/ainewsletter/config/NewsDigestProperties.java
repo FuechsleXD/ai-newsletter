@@ -42,15 +42,46 @@ public record NewsDigestProperties(
     @Valid @NotNull @DefaultValue Mail mail,
     @Valid @NotNull @DefaultValue Storage storage,
     @Valid @NotNull @DefaultValue Retention retention,
+    @Valid @NotNull @DefaultValue Scheduler scheduler,
+    @Valid @NotNull @DefaultValue Maintenance maintenance,
     @Valid @NotNull @DefaultValue Api api,
     @Valid @NotNull @DefaultValue Eval eval,
     @Valid @NotNull @DefaultValue Aws aws) {
 
-  /** Run defaults. */
+  /**
+   * Run defaults.
+   *
+   * @param configReloadInterval how often the scheduler reloads topics and schedules from the
+   *     database
+   * @param maxDuration a run that is still RUNNING after this time is cancelled by the maintenance
+   *     job and the operator is informed
+   */
   public record Run(
       @Min(1) @DefaultValue("7") int initialLookbackDays,
       @NotNull @DefaultValue("60s") Duration configReloadInterval,
-      @Min(1) @DefaultValue("3") int maxManualRunsPerTopicPerHour) {}
+      @Min(1) @DefaultValue("3") int maxManualRunsPerTopicPerHour,
+      @NotNull @DefaultValue("3h") Duration maxDuration) {}
+
+  /**
+   * Scheduled starts from the {@code schedule} table (ADR-019).
+   *
+   * @param enabled starts runs on schedule; on in profile {@code prod} only, so local work and
+   *     tests never start real runs by themselves
+   * @param misfireGrace on start of the app, a scheduled start missed within this time (instance or
+   *     app was down) is made up once
+   */
+  public record Scheduler(
+      @DefaultValue("false") boolean enabled, @NotNull @DefaultValue("6h") Duration misfireGrace) {}
+
+  /**
+   * Maintenance job: cancels overdue runs, applies the retention periods and starts the history
+   * cleanup of the engine. It runs shortly after the start of the app and then at a fixed interval,
+   * not at a fixed time of day, because the instance may only run for a short time (ADR-019).
+   */
+  public record Maintenance(
+      @DefaultValue("true") boolean enabled,
+      @NotNull @DefaultValue("10m") Duration initialDelay,
+      @NotNull @DefaultValue("24h") Duration interval) {}
 
   /** Model and research defaults. */
   public record Ai(

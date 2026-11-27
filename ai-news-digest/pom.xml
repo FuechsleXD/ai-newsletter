@@ -299,6 +299,7 @@
                     <include>de.fuechsle.ainewsletter.service*</include>
                     <include>de.fuechsle.ainewsletter.process*</include>
                     <include>de.fuechsle.ainewsletter.scheduling*</include>
+                    <include>de.fuechsle.ainewsletter.maintenance*</include>
                     <include>de.fuechsle.ainewsletter.research*</include>
                     <include>de.fuechsle.ainewsletter.cost*</include>
                     <include>de.fuechsle.ainewsletter.aggregate*</include>

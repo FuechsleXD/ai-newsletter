@@ -11,7 +11,10 @@ public enum OperatorNotificationReason {
   AGGREGATION_FAILED("Die Aggregation ist fehlgeschlagen; der Lauf ist fehlgeschlagen."),
   NO_RECIPIENTS("Das Topic hat keine aktiven Empfänger; der Lauf ist fehlgeschlagen."),
   MAIL_PARTIALLY_FAILED(
-      "Der Digest wurde verschickt, aber nicht alle Empfänger haben die Mail erhalten.");
+      "Der Digest wurde verschickt, aber nicht alle Empfänger haben die Mail erhalten."),
+  RUN_TIMED_OUT(
+      "Der Lauf hat die Höchstdauer überschritten und wurde abgebrochen (Status CANCELLED). Ursache"
+          + " ist meist ein Incident in der Engine; der nächste geplante Lauf startet normal.");
 
   private final String description;
 

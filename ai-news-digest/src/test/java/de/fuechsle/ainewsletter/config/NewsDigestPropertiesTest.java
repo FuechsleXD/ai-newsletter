@@ -33,6 +33,12 @@ class NewsDigestPropertiesTest {
       assertThat(p.run().initialLookbackDays()).isEqualTo(7);
       assertThat(p.run().configReloadInterval()).isEqualTo(Duration.ofSeconds(60));
       assertThat(p.run().maxManualRunsPerTopicPerHour()).isEqualTo(3);
+      assertThat(p.run().maxDuration()).isEqualTo(Duration.ofHours(3));
+      assertThat(p.scheduler().enabled()).isFalse();
+      assertThat(p.scheduler().misfireGrace()).isEqualTo(Duration.ofHours(6));
+      assertThat(p.maintenance().enabled()).isTrue();
+      assertThat(p.maintenance().initialDelay()).isEqualTo(Duration.ofMinutes(10));
+      assertThat(p.maintenance().interval()).isEqualTo(Duration.ofHours(24));
 
       assertThat(p.ai().callTimeout()).isEqualTo(Duration.ofSeconds(300));
       assertThat(p.prompts().research()).isEqualTo("v7");

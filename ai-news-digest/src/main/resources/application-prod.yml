@@ -15,6 +15,9 @@ spring:
       mail.smtp.writetimeout: 10000
 
 newsdigest:
+  # Runs start on the schedules from the database (ADR-019); off in all other profiles
+  scheduler:
+    enabled: true
   secrets:
     source: aws
   storage:

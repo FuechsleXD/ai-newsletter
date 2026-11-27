@@ -108,11 +108,15 @@ public class DigestRunService {
 
   /**
    * Ends the run. For COMPLETED and NO_NEWS the {@code last_successful_run_at} of the topic moves
-   * to the end of the run period, so the next run continues from there.
+   * to the end of the run period, so the next run continues from there. A run cancelled in the
+   * meantime stays cancelled (the row is locked like in {@link RunCancellationService}).
    */
   @Transactional
   public void finish(long runId, RunStatus status) {
-    DigestRun run = runs.findById(runId).orElseThrow();
+    DigestRun run = runs.findForUpdate(runId).orElseThrow();
+    if (run.getStatus() == RunStatus.CANCELLED) {
+      return;
+    }
     run.finish(status, clock.instant());
     if (status == RunStatus.COMPLETED || status == RunStatus.NO_NEWS) {
       TopicState state =

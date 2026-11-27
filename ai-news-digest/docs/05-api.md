@@ -29,7 +29,7 @@
 | `POST /runs/{id}/cancel` | Laufenden Lauf abbrechen: 200; 409 wenn nicht `RUNNING` | ADMIN |
 | `POST /topics/{id}/runs` | Manueller Lauf: 202 + Run-ID; 409 wenn Lauf aktiv; 429 bei Rate-Limit; 422 wenn Budget erreicht | ADMIN |
 
-Nur im Profil `dev` (Schritt 9, ohne Rollen, nie in Produktion): `POST /dev/topics/{id}/runs` startet einen Lauf, 202 mit `runId` und `processInstanceId`; 404 bei unbekanntem Topic, 409 bei aktivem Lauf.
+Nur im Profil `dev` (Schritt 9, ohne Rollen, nie in Produktion): `POST /dev/topics/{id}/runs` startet einen Lauf, 202 mit `runId` und `processInstanceId`; 404 bei unbekanntem Topic, 409 bei aktivem Lauf. `POST /dev/runs/{id}/cancel` bricht einen laufenden Lauf ab (Schritt 16), 204; 404 bei unbekanntem Lauf, 409 wenn er nicht mehr läuft.
 
 ## Validierung
 - Cron mit Springs `CronExpression`, Zeitzone gegen `ZoneId`, E-Mail-Format, eindeutige Namen

@@ -18,7 +18,12 @@ import org.testcontainers.utility.MountableFile;
  * {@link ProcessTestSupport} and the engine smoke test switch it on.
  */
 // Lower precedence than @DynamicPropertySource, so subclasses can switch the job executor on
-@TestPropertySource(properties = "camunda.bpm.job-execution.enabled=false")
+// The maintenance job is off as well; tests call its services directly
+@TestPropertySource(
+    properties = {
+      "camunda.bpm.job-execution.enabled=false",
+      "newsdigest.maintenance.enabled=false"
+    })
 public abstract class PostgresTestSupport {
 
   public static final String APP_USER = "newsdigest_app";

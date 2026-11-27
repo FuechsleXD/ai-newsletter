@@ -115,7 +115,7 @@ Alle Variablen sind einfache Werte oder Strings, damit die Engine keine Java-Ser
 | `NO_NEWS` | Modelle haben geliefert, aber keine gültige Meldung | auf `period_to` gesetzt |
 | `FAILED` | Kein Modell erfolgreich oder Incident nicht behebbar | unverändert |
 | `SKIPPED_BUDGET` | Monatsbudget erreicht, keine KI-Aufrufe | unverändert |
-| `CANCELLED` | Von einem Admin abgebrochen | unverändert |
+| `CANCELLED` | Von einem Admin oder nach Überschreiten der Höchstdauer abgebrochen | unverändert |
 
 ## Idempotenz
 Jeder asynchrone Schritt kann von der Engine wiederholt werden (Retry, abgelaufene Job-Sperre nach Neustart). Deshalb:
@@ -132,9 +132,18 @@ Jeder asynchrone Schritt kann von der Engine wiederholt werden (Retry, abgelaufe
 - Beim Herunterfahren (Deployment) wartet die App kontrolliert auf laufende Jobs (`server.shutdown=graceful`, ausreichende Stop-Zeit im Container); nicht beendete Jobs übernimmt die Engine nach Ablauf der Sperre beim nächsten Start
 
 ## Abbrechen hängender Läufe
-- Ein Admin kann einen Lauf mit Status `RUNNING` abbrechen (API und UI); dabei wird die Prozessinstanz beendet und der Lauf auf `CANCELLED` gesetzt
+- Ein Admin kann einen Lauf mit Status `RUNNING` abbrechen (API und UI ab Schritt 19/23, bis dahin `POST /dev/runs/{id}/cancel` im Profil `dev`); `RunCancellationService` beendet die Prozessinstanz (offene Jobs und Incidents verschwinden mit ihr, Custom-Listener wie die Budgetwarnung laufen nicht) und setzt den Lauf auf `CANCELLED` mit Grund in `error_message`
+- Die Zeile des Laufs wird dabei gesperrt (`SELECT … FOR UPDATE`), ebenso beim regulären Beenden (`DigestRunService.finish`); ein abgebrochener Lauf bleibt `CANCELLED`. Ein Job, der beim Abbruch noch läuft (z. B. ein Modellaufruf), scheitert beim Commit, weil seine Prozessinstanz fehlt; der bezahlte Aufruf bleibt in `provider_result` erfasst
+- Automatisch: Läuft ein Lauf länger als `newsdigest.run.max-duration` (3 h), bricht ihn der Wartungsjob ab und schickt dem Betreiber eine Mail (`RUN_TIMED_OUT`). Grund: Die Instanz läuft nur zum Lauf, ein hängender Lauf (meist ein Incident) fiele sonst niemandem auf und blockierte jeden weiteren Lauf des Topics
 - Danach kann für das Topic wieder ein Lauf starten (Teilindex gilt nur für `RUNNING`)
-- Fällt ein geplanter Start aus, weil noch ein Lauf aktiv ist, wird das geloggt und als Metrik gezählt
+- Fällt ein geplanter Start aus, weil noch ein Lauf aktiv ist, wird das geloggt und als Metrik `digest.run.skipped` (Tags `topic`, `reason`) gezählt
+
+## Zeitplan
+- `DigestScheduler` (Package `scheduling`) liest die aktiven Topics mit Cron-Ausdruck (Spring-Format mit Sekunden) und Zeitzone ihres `schedule`, alle `newsdigest.run.config-reload-interval` (60 s) neu; geänderte Zeitpläne wirken ohne Neustart, deaktivierte Topics fallen heraus
+- Ungültiger Cron-Ausdruck oder unbekannte Zeitzone: Fehler im Log, nur dieses Topic startet nicht nach Plan
+- Nachholen (ADR-019): Beim Start der App wird für jedes Topic der letzte geplante Zeitpunkt innerhalb von `newsdigest.scheduler.misfire-grace` (6 h) gesucht; ist seitdem kein Lauf gestartet, startet er einmal. Ein zweiter Neustart startet ihn nicht erneut
+- Budget, Zeitraum und alles Weitere prüft der Prozess wie bei einem manuellen Start
+- Nur aktiv mit `newsdigest.scheduler.enabled=true` (Profil `prod`); lokal, im Eval und in Tests startet nichts von selbst
 
 ## Start und Parallelität zwischen Läufen
 - Prozessstart ausschließlich über `DigestProcessStarter` (Scheduler und manueller Lauf); Business Key ist die Topic-ID

@@ -19,13 +19,14 @@ Hosting ohne Load Balancer, Details in `11-deployment-cicd.md`.
 | `config` | `@ConfigurationProperties` (Defaults), technische Konfiguration |
 | `web` | Controller, Request/Response-Records, Mapper, `GlobalExceptionHandler` |
 | `security` | Security-Konfiguration, Entry Point, Access-Denied-Handler |
-| `service` | Fachlogik, fachliche Exceptions |
+| `service` | Fachlogik, fachliche Exceptions; Abbrechen eines Laufs (`RunCancellationService`) |
 | `provider` | `NewsProvider`, Implementierungen je Anbieter, Registry, `ModelSnapshot` (Modell und Preise für einen Aufruf), `SearchTrace` (Suchbegriffe und Treffer eines Aufrufs zur Diagnose; bei Anthropic aus der vollständigen Antwort in den Spring-AI-Metadaten), `ModelCalls` (Token und Kosten über Aufruf und Reparaturversuche), `JsonModelCall` (Aufruf mit JSON-Vertrag und Reparaturversuch), `ProviderCallLimiter` (Parallelitätsbegrenzung pro Anbieter; die Registry gibt nur begrenzte Provider heraus) |
 | `aggregate` | Aggregator-Aufruf, `DigestAggregate`, Parsing und Validierung der Aggregator-Antwort, Icon-Schlüssel, Speichern des Ergebnisses |
 | `research` | Parsing der Recherche-Antworten, URL-Normalisierung, Prüfung der Meldungen (Zeitraum, URL, Duplikate) |
 | `cost` | Kostenberechnung (`CostCalculator`, je Aufruf mit Preisstufe nach Prompt-Länge), Budgetprüfung (`BudgetService`), Budgetwarnung (`BudgetWarningService`), Kostenauswertung nach Topic, Modell und Monat (`CostReportService`) |
 | `process` | BPMN-Delegates, `DigestProcessStarter` |
-| `scheduling` | Laden der Zeitpläne, Reload, Start der Läufe |
+| `scheduling` | `DigestScheduler`: Zeitpläne der aktiven Topics aus der DB, Reload ohne Neustart, Start der Läufe über `DigestProcessStarter`, Nachholen verpasster Starts beim Start der App (ADR-019); nur mit `newsdigest.scheduler.enabled` (Profil `prod`) |
+| `maintenance` | Wartungsjob (`MaintenanceJob`) kurz nach dem Start und dann alle 24 h: überfällige Läufe abbrechen (`OverdueRunCanceller`), Aufbewahrungsfristen und History-Cleanup der Engine (`RetentionService`) |
 | `render` | HTML-Mail- und PDF-Erzeugung aus demselben Aggregat (`DigestView`, Thymeleaf-Templates in `templates/pdf/` und `templates/mail/`, Klartext-Teil), Längenbegrenzung (`TextShortener`), Ausgabesprache mit festen Texten und Datumsformat (`DigestLanguage`, `messages/digest*.properties`), Gotenberg-Client |
 | `mail` | Mailversand per SMTP über `JavaMailSender` (lokal Mailpit, in AWS SES); ein Code-Pfad für alle Umgebungen; Digest-Versand mit Protokoll je Empfänger, Betreiber-Mail |
 | `storage` | Ablage der PDFs (`DigestStorage`): `LocalDigestStorage` (Default, lokales Verzeichnis) oder `S3DigestStorage` (Profil `prod`), gemeinsame Schlüsselprüfung `StorageKeys` (ADR-015) |
