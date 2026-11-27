@@ -37,12 +37,16 @@ Modellierung:
 - Ein fehlgeschlagenes Modell beendet seine Instanz regulär mit Status `FAILED` im `provider_result` (kein BPMN-Error, keine Abbruchbedingung `completionCondition`)
 
 Technische Regeln (wichtig für echte Parallelität):
-- Recherche-Task mit `asyncBefore="true"` und `camunda:exclusive="false"`; exklusive Jobs würden die Instanzen derselben Prozessinstanz nacheinander ausführen
-- Multi-Instance-Body mit `asyncAfter="true"`, damit das Zusammenführen in einer eigenen Transaktion läuft
-- Gleichzeitiges Beenden mehrerer Instanzen führt zu `OptimisticLockingException` beim Join; die Engine wiederholt den Job automatisch. Das ist erwartetes Verhalten und muss getestet werden
+- Wo die Attribute stehen (in Camunda 7 / CIB seven leicht zu verwechseln): `async*` und `exclusive` am `serviceTask` gelten für den **Multi-Instance-Body**, an `multiInstanceLoopCharacteristics` für **jede innere Instanz**. Bis Schritt 13a standen sie am Task; dann gab es nur einen Job für den Body, der die Instanzen nacheinander im selben Thread ausführte
+- Innere Instanzen (`multiInstanceLoopCharacteristics`): `asyncBefore="true"` und `camunda:exclusive="false"`, damit jede Instanz ein eigener, nicht exklusiver Job ist; exklusive Jobs würden die Instanzen derselben Prozessinstanz nacheinander ausführen
+- Innere Instanzen zusätzlich `asyncAfter="true"`: Aufruf und Ergebnis sind festgeschrieben, bevor die Instanz abschließt. Beenden mehrere Instanzen gleichzeitig, kollidiert nur dieser kleine Abschluss-Job (`OptimisticLockingException`) und wird von der Engine wiederholt; das Modell wird nie ein zweites Mal aufgerufen (ohne `asyncAfter` rollte die Kollision den ganzen Recherche-Job zurück und der Aufruf wurde doppelt bezahlt)
+- Multi-Instance-Body (`serviceTask`): `asyncAfter="true"`, damit das Zusammenführen in einer eigenen Transaktion läuft
+- Die Kollision beim Abschluss ist erwartetes Verhalten und getestet (`ParallelResearchProcessTest`)
 - Die Instanzen schreiben ihre Ergebnisse in eigene Tabellenzeilen, NIE in gemeinsame Prozessvariablen (kein Zähler, keine Liste, die parallel verändert wird)
 - Das Ergebnis der Recherche (`researchOutcome`) wird nach dem Join aus der Datenbank ermittelt
-- Pro Anbieter begrenzt eine Semaphore die gleichzeitigen Aufrufe (Default siehe Defaults); die Job-Executor-Threads müssen dazu passend konfiguriert sein
+- Pro Anbieter begrenzt eine faire Semaphore die gleichzeitigen Aufrufe (`ProviderCallLimiter`: `ai_provider.max_concurrent_calls`, sonst Default 2); jeder Aufruf belegt einen Platz, auch Reparaturversuch und Aggregation. Die Job-Executor-Threads müssen dazu passen (Defaults)
+- Wartezeit auf einen freien Platz höchstens `max-wait-for-call-slot` (5 min); danach wird der Job wiederholt (`R3/PT5M`), die Recherche ist nicht `FAILED`, weil das Modell nicht versagt hat. Beim Start wird geprüft: Wartezeit + Timeout × (1 + Reparaturversuche) < Sperrzeit des Jobs (20 min; Defaults: 5 min + 2 × 300 s = 15 min); sonst könnte die Engine einen noch laufenden Job einem zweiten Thread geben und das Modell doppelt aufrufen
+- Findet ein Reparaturversuch keinen Platz, scheitert nur dieser Versuch wie ein Anbieterfehler; der bereits bezahlte erste Aufruf bleibt gebucht
 
 ## Dateien
 - Modell: `src/main/resources/processes/digest-run.bpmn`, Process-ID `digestRun`; wird beim Start automatisch deployt (`camunda.bpm.deployment-resource-pattern: classpath*:processes/*.bpmn`), eine neue Prozessversion entsteht nur bei geändertem Modell

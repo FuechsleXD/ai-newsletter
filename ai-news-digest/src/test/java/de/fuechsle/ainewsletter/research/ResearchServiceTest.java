@@ -77,7 +77,7 @@ class ResearchServiceTest {
     assertThat(invocation.temperature()).isEqualByComparingTo("0.2");
     assertThat(invocation.webSearch()).isTrue();
     assertThat(invocation.maxWebSearches()).isEqualTo(15);
-    assertThat(invocation.timeout()).isEqualTo(Duration.ofSeconds(120));
+    assertThat(invocation.timeout()).isEqualTo(Duration.ofSeconds(300));
     assertThat(invocation.prompt())
         .contains("TOPIC: Java")
         .contains("FOCUS: Releases und JEPs")

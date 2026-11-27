@@ -18,8 +18,9 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 | Temperatur | Anbieter-Standard (nicht gesendet, wenn NULL); nur pflegbar, wenn `ai_model.supports_temperature` (Default `false`, aktuelle Claude-Modelle lehnen sie ab) | `ai_model.temperature` |
 | Max-Tokens | 16000 (`newsdigest.ai.default-max-output-tokens`) | `ai_model.max_output_tokens` |
 | Websuchen pro Recherche-Aufruf | max. 15 (`newsdigest.ai.max-web-searches-per-call`, Kostenbremse). Im Eval lieferte Recherche `v3` mit 5 Suchen nur 1 Meldung, mit 10 Suchen 4 gültige aus echten Artikeln; Lauf 8 zeigte, dass 10 Suchen für einen breiten Schwerpunkt mit 6-10 Aspekten nicht reichen, deshalb ab `v7` 15. Kosten mit Claude Sonnet 5.5 bei 10 Suchen etwa 0,41-0,59 USD je Lauf, bei 15 geschätzt 0,55-0,80 USD (rund 2,50-3,50 USD im Monat für ein wöchentliches Topic) | – |
-| Timeout pro Modellaufruf | 120 s | – |
-| Gleichzeitige Aufrufe pro Anbieter | 2 | `ai_provider.max_concurrent_calls` |
+| Timeout pro Modellaufruf | 300 s (`newsdigest.ai.call-timeout`); Recherche mit 15 Websuchen dauerte mit Claude Sonnet 5.5 bis 203 s (Eval-Lauf 9), mit 120 s brach Lauf 10 ab. Keine automatischen Wiederholungen im SDK (`maxRetries` 0, ADR-014) | – |
+| Gleichzeitige Aufrufe pro Anbieter | 2 (`newsdigest.ai.max-concurrent-calls-per-provider`); gilt für Recherche, Reparatur und Aggregation; der Wert der Zeile wird beim ersten Aufruf gelesen, Änderung wirkt nach Neustart | `ai_provider.max_concurrent_calls` |
+| Wartezeit auf einen freien Aufrufplatz | 5 min (`newsdigest.ai.max-wait-for-call-slot`), danach Wiederholung des Jobs; zusammen mit den Aufrufen eines Jobs unter der Sperrzeit (beim Start geprüft) | – |
 | Meldungen pro Modell | max. 10 | – |
 | Reparaturversuche bei unlesbarem JSON | 1 | – |
 | Duplikatprüfung gegen frühere Läufe | letzte 90 Tage | – |
@@ -56,9 +57,9 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 | Einstellung | Default |
 |---|---|
 | Retries externer Tasks | 3 Versuche, 5 min Abstand (`R3/PT5M`) |
-| Job-Executor-Threads | mindestens Summe der parallelen Aufrufe aller Anbieter + 2 |
+| Job-Executor-Threads | mindestens Summe der parallelen Aufrufe aller Anbieter + 2; derzeit `core-pool-size` 4, `max-pool-size` 10 (`camunda.bpm.job-execution` in `application.yml`) |
 | `historyTimeToLive` | 30 Tage (Engine-Default, gesetzt von `ProcessEngineSettings`) |
-| Sperrzeit eines Jobs (`lockTimeInMillis`) | 10 min |
+| Sperrzeit eines Jobs (`lockTimeInMillis`) | 20 min (`newsdigest.process.job-lock-time`); muss länger sein als Wartezeit auf einen Aufrufplatz plus alle Aufrufe eines Jobs (beim Start geprüft). Wirkt nur nach einem Absturz: dann wird ein verwaister Job nach dieser Zeit erneut vergeben |
 | Stop-Zeit beim Herunterfahren | 3 min |
 
 ## Rendering

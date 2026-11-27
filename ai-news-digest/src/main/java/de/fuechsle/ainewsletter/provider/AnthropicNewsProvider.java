@@ -89,7 +89,11 @@ public class AnthropicNewsProvider implements NewsProvider {
             .maxTokens(invocation.maxOutputTokens())
             .apiKey(apiKey)
             .baseUrl(baseUrl)
-            .timeout(invocation.timeout());
+            .timeout(invocation.timeout())
+            // No hidden SDK retries (Spring AI default: 2): a timed-out attempt is still billed by
+            // the provider without its tokens reaching us, and three attempts would outlast the
+            // job lock. Retries are left to the engine, visible and costed (ADR-014).
+            .maxRetries(0);
     if (invocation.temperature() != null) {
       builder.temperature(invocation.temperature().doubleValue());
     }

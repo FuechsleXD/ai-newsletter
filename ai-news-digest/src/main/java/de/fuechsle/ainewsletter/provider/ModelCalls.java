@@ -34,7 +34,13 @@ public final class ModelCalls {
   /**
    * Calls the model. Errors of the provider or a missing secret do not throw.
    *
+   * <p>If no call slot of the provider becomes free in time, the first call of the task throws
+   * {@link CallSlotUnavailableException}, so the engine retries the job; nothing was billed yet. A
+   * later call (repair attempt) fails like a provider error instead, so the cost of the calls
+   * before is still recorded (golden rule 5).
+   *
    * @return the response, or {@code null} if the call failed ({@link #lastError()} is set)
+   * @throws CallSlotUnavailableException if no slot became free for the first call
    */
   public ModelResponse call(ModelInvocation invocation) {
     try {
@@ -42,11 +48,20 @@ public final class ModelCalls {
       responses.add(response);
       lastText = response.text();
       return response;
+    } catch (CallSlotUnavailableException e) {
+      if (responses.isEmpty()) {
+        throw e;
+      }
+      return failed(e);
     } catch (ProviderException | SecretNotFoundException e) {
-      log.warn("Call of model {} failed: {}", model.modelName(), e.getMessage());
-      lastError = e.getMessage();
-      return null;
+      return failed(e);
     }
+  }
+
+  private ModelResponse failed(RuntimeException e) {
+    log.warn("Call of model {} failed: {}", model.modelName(), e.getMessage());
+    lastError = e.getMessage();
+    return null;
   }
 
   public ModelSnapshot model() {

@@ -54,14 +54,20 @@ public record NewsDigestProperties(
 
   /** Model and research defaults. */
   public record Ai(
-      @NotNull @DefaultValue("120s") Duration callTimeout,
+      @NotNull @DefaultValue("300s") Duration callTimeout,
       /**
        * Used when {@code ai_model.max_output_tokens} is NULL; the Anthropic API requires a value.
        */
       @Min(1) @DefaultValue("16000") int defaultMaxOutputTokens,
       /** Upper limit of web searches per research call (cost guard). */
       @Min(1) @DefaultValue("15") int maxWebSearchesPerCall,
+      /** Concurrent calls per provider (research, repair, aggregation); protects rate limits. */
       @Min(1) @DefaultValue("2") int maxConcurrentCallsPerProvider,
+      /**
+       * Longest wait for a free call slot; then the engine retries the job. Together with the call
+       * timeouts of one job it must stay below {@code process.job-lock-time} (checked on start).
+       */
+      @NotNull @DefaultValue("5m") Duration maxWaitForCallSlot,
       @Min(1) @DefaultValue("10") int maxItemsPerModel,
       @Min(0) @DefaultValue("1") int jsonRepairAttempts,
       @Min(1) @DefaultValue("90") int duplicateLookbackDays,
@@ -117,7 +123,7 @@ public record NewsDigestProperties(
   public record Process(
       @NotBlank @DefaultValue("R3/PT5M") String externalTaskRetryCycle,
       @NotNull @DefaultValue("30d") Duration historyTimeToLive,
-      @NotNull @DefaultValue("10m") Duration jobLockTime,
+      @NotNull @DefaultValue("20m") Duration jobLockTime,
       @NotNull @DefaultValue("3m") Duration shutdownTimeout) {}
 
   /** PDF rendering defaults. Gotenberg is only reachable in the internal Docker network. */

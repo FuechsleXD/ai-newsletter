@@ -24,15 +24,17 @@ Leitidee: erst ein schmaler Durchstich von Anfang bis Ende, dann früh deployen,
     - Gefunden und behoben: Der Eval-Runner blockierte den Start des Job Executors; Eval-Export nach `data/eval` (überlebt `mvn clean`); Startmeldung mit Prozessinstanz im Log
     - Fixtures `research/real-claude-v3.json` und `aggregate/real-claude-v2.json` (nur öffentliche URLs und Nachrichten)
 - [x] 10. Dockerfile, `docker-compose.prod.yml` mit Caddy, Trivy in der CI
-- [~] 11. Terraform-Grundlage (State-Bootstrap, `infra.yml`) und minimaler Betrieb auf AWS per Terraform (EC2, HTTPS, DB, Secrets, S3, SES, Domain); Caddy veröffentlicht bis Schritt 20 nur Platzhalter und Health-Check; Backup-Job; erster echter Mailversand; Wiederherstellung einmal üben. Keycloak kommt erst mit Schritt 20 auf den Server (ohne JWT-Prüfung kostet er nur Speicher und vergrößert die Angriffsfläche)
+- [x] 11. Terraform-Grundlage (State-Bootstrap, `infra.yml`) und minimaler Betrieb auf AWS per Terraform (EC2, HTTPS, DB, Secrets, S3, SES, Domain); Caddy veröffentlicht bis Schritt 20 nur Platzhalter und Health-Check; Backup-Job; erster echter Mailversand; Wiederherstellung einmal üben. Keycloak kommt erst mit Schritt 20 auf den Server (ohne JWT-Prüfung kostet er nur Speicher und vergrößert die Angriffsfläche)
   - [x] 11a. App an AWS anbinden: AWS SDK v2, Secrets aus dem Secrets Manager mit Cache, PDFs in S3, Profil `prod` mit SES-SMTP (STARTTLS), Region `eu-central-1` (ADR-015)
   - [x] 11b. Infrastruktur als Code: `infra/terraform/` (Netz, EC2 `t4g.medium`, EBS, S3, ECR, leere Secrets, SES mit DKIM, Route 53, DLM, SNS, Budget-Alarm, GitHub-OIDC), `infra.yml`, Deploy-Skript für Start-Secrets, Backup-Job, Log-Treiber `awslogs`, Runbook Bootstrap
   - [x] 11c. Erstes Deployment (durch mich, begleitet): State-Bucket, Apply, Secrets eintragen, Image nach ECR, Start per SSM, HTTPS, erster echter Mailversand, Wiederherstellung üben
-  - [x] 12. CD-Pipeline: ECR, SSM-Deployment, Freigabe, Smoke-Test, Rollback
+- [x] 12. CD-Pipeline: ECR, SSM-Deployment, Freigabe, Smoke-Test, Rollback
 
 
 ## Phase 4 – Breite im Backend
-- [ ] 13. Weitere Anbieter/Modelle, echte Parallelität (nicht-exklusive Jobs, Semaphore pro Anbieter), Parallelitäts-Tests
+- [~] 13. Weitere Anbieter/Modelle, echte Parallelität (nicht-exklusive Jobs, Semaphore pro Anbieter), Parallelitäts-Tests
+  - [x] 13a. Echte Parallelität mit einem zweiten Anthropic-Modell (Claude Haiku 5.5): Semaphore pro Anbieter (`ProviderCallLimiter`), Job-Executor passend konfiguriert, Parallelitäts-Tests. Gefunden und behoben: die Async-Attribute standen am Task statt an der Multi-Instance, die Recherche lief deshalb bisher nacheinander; ohne `asyncAfter` der Instanzen wurde bei der Kollision am Join das Modell doppelt aufgerufen; Eval-Lauf 10 (Sonnet und Haiku gleichzeitig) zeigte versteckte SDK-Wiederholungen nach dem Timeout: jetzt `maxRetries` 0, Timeout 300 s, Sperrzeit 20 min (ADR-014, Nachtrag)
+  - [ ] 13b. Zweiter Anbieter (Auswahl offen, offener Punkt 4)
 - [ ] 14. URL-Prüfung mit SSRF-Schutz, Duplikate gegen frühere Läufe, letzte Überschriften an den Aggregator
 - [ ] 15. Budget-Gateway, Kostenauswertung
 - [ ] 16. Scheduler aus der DB mit Reload; Abbrechen hängender Läufe; nächtlicher Aufräumjob (Aufbewahrungsfristen); Instanz nur zum Lauf hochfahren (EventBridge-Schedule in Terraform startet die EC2-Instanz vor dem frühesten Topic-Zeitplan und stoppt sie nach dem Lauf, Backup beim Start, Alarm `backup-missing` ohne Fehlalarm bei gestoppter Instanz, Runbook; Ziel etwa 12 statt 40 USD im Monat)

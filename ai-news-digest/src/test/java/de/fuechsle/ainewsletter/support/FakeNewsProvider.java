@@ -32,6 +32,8 @@ import java.util.stream.Collectors;
  *   <li>{@code empty-}: an empty list
  *   <li>{@code fail-}: provider error
  *   <li>{@code slow-}: waits until {@link #release()} is called, then two valid items
+ *   <li>{@code parallel-}: waits at a gate until {@link #openParallelGate()}, then two valid items;
+ *       counts how many of these calls run at the same time
  * </ul>
  *
  * <p>Aggregation calls (prompt with the data block of the aggregation): {@code fail-} is a provider
@@ -54,6 +56,9 @@ public class FakeNewsProvider implements NewsProvider {
   private final Map<String, AtomicInteger> aggregationCalls = new ConcurrentHashMap<>();
   private volatile CountDownLatch slowEntered = new CountDownLatch(1);
   private volatile CountDownLatch slowRelease = new CountDownLatch(1);
+  private final AtomicInteger parallelActive = new AtomicInteger();
+  private final AtomicInteger parallelMax = new AtomicInteger();
+  private volatile CountDownLatch parallelGate = new CountDownLatch(1);
 
   @Override
   public String code() {
@@ -97,7 +102,49 @@ public class FakeNewsProvider implements NewsProvider {
     slowRelease = new CountDownLatch(1);
   }
 
+  /** Closes the gate of the {@code parallel-} models and forgets the maximum. */
+  public void resetParallel() {
+    parallelGate.countDown();
+    parallelGate = new CountDownLatch(1);
+    parallelMax.set(0);
+  }
+
+  /** Waits until at least {@code count} {@code parallel-} calls are inside the call at once. */
+  public void awaitParallelCalls(int count) {
+    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+    while (parallelActive.get() < count) {
+      if (System.nanoTime() > deadline) {
+        throw new AssertionError(
+            "Only " + parallelActive.get() + " of " + count + " parallel calls at the same time");
+      }
+      try {
+        Thread.sleep(20);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new IllegalStateException(e);
+      }
+    }
+  }
+
+  /** Lets the waiting {@code parallel-} calls finish. */
+  public void openParallelGate() {
+    parallelGate.countDown();
+  }
+
+  /** Most {@code parallel-} calls that were inside the call at the same time. */
+  public int maxParallelCalls() {
+    return parallelMax.get();
+  }
+
   private ModelResponse research(String model) {
+    if (model.startsWith("parallel-")) {
+      parallelMax.accumulateAndGet(parallelActive.incrementAndGet(), Math::max);
+      try {
+        await(parallelGate);
+      } finally {
+        parallelActive.decrementAndGet();
+      }
+    }
     if (model.startsWith("empty-")) {
       return response("{\"items\": []}", 1);
     }
