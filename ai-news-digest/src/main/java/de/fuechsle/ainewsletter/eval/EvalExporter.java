@@ -1,5 +1,7 @@
 package de.fuechsle.ainewsletter.eval;
 
+import de.fuechsle.ainewsletter.cost.BudgetService;
+import de.fuechsle.ainewsletter.cost.BudgetStatus;
 import de.fuechsle.ainewsletter.provider.SearchTrace;
 import de.fuechsle.ainewsletter.render.DigestRenderer;
 import de.fuechsle.ainewsletter.render.RenderDigestService;
@@ -34,14 +36,17 @@ public class EvalExporter {
   private final RenderDigestService renderService;
   private final DigestRenderer renderer;
   private final DigestStorage storage;
+  private final BudgetService budget;
 
   public EvalExporter(
       JdbcTemplate jdbc,
       ObjectMapper objectMapper,
       RenderDigestService renderService,
       DigestRenderer renderer,
-      DigestStorage storage) {
+      DigestStorage storage,
+      BudgetService budget) {
     this.jdbc = jdbc;
+    this.budget = budget;
     this.objectMapper = objectMapper;
     this.renderService = renderService;
     this.renderer = renderer;
@@ -76,6 +81,14 @@ public class EvalExporter {
         "finishedAt", run.get("finished_at") == null ? null : run.get("finished_at").toString());
     report.put("errorMessage", run.get("error_message"));
     report.put("totalCostUsd", totalCost(results, aggregation));
+    BudgetStatus month = budget.check();
+    report.put(
+        "budget",
+        Map.of(
+            "month", month.month().toString(),
+            "spentUsd", month.spentUsd(),
+            "limitUsd", month.limitUsd(),
+            "spentPercent", month.spentPercent()));
     report.put("research", results);
     report.put("aggregation", aggregation);
     report.put("mailDeliveries", deliveries);
@@ -196,6 +209,17 @@ public class EvalExporter {
         .append(report.get("periodTo"));
     text.append("\n- Prompt-Version: ").append(report.get("promptVersion"));
     text.append("\n- Kosten gesamt: ").append(report.get("totalCostUsd")).append(" USD");
+    @SuppressWarnings("unchecked")
+    Map<String, Object> month = (Map<String, Object>) report.get("budget");
+    text.append("\n- Budget im Monat ")
+        .append(month.get("month").toString(), 0, 7)
+        .append(": ")
+        .append(month.get("spentUsd"))
+        .append(" von ")
+        .append(month.get("limitUsd"))
+        .append(" USD (")
+        .append(month.get("spentPercent"))
+        .append(" %)");
     if (report.get("errorMessage") != null) {
       text.append("\n- Fehler: ").append(report.get("errorMessage"));
     }

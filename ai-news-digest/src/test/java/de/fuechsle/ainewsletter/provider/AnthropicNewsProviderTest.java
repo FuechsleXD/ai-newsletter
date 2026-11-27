@@ -2,6 +2,7 @@ package de.fuechsle.ainewsletter.provider;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
 import com.sun.net.httpserver.HttpServer;
 import de.fuechsle.ainewsletter.secret.SecretNotFoundException;
@@ -63,6 +64,7 @@ class AnthropicNewsProviderTest {
   private HttpServer server;
   private volatile int status = 200;
   private volatile String answer = WEB_SEARCH_ANSWER;
+  private volatile long delayMs;
 
   @BeforeEach
   void startStub() throws IOException {
@@ -73,6 +75,13 @@ class AnthropicNewsProviderTest {
           String body =
               new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
           requests.add(new Recorded(exchange.getRequestHeaders().getFirst("x-api-key"), body));
+          if (delayMs > 0) {
+            try {
+              Thread.sleep(delayMs);
+            } catch (InterruptedException e) {
+              Thread.currentThread().interrupt();
+            }
+          }
           byte[] bytes = answer.getBytes(StandardCharsets.UTF_8);
           exchange.getResponseHeaders().add("Content-Type", "application/json");
           exchange.sendResponseHeaders(status, bytes.length);
@@ -259,6 +268,48 @@ class AnthropicNewsProviderTest {
         .isInstanceOf(ProviderException.class)
         .hasMessageContaining("test-model-1")
         .hasMessageNotContaining(API_KEY);
+  }
+
+  @Test
+  void callThatTimesOutIsCostedWithAnEstimate() {
+    delayMs = 2_000;
+    ModelInvocation shortTimeout =
+        new ModelInvocation(
+            "ANTHROPIC",
+            "newsdigest/test/ai/anthropic",
+            "test-model-1",
+            4_000,
+            null,
+            true,
+            3,
+            "Finde Meldungen zu Java.",
+            Duration.ofMillis(300));
+
+    ProviderException error =
+        catchThrowableOfType(ProviderException.class, () -> provider().call(shortTimeout));
+
+    // The request reached the provider: prompt tokens and the highest possible searches
+    ModelResponse estimate = error.estimatedUsage();
+    assertThat(estimate).isNotNull();
+    assertThat(estimate.usageEstimated()).isTrue();
+    assertThat(estimate.inputTokens()).isEqualTo(("Finde Meldungen zu Java.".length() + 2) / 3);
+    assertThat(estimate.webSearches()).isEqualTo(3);
+    assertThat(estimate.stopReason()).isEqualTo(AnthropicNewsProvider.ABORTED);
+  }
+
+  @Test
+  void answeredHttpErrorIsNotBilledAndHasNoEstimate() {
+    status = 400;
+    answer =
+        """
+        {"type": "error", "error": {"type": "invalid_request_error", "message": "bad"}}
+        """;
+
+    ProviderException error =
+        catchThrowableOfType(
+            ProviderException.class, () -> provider().call(invocation(null, true)));
+
+    assertThat(error.estimatedUsage()).isNull();
   }
 
   @Test

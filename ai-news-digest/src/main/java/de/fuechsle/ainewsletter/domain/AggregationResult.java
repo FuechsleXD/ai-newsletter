@@ -42,6 +42,10 @@ public class AggregationResult {
   @Column(name = "duration_ms", nullable = false)
   private long durationMs;
 
+  /** The cost is an estimate, not usage reported by the provider (ADR-014). */
+  @Column(name = "cost_estimated", nullable = false)
+  private boolean costEstimated;
+
   protected AggregationResult() {}
 
   public AggregationResult(
@@ -66,6 +70,15 @@ public class AggregationResult {
     this.outputTokens += addedOutputTokens;
     this.costUsd = costUsd.add(addedCost);
     this.durationMs += addedMs;
+  }
+
+  public boolean isCostEstimated() {
+    return costEstimated;
+  }
+
+  /** Marks the cost as (partly) estimated; it stays marked once set. */
+  public void markCostEstimated(boolean estimated) {
+    this.costEstimated = costEstimated || estimated;
   }
 
   public Long getDigestRunId() {

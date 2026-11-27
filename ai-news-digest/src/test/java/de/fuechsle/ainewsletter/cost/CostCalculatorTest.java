@@ -21,6 +21,31 @@ class CostCalculatorTest {
   }
 
   @Test
+  void longPromptsAreBilledWithTheTierPricesForTheWholeCall() {
+    ModelPrices tiered =
+        new ModelPrices(
+            new BigDecimal("0.10"),
+            new BigDecimal("0.50"),
+            new BigDecimal("0.01"),
+            new ModelPrices.LongContext(100_000, new BigDecimal("0.50"), new BigDecimal("2.50")));
+
+    // At the threshold the normal prices apply: 100,000 * 0.10 / 1M + 1,000 * 0.50 / 1M
+    assertThat(calculator.cost(tiered, 100_000, 1_000, 0)).isEqualTo(new BigDecimal("0.010500"));
+    // Above it all tokens of the call: 100,001 * 0.50 / 1M + 1,000 * 2.50 / 1M + 2 searches
+    assertThat(calculator.cost(tiered, 100_001, 1_000, 2)).isEqualTo(new BigDecimal("0.072501"));
+    // Without a tier the normal prices apply to every length
+    assertThat(calculator.cost(prices, 400_000, 0, 0)).isEqualTo(new BigDecimal("1.200000"));
+  }
+
+  @Test
+  void tierIsOnlyComplete() {
+    assertThat(ModelPrices.LongContext.of(null, BigDecimal.ONE, BigDecimal.ONE)).isNull();
+    assertThat(ModelPrices.LongContext.of(100, BigDecimal.ONE, null)).isNull();
+    assertThat(ModelPrices.LongContext.of(100, BigDecimal.ONE, BigDecimal.TEN).thresholdTokens())
+        .isEqualTo(100);
+  }
+
+  @Test
   void resultHasSixDecimalsAndRoundsHalfUp() {
     ModelPrices cheap = new ModelPrices(new BigDecimal("0.1"), new BigDecimal("0.5"), null);
 

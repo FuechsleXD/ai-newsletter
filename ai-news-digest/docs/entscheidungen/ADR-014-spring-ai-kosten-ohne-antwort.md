@@ -29,3 +29,6 @@ Entscheidung:
 - `AnthropicNewsProvider` setzt `maxRetries(0)`; Wiederholungen macht nur die Engine, sichtbar und mit Kostenerfassung
 - Timeout pro Aufruf 300 s statt 120 s, Sperrzeit eines Jobs 20 statt 10 min (Startprüfung: 5 min Wartezeit + 2 × 300 s = 15 min)
 - Ein Aufruf, der dennoch in den Timeout läuft, ist `FAILED` mit 0 gebuchten Kosten, obwohl der Anbieter ihn vermutlich abrechnet: offener Punkt 7
+
+## Nachtrag 2 (Roadmap-Schritt 15): Schätzung abgebrochener Aufrufe
+Bricht ein Aufruf nach dem Senden ab (Timeout, Verbindung verloren, im SDK `AnthropicIoException`), bucht `ModelCalls` eine Schätzung statt 0: Input-Token aus dem Prompt (1 Token je 3 Zeichen) und die höchstmögliche Zahl an Websuchen des Aufrufs. Ein beantworteter HTTP-Fehler (`AnthropicServiceException`) wird vom Anbieter nicht abgerechnet und bleibt bei 0. Der Fehlertext endet mit "Kosten geschätzt (Abbruch)", `provider_result.cost_estimated` bzw. `aggregation_result.cost_estimated` ist gesetzt, und die Kostenauswertung weist geschätzte Beträge getrennt aus. Die Suchinhalte, die der Anbieter in den Kontext legt, bleiben unbekannt; die Schätzung ist eine Untergrenze (offener Punkt 7).

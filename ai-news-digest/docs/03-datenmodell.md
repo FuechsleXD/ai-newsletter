@@ -14,25 +14,27 @@
 | `schedule` | id, name, cron_expression, timezone | `name` UNIQUE; von mehreren Topics nutzbar |
 | `topic` | id, name, description, initial_lookback_days NULL, aggregator_model_id, schedule_id, active | `name` UNIQUE; FK `schedule`, FK `ai_model`; `initial_lookback_days` NULL = Default; `aggregator_model_id` Pflicht seit `V4` (ADR-013) |
 | `ai_provider` | id, code, display_name, secret_name, max_concurrent_calls NULL, active | `code` UNIQUE (z. B. `ANTHROPIC`, `OPENAI`, `GEMINI`); `secret_name` = Name des Secrets im AWS Secrets Manager, nie der Key selbst |
-| `ai_model` | id, provider_id, model_name, display_name, supports_web_search, supports_structured_output, supports_temperature, max_output_tokens NULL, temperature NULL, input_price_per_mtok, output_price_per_mtok, price_per_search_call NULL, active | UNIQUE (provider_id, model_name); Preise in USD pro 1 Mio. Token; `temperature` nur erlaubt, wenn `supports_temperature` (CHECK, seit `V5`) |
+| `ai_model` | id, provider_id, model_name, display_name, supports_web_search, supports_structured_output, supports_temperature, max_output_tokens NULL, temperature NULL, input_price_per_mtok, output_price_per_mtok, price_per_search_call NULL, active | UNIQUE (provider_id, model_name); Preise in USD pro 1 Mio. Token; `temperature` nur erlaubt, wenn `supports_temperature` (CHECK, seit `V5`); Preisstufe für lange Prompts (V7, ADR-018): `long_context_threshold_tokens`, `long_context_input_price_per_mtok`, `long_context_output_price_per_mtok`, alle drei gesetzt oder keine; über der Schwelle gelten die höheren Preise für den ganzen Aufruf |
 | `topic_model` | topic_id, model_id | PK (topic_id, model_id); Menge der Recherche-Modelle (parallel, keine Reihenfolge) |
 | `recipient` | id, email, display_name, active | `email` UNIQUE, in Kleinschreibung |
 | `topic_recipient` | topic_id, recipient_id | PK (topic_id, recipient_id) |
 | `budget` | id, month_limit_usd, warn_percent, active | Höchstens eine aktive Zeile (Teilindex); ohne aktive Zeile gilt der Default |
+| `budget_warning` | month (PK), sent_at | Pro Kalendermonat (Europe/Berlin, erster Tag) höchstens eine Budgetwarnung an den Betreiber (V7) |
 
 ## Zustand und Historie
 | Tabelle | Spalten | Schlüssel / Regeln |
 |---|---|---|
 | `topic_state` | topic_id, last_successful_run_at | PK = FK `topic`; 1:1 |
 | `digest_run` | id, topic_id, aggregator_model_id, process_instance_id NULL, prompt_version, period_from, period_to, status, started_at, finished_at NULL, error_message NULL, aggregate_json jsonb NULL, pdf_s3_key NULL | Status: `RUNNING`, `COMPLETED`, `NO_NEWS`, `FAILED`, `SKIPPED_BUDGET`, `CANCELLED`; Bedeutung siehe `04-prozess-bpmn.md`; Teilindex UNIQUE (topic_id) WHERE status = 'RUNNING' |
-| `provider_result` | id, digest_run_id, model_id, status, raw_response NULL, duration_ms, input_tokens NULL, output_tokens NULL, search_calls NULL, cost_usd NULL, error_message NULL, search_trace jsonb NULL | UNIQUE (digest_run_id, model_id); Status `SUCCEEDED`/`FAILED`; `search_trace`: Suchbegriffe und zurückgelieferte Seiten der Recherche zur Diagnose (V6), NULL ohne Suche |
+| `provider_result` | id, digest_run_id, model_id, status, raw_response NULL, duration_ms, input_tokens NULL, output_tokens NULL, search_calls NULL, cost_usd NULL, cost_estimated, error_message NULL, search_trace jsonb NULL | UNIQUE (digest_run_id, model_id); Status `SUCCEEDED`/`FAILED`; `search_trace`: Suchbegriffe und zurückgelieferte Seiten der Recherche zur Diagnose (V6), NULL ohne Suche |
 | `news_item` | id, provider_result_id, headline, summary, url, normalized_url, published_at NULL, status | Status: `VALID`, `OUT_OF_PERIOD`, `DUPLICATE_PREVIOUS`, `DUPLICATE_RUN`, `UNREACHABLE`; Index auf `normalized_url` |
-| `aggregation_result` | digest_run_id, model_id, input_tokens, output_tokens, cost_usd, duration_ms | PK = FK `digest_run`; Kosten des Aggregator-Aufrufs |
+| `aggregation_result` | digest_run_id, model_id, input_tokens, output_tokens, cost_usd, cost_estimated, duration_ms | PK = FK `digest_run`; Kosten des Aggregator-Aufrufs |
 | `mail_delivery` | id, digest_run_id, recipient_id, status, sent_at NULL, error_message NULL | UNIQUE (digest_run_id, recipient_id); Status `PENDING`, `SENT`, `FAILED` |
 
 ## Regeln
 - `aggregate_json` ist eine bewusste Denormalisierung (Dokument-Ergebnis des Aggregators)
 - `cost_usd` wird beim Lauf berechnet und gespeichert (Preis-Momentaufnahme), weil sich Modellpreise später ändern; das ist eine bewusste Ausnahme von der Ableitbarkeit
+- `cost_estimated` (V7): Kosten sind geschätzt statt vom Anbieter gemeldet (Antwort ohne Inhalt, abgebrochener Aufruf; ADR-014); die Kostenauswertung weist sie getrennt aus
 - Monatskosten = Summe aus `provider_result.cost_usd` und `aggregation_result.cost_usd` im Kalendermonat (`Europe/Berlin`); als Abfrage bzw. View, nicht gespeichert
 - Duplikatprüfung über `news_item.normalized_url` zusammen mit Topic und Status `VALID` früherer erfolgreicher Läufe
 - PDFs liegen in S3, in der DB nur der Schlüssel

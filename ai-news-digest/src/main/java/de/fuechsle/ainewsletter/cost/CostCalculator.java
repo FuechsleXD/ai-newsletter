@@ -17,6 +17,11 @@ public class CostCalculator {
   private static final BigDecimal ONE_MILLION = BigDecimal.valueOf(1_000_000);
 
   /**
+   * Cost of one call. With a long context tier and more input tokens than its threshold, the tier
+   * prices apply to all tokens of the call. For calls with web search the provider reports the
+   * input tokens summed over its internal steps; comparing that sum with the threshold is rather
+   * too high than too low.
+   *
    * @throws IllegalArgumentException if a count is negative or searches were made but the model has
    *     no search price
    */
@@ -29,11 +34,16 @@ public class CostCalculator {
       throw new IllegalArgumentException(
           "Web searches were made, but the model has no price per search call");
     }
+    boolean longPrompt =
+        prices.longContext() != null && inputTokens > prices.longContext().thresholdTokens();
+    BigDecimal inputPrice =
+        longPrompt ? prices.longContext().inputPerMtok() : prices.inputPerMtok();
+    BigDecimal outputPrice =
+        longPrompt ? prices.longContext().outputPerMtok() : prices.outputPerMtok();
     BigDecimal tokens =
-        prices
-            .inputPerMtok()
+        inputPrice
             .multiply(BigDecimal.valueOf(inputTokens))
-            .add(prices.outputPerMtok().multiply(BigDecimal.valueOf(outputTokens)))
+            .add(outputPrice.multiply(BigDecimal.valueOf(outputTokens)))
             .divide(ONE_MILLION, SCALE + 4, RoundingMode.HALF_UP);
     BigDecimal searches =
         webSearches == 0

@@ -18,6 +18,10 @@ public final class ModelCalls {
 
   private static final Logger log = LoggerFactory.getLogger(ModelCalls.class);
 
+  /** Appended to the error of a call that broke off and was costed with an estimate. */
+  static final String ABORTED_ESTIMATE =
+      "; Kosten geschätzt (Abbruch): Prompt und höchstmögliche Websuchen, Suchinhalte unbekannt";
+
   private final NewsProviderRegistry providers;
   private final CostCalculator costs;
   private final ModelSnapshot model;
@@ -53,7 +57,16 @@ public final class ModelCalls {
         throw e;
       }
       return failed(e);
-    } catch (ProviderException | SecretNotFoundException e) {
+    } catch (ProviderException e) {
+      if (e.estimatedUsage() == null) {
+        return failed(e);
+      }
+      // The provider probably billed the call although it broke off: book the estimate
+      responses.add(e.estimatedUsage());
+      log.warn("Call of model {} broke off: {}", model.modelName(), e.getMessage());
+      lastError = e.getMessage() + ABORTED_ESTIMATE;
+      return null;
+    } catch (SecretNotFoundException e) {
       return failed(e);
     }
   }
@@ -101,8 +114,18 @@ public final class ModelCalls {
     return responses.stream().map(ModelResponse::duration).reduce(Duration.ZERO, Duration::plus);
   }
 
-  /** Cost of all calls with the price snapshot of the model. */
+  /**
+   * Cost of all calls with the price snapshot of the model. Each call is priced on its own, because
+   * a price tier depends on the prompt length of the single call.
+   */
   public BigDecimal cost() {
-    return costs.cost(model.prices(), inputTokens(), outputTokens(), webSearches());
+    return responses.stream()
+        .map(r -> costs.cost(model.prices(), r.inputTokens(), r.outputTokens(), r.webSearches()))
+        .reduce(BigDecimal.ZERO.setScale(CostCalculator.SCALE), BigDecimal::add);
+  }
+
+  /** Whether any call was costed with an estimate instead of reported usage. */
+  public boolean usageEstimated() {
+    return responses.stream().anyMatch(ModelResponse::usageEstimated);
   }
 }

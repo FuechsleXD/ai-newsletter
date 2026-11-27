@@ -48,6 +48,9 @@ Technische Regeln (wichtig für echte Parallelität):
 - Wartezeit auf einen freien Platz höchstens `max-wait-for-call-slot` (5 min); danach wird der Job wiederholt (`R3/PT5M`), die Recherche ist nicht `FAILED`, weil das Modell nicht versagt hat. Beim Start wird geprüft: Wartezeit + Timeout × (1 + Reparaturversuche) < Sperrzeit des Jobs (20 min; Defaults: 5 min + 2 × 300 s = 15 min); sonst könnte die Engine einen noch laufenden Job einem zweiten Thread geben und das Modell doppelt aufrufen
 - Findet ein Reparaturversuch keinen Platz, scheitert nur dieser Versuch wie ein Anbieterfehler; der bereits bezahlte erste Aufruf bleibt gebucht
 
+## Budgetwarnung
+Ein End-Listener am Prozess (`budgetWarningListener`, `camunda:executionListener event="end"`) prüft nach jedem Ende eines Laufs, ob die Ausgaben des Monats die Warnschwelle erreicht haben, und schickt dann einmal pro Monat eine Mail an den Betreiber (`BudgetWarningService`, Tabelle `budget_warning`). Er wirft nie: Scheitert die Mail, wird das protokolliert und nach dem nächsten Lauf erneut versucht; der Status des Laufs bleibt unberührt. Ein Listener statt eines Tasks, weil er an allen vier Enden gilt, ohne den Ablauf zu verzweigen.
+
 ## Dateien
 - Modell: `src/main/resources/processes/digest-run.bpmn`, Process-ID `digestRun`; wird beim Start automatisch deployt (`camunda.bpm.deployment-resource-pattern: classpath*:processes/*.bpmn`), eine neue Prozessversion entsteht nur bei geändertem Modell
 - Delegates im Package `process`, als Spring-Beans über `camunda:delegateExpression="${...}"`

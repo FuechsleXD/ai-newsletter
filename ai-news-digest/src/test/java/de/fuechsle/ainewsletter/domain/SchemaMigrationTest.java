@@ -61,6 +61,7 @@ class SchemaMigrationTest extends PostgresTestSupport {
             "V4__app_topic_aggregator_required.sql",
             "V5__app_model_supports_temperature.sql",
             "V6__app_provider_result_search_trace.sql",
+            "V7__app_price_tier_and_budget_warning.sql",
             "R__monthly_cost.sql");
     assertThat(Arrays.stream(applied).map(MigrationInfo::getState))
         .allMatch(MigrationState::isApplied)

@@ -106,7 +106,8 @@ public class AggregationService {
         calls.outputTokens(),
         calls.cost(),
         calls.duration(),
-        outcome.errorMessage());
+        outcome.errorMessage(),
+        calls.usageEstimated());
   }
 
   /** Sets sources and per-section models from the checked news items. */

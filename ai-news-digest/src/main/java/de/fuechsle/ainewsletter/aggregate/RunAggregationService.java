@@ -146,11 +146,14 @@ public class RunAggregationService {
     int input = Math.toIntExact(outcome.inputTokens());
     int output = Math.toIntExact(outcome.outputTokens());
     long durationMs = outcome.duration().toMillis();
-    aggregationResults
-        .findById(runId)
-        .ifPresentOrElse(
-            existing -> existing.addUsage(input, output, outcome.costUsd(), durationMs),
-            () ->
+    AggregationResult result =
+        aggregationResults
+            .findById(runId)
+            .map(existing -> {
+              existing.addUsage(input, output, outcome.costUsd(), durationMs);
+              return existing;
+            })
+            .orElseGet(() ->
                 aggregationResults.save(
                     new AggregationResult(
                         runs.getReferenceById(runId),
@@ -159,6 +162,7 @@ public class RunAggregationService {
                         output,
                         outcome.costUsd(),
                         durationMs)));
+    result.markCostEstimated(outcome.costEstimated());
 
     DigestRun run = runs.findById(runId).orElseThrow();
     if (outcome.succeeded()) {

@@ -1,5 +1,7 @@
 package de.fuechsle.ainewsletter.provider;
 
+import com.anthropic.errors.AnthropicIoException;
+import com.anthropic.errors.AnthropicServiceException;
 import com.anthropic.models.messages.ContentBlock;
 import com.anthropic.models.messages.Message;
 import com.anthropic.models.messages.ServerToolUsage;
@@ -44,6 +46,9 @@ public class AnthropicNewsProvider implements NewsProvider {
   /** Conservative characters per token for the estimate of answers without content. */
   static final int CHARS_PER_TOKEN = 3;
 
+  /** Stop reason of a call that broke off before an answer arrived. */
+  static final String ABORTED = "ABORTED";
+
   private final SecretProvider secrets;
   private final String baseUrl;
   private final Clock clock;
@@ -72,8 +77,13 @@ public class AnthropicNewsProvider implements NewsProvider {
       response = model.call(new Prompt(invocation.prompt(), options));
     } catch (RuntimeException e) {
       // The SDK messages contain status and error type, never the API key.
-      throw new ProviderException(
-          "Anthropic call for model " + invocation.modelName() + " failed: " + e.getMessage(), e);
+      String message =
+          "Anthropic call for model " + invocation.modelName() + " failed: " + e.getMessage();
+      if (brokeOff(e)) {
+        throw new ProviderException(
+            message, e, aborted(invocation, Duration.between(start, clock.instant())));
+      }
+      throw new ProviderException(message, e);
     }
     Duration duration = Duration.between(start, clock.instant());
     if (response.getResults().isEmpty()) {
@@ -197,9 +207,44 @@ public class AnthropicNewsProvider implements NewsProvider {
    * rounded up, which is rather too high than too low for German and English text. Output tokens
    * and web searches are unknown and counted as 0.
    */
+  /**
+   * Whether the request may have reached the provider and broken off afterwards (timeout,
+   * connection lost). An answered HTTP error ({@code AnthropicServiceException}) is not billed.
+   */
+  static boolean brokeOff(Throwable error) {
+    for (Throwable t = error; t != null; t = t.getCause()) {
+      if (t instanceof AnthropicServiceException) {
+        return false;
+      }
+      if (t instanceof AnthropicIoException) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Estimate for a call that broke off (ADR-014, Nachtrag): the input tokens of the prompt and the
+   * highest possible number of web searches. The search content the provider adds to the context is
+   * unknown, so the real cost can be higher (open point 7).
+   */
+  static ModelResponse aborted(ModelInvocation invocation, Duration duration) {
+    return new ModelResponse(
+        "",
+        estimatedPromptTokens(invocation),
+        0,
+        invocation.webSearch() ? invocation.maxWebSearches() : 0,
+        ABORTED,
+        duration,
+        true);
+  }
+
+  private static long estimatedPromptTokens(ModelInvocation invocation) {
+    return (invocation.prompt().length() + CHARS_PER_TOKEN - 1) / CHARS_PER_TOKEN;
+  }
+
   static ModelResponse withoutContent(ModelInvocation invocation, Duration duration) {
-    long estimatedInputTokens =
-        (invocation.prompt().length() + CHARS_PER_TOKEN - 1) / CHARS_PER_TOKEN;
+    long estimatedInputTokens = estimatedPromptTokens(invocation);
     return new ModelResponse(
         "", estimatedInputTokens, 0, 0, ModelResponse.NO_CONTENT, duration, true);
   }

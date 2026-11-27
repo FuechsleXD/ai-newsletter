@@ -59,6 +59,15 @@ public class AiModel extends AuditedEntity {
   @Column(name = "price_per_search_call", precision = 12, scale = 6)
   private BigDecimal pricePerSearchCall;
 
+  @Column(name = "long_context_threshold_tokens")
+  private Integer longContextThresholdTokens;
+
+  @Column(name = "long_context_input_price_per_mtok", precision = 12, scale = 6)
+  private BigDecimal longContextInputPricePerMtok;
+
+  @Column(name = "long_context_output_price_per_mtok", precision = 12, scale = 6)
+  private BigDecimal longContextOutputPricePerMtok;
+
   @Column(name = "active", nullable = false)
   private boolean active = true;
 
@@ -184,6 +193,26 @@ public class AiModel extends AuditedEntity {
 
   public void setPricePerSearchCall(BigDecimal pricePerSearchCall) {
     this.pricePerSearchCall = pricePerSearchCall;
+  }
+
+  public Integer getLongContextThresholdTokens() {
+    return longContextThresholdTokens;
+  }
+
+  public BigDecimal getLongContextInputPricePerMtok() {
+    return longContextInputPricePerMtok;
+  }
+
+  public BigDecimal getLongContextOutputPricePerMtok() {
+    return longContextOutputPricePerMtok;
+  }
+
+  /** Sets the price tier for long prompts; all {@code null} removes it. */
+  public void setLongContextPrices(
+      Integer thresholdTokens, BigDecimal inputPricePerMtok, BigDecimal outputPricePerMtok) {
+    this.longContextThresholdTokens = thresholdTokens;
+    this.longContextInputPricePerMtok = inputPricePerMtok;
+    this.longContextOutputPricePerMtok = outputPricePerMtok;
   }
 
   public boolean isActive() {

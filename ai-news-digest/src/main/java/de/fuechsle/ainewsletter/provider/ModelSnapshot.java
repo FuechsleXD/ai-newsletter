@@ -31,6 +31,10 @@ public record ModelSnapshot(
         new ModelPrices(
             model.getInputPricePerMtok(),
             model.getOutputPricePerMtok(),
-            model.getPricePerSearchCall()));
+            model.getPricePerSearchCall(),
+            ModelPrices.LongContext.of(
+                model.getLongContextThresholdTokens(),
+                model.getLongContextInputPricePerMtok(),
+                model.getLongContextOutputPricePerMtok())));
   }
 }

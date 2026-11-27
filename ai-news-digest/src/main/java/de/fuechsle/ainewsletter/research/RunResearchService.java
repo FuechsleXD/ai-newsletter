@@ -100,6 +100,7 @@ public class RunResearchService {
     row.setSearchCalls(sum(row.getSearchCalls(), result.webSearches()));
     BigDecimal previousCost = row.getCostUsd() == null ? BigDecimal.ZERO : row.getCostUsd();
     row.setCostUsd(previousCost.add(result.costUsd()));
+    row.setCostEstimated(row.isCostEstimated() || result.costEstimated());
     ProviderResult saved = providerResults.save(row);
 
     for (NewsItemCandidate candidate : result.items()) {

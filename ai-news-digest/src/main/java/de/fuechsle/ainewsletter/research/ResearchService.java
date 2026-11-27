@@ -131,7 +131,8 @@ public class ResearchService {
         calls.cost(),
         calls.duration(),
         error,
-        calls.searchTrace());
+        calls.searchTrace(),
+        calls.usageEstimated());
   }
 
   /** The model is not suitable for research; no call was made. */
@@ -146,6 +147,7 @@ public class ResearchService {
         BigDecimal.ZERO.setScale(CostCalculator.SCALE),
         Duration.ZERO,
         message,
-        SearchTrace.EMPTY);
+        SearchTrace.EMPTY,
+        false);
   }
 }
