@@ -1,5 +1,5 @@
 # Allowed icon keys for the aggregator (prompt placeholder allowedIconKeys).
-# One key per line. The SVG files follow in roadmap step 17 as pdf/icons/<key>.svg.
+# One key per line; each key needs pdf/icons/<key>.svg (Lucide, see pdf/README.md).
 # Unknown keys from the aggregator are replaced by "default".
 default
 ai

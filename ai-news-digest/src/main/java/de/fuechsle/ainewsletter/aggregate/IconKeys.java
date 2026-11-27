@@ -26,7 +26,7 @@ public class IconKeys {
     this(read(LOCATION));
   }
 
-  IconKeys(List<String> keys) {
+  public IconKeys(List<String> keys) {
     if (!keys.contains(DEFAULT)) {
       throw new IllegalStateException("Icon key list must contain \"" + DEFAULT + "\"");
     }

@@ -1,103 +1,198 @@
 <!DOCTYPE html>
 <!--
-  Simple one-page PDF (roadmap step 8); the final infographic design follows in step 17
-  (docs/09-pdf-design.md). Rendered by Gotenberg (Chromium). No external resources: everything the
-  page needs is in this file. All texts come from an LLM and are escaped by th:text.
+  One-page infographic (roadmap step 17, docs/09-pdf-design.md), rendered by Gotenberg (Chromium).
+  No external resources: the Inter font (base64) and the Lucide icons (inline SVG) come from
+  DigestAssets, so the page also works offline as a preview. All texts come from an LLM and are
+  escaped by th:text; th:utext is only used for our own font CSS and SVG files.
 -->
 <html lang="en" th:lang="${lang}" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
   <title th:text="${digest.title}">Titel</title>
+  <style th:utext="${assets.fontFaces()}"></style>
   <style>
-    @page { size: A4; margin: 10mm; }
+    @page { size: A4; margin: 7mm; }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: "DejaVu Sans", Arial, Helvetica, sans-serif; font-size: 9pt;
-           color: #1f2937; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .banner { background: #1e3a8a; color: #fff; border-radius: 6px; padding: 8px 12px; }
-    .banner h1 { margin: 0; font-size: 16pt; }
-    .banner p { margin: 2px 0 0; font-size: 9pt; }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
-    .card { border: 1.5px solid #93c5fd; background: #eff6ff; border-radius: 6px; padding: 6px 8px; }
-    .card h2 { margin: 0 0 3px; font-size: 10pt; }
-    .card p, .card ul { margin: 0; }
-    .card ul { padding-left: 14px; }
-    .section { border-width: 1.5px; border-style: solid; }
-    .blue { border-color: #3b82f6; background: #eff6ff; }
-    .green { border-color: #22c55e; background: #f0fdf4; }
-    .purple { border-color: #a855f7; background: #faf5ff; }
-    .orange { border-color: #f97316; background: #fff7ed; }
-    .red { border-color: #ef4444; background: #fef2f2; }
-    .teal { border-color: #14b8a6; background: #f0fdfa; }
-    .number { font-weight: bold; margin-right: 4px; }
-    .highlight { margin-top: 3px; font-weight: bold; }
-    .flow { margin-top: 3px; color: #374151; }
-    .meta { margin-top: 3px; font-size: 8pt; color: #4b5563; }
-    .unconfirmed { color: #b45309; }
-    .closing { margin-top: 6px; background: #1e3a8a; color: #fff; border-radius: 6px;
-               padding: 6px 10px; display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
-    .closing h2 { margin: 0 0 3px; font-size: 10pt; }
-    .closing ul { margin: 0; padding-left: 14px; }
-    .footer { margin-top: 6px; font-size: 8pt; color: #4b5563; }
-    .footer a { color: #1e3a8a; }
+    html, body { margin: 0; }
+    body { font-family: "Inter", Arial, Helvetica, sans-serif; font-size: 8.2pt; line-height: 1.28;
+           color: #1e293b; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    p { margin: 0; }
+    h1, h2, h3 { margin: 0; }
+    .icon { display: inline-block; flex: none; width: 1.15em; height: 1.15em; vertical-align: -0.2em; }
+    .icon svg { width: 100%; height: 100%; display: block; }
+
+    /* Header banner */
+    .banner { display: flex; align-items: center; gap: 4mm; padding: 3.6mm 4.6mm;
+              background: linear-gradient(120deg, #0f2a5f 0%, #1e3a8a 60%, #1d4ed8 100%);
+              color: #fff; border-radius: 3.5mm; }
+    .banner-text { flex: 1; min-width: 0; }
+    .banner h1 { font-size: 17pt; font-weight: 800; line-height: 1.12; letter-spacing: -0.01em; }
+    .banner .subtitle { margin-top: 1.2mm; font-size: 9.5pt; color: #dbeafe; }
+    .banner .meta { margin-top: 1.6mm; display: flex; flex-wrap: wrap; gap: 1.5mm; }
+    .chip { display: inline-block; padding: 0.5mm 2.2mm; border-radius: 99px; font-size: 7.6pt;
+            font-weight: 600; background: rgba(255, 255, 255, 0.16); color: #fff; }
+    .badge { flex: none; width: 27mm; padding: 2.5mm 2mm; text-align: center; border-radius: 3mm;
+             background: rgba(255, 255, 255, 0.12); border: 0.3mm solid rgba(255, 255, 255, 0.35); }
+    .badge .icon { width: 9mm; height: 9mm; color: #93c5fd; }
+    .badge .label { margin-top: 1mm; font-size: 7.6pt; font-weight: 700; text-transform: uppercase;
+                    letter-spacing: 0.04em; }
+    .badge .date { font-size: 7.4pt; color: #bfdbfe; }
+
+    /* Cards */
+    .card { border-radius: 3mm; padding: 2.2mm 3mm; border: 0.35mm solid; }
+    .card h2 { display: flex; align-items: center; gap: 1.6mm; margin-bottom: 1.3mm;
+               font-size: 10pt; font-weight: 800; }
+    .card h2 .icon { width: 5.2mm; height: 5.2mm; padding: 0.9mm; border-radius: 1.4mm; color: #fff; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 2.2mm; margin-top: 2.2mm; }
+    .summary { background: #eff6ff; border-color: #93c5fd; }
+    .summary h2 { color: #1e3a8a; }
+    .summary h2 .icon { background: #2563eb; }
+    .summary p { font-size: 8.8pt; }
+    .keypoints { background: #f5f3ff; border-color: #c4b5fd; }
+    .keypoints h2 { color: #4c1d95; }
+    .keypoints h2 .icon { background: #7c3aed; }
+    .keypoints ul { list-style: none; margin: 0; padding: 0; }
+    .keypoints li { display: flex; align-items: flex-start; gap: 1.6mm; margin-top: 1mm; }
+    .keypoints li .icon { width: 4.8mm; height: 4.8mm; padding: 0.8mm; border-radius: 99px;
+                          background: #ddd6fe; color: #5b21b6; }
+
+    /* Topic cards */
+    .topic { display: flex; flex-direction: column; background: var(--bg); border-color: var(--c); }
+    .topic-head { display: flex; align-items: center; gap: 1.6mm; margin-bottom: 1.3mm; }
+    .num { flex: none; width: 5.4mm; height: 5.4mm; border-radius: 99px; background: var(--c);
+           color: #fff; font-weight: 800; font-size: 8.6pt; line-height: 5.4mm; text-align: center; }
+    .topic-head .icon { width: 5.2mm; height: 5.2mm; color: var(--dark); }
+    .topic h3 { font-size: 9.6pt; font-weight: 800; line-height: 1.18; color: var(--dark); }
+    .topic .text { flex: 1; }
+    .highlight { display: flex; align-items: baseline; gap: 1.6mm; margin-top: 1.4mm;
+                 padding: 1mm 2.2mm; border-radius: 2mm; background: #fff; border: 0.3mm dashed var(--c); }
+    .highlight .value { font-size: 13pt; font-weight: 800; color: var(--dark); white-space: nowrap; }
+    .highlight .label { font-size: 7.8pt; font-weight: 600; color: #475569; }
+    .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 1mm; margin-top: 1.4mm; }
+    .step { padding: 0.6mm 1.8mm; border-radius: 1.4mm; background: #fff; border: 0.3mm solid var(--c);
+            font-size: 7.6pt; font-weight: 600; color: var(--dark); }
+    .arrow { color: var(--c); font-weight: 800; }
+    .topic-foot { display: flex; align-items: center; gap: 1.6mm; margin-top: 1.3mm; padding-top: 1mm;
+                  border-top: 0.25mm solid var(--line); font-size: 7.4pt; color: #475569; }
+    .dots { display: flex; gap: 0.8mm; }
+    .dot { display: inline-block; width: 2.4mm; height: 2.4mm; border-radius: 99px; }
+    .unconfirmed { padding: 0.2mm 1.6mm; border-radius: 99px; background: #fef3c7; color: #92400e;
+                   font-weight: 700; font-size: 7pt; }
+    .sources-ref { margin-left: auto; font-weight: 600; }
+    .blue   { --c: #3b82f6; --bg: #eff6ff; --dark: #1d4ed8; --line: #bfdbfe; }
+    .green  { --c: #22c55e; --bg: #f0fdf4; --dark: #15803d; --line: #bbf7d0; }
+    .purple { --c: #a855f7; --bg: #faf5ff; --dark: #7e22ce; --line: #e9d5ff; }
+    .orange { --c: #f97316; --bg: #fff7ed; --dark: #c2410c; --line: #fed7aa; }
+    .red    { --c: #ef4444; --bg: #fef2f2; --dark: #b91c1c; --line: #fecaca; }
+    .teal   { --c: #14b8a6; --bg: #f0fdfa; --dark: #0f766e; --line: #99f6e4; }
+
+    /* Closing banner */
+    .closing { display: grid; grid-template-columns: 2fr 1fr; gap: 3mm; margin-top: 2.2mm;
+               padding: 2.8mm 3.4mm; border-radius: 3.5mm; color: #fff;
+               background: linear-gradient(120deg, #0f2a5f 0%, #1e3a8a 70%, #1d4ed8 100%); }
+    .closing h2 { display: flex; align-items: center; gap: 1.6mm; margin-bottom: 1.3mm;
+                  font-size: 10pt; font-weight: 800; }
+    .closing ul { list-style: none; margin: 0; padding: 0; }
+    .closing li { display: flex; align-items: flex-start; gap: 1.6mm; margin-top: 1mm; }
+    .closing li .icon { width: 3.8mm; height: 3.8mm; padding: 0.6mm; border-radius: 99px;
+                        background: #22c55e; color: #fff; margin-top: 0.2mm; }
+    .watch { padding: 2.4mm 3mm; border-radius: 2.6mm; background: #fff7ed; color: #431407; }
+    .watch h2 { color: #c2410c; }
+    .watch h2 .icon { width: 4.8mm; height: 4.8mm; }
+
+    /* Footer */
+    .footer { margin-top: 1.8mm; padding: 0 1mm; font-size: 7.2pt; color: #475569; }
+    .footer .line { display: flex; flex-wrap: wrap; align-items: center; gap: 1.2mm 3mm; }
+    .legend { display: inline-flex; align-items: center; gap: 1mm; }
+    .footer .list { margin-top: 0.8mm; }
+    .footer a { color: #1e3a8a; text-decoration: none; }
   </style>
 </head>
 <body>
-  <div class="banner">
-    <h1 th:text="${digest.title}">Titel</h1>
-    <p><span th:text="${digest.topicName}">Topic</span> · <span th:text="${digest.period}">Zeitraum</span></p>
-    <p th:if="${!#strings.isEmpty(digest.subtitle)}" th:text="${digest.subtitle}">Untertitel</p>
-  </div>
-
-  <div class="row">
-    <div class="card">
-      <h2 th:text="#{digest.summary}">Summary</h2>
-      <p th:text="${digest.summary}">Kurzfazit</p>
-    </div>
-    <div class="card">
-      <h2 th:text="#{digest.keyPoints}">Key points</h2>
-      <ul>
-        <li th:each="point : ${digest.keyPoints}" th:text="${point.text}">Kernpunkt</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="row">
-    <div th:each="section : ${digest.sections}" th:class="${'card section ' + section.color}">
-      <h2><span class="number" th:text="${section.number}">1</span><span th:text="${section.heading}">Thema</span></h2>
-      <p th:text="${section.text}">Text</p>
-      <p class="highlight" th:if="${section.highlightValue != null}">
-        <span th:text="${section.highlightValue}">42</span> <span th:text="${section.highlightLabel}">Label</span>
-      </p>
-      <p class="flow" th:if="${!section.flowSteps.isEmpty()}" th:text="${#strings.listJoin(section.flowSteps, ' → ')}">Ablauf</p>
+  <header class="banner">
+    <div class="banner-text">
+      <h1 th:text="${digest.title}">Titel</h1>
+      <p class="subtitle" th:if="${!#strings.isEmpty(digest.subtitle)}" th:text="${digest.subtitle}">Untertitel</p>
       <p class="meta">
-        <span th:text="#{digest.sources}">Sources</span>: <span th:each="source, it : ${section.sourceNumbers}" th:text="${'[' + source + ']' + (it.last ? '' : ' ')}">[1]</span>
-        · <span th:text="#{digest.models}">Models</span>: <span th:text="${#strings.listJoin(section.models, ', ')}">Modell</span>
-        <span class="unconfirmed" th:if="${section.unconfirmed}" th:text="${'· ' + #messages.msg('digest.unconfirmed')}">· unconfirmed</span>
+        <span class="chip" th:text="${digest.topicName}">Topic</span>
+        <span class="chip" th:text="${digest.period}">Zeitraum</span>
+        <span class="chip" th:text="#{digest.modelCount(${digest.modelCount})}">2 models</span>
       </p>
     </div>
+    <div class="badge">
+      <span class="icon" th:utext="${assets.ui('newspaper')}"></span>
+      <div class="label" th:text="#{digest.badge}">News digest</div>
+      <div class="date" th:text="${digest.createdOn}">23.11.2026</div>
+    </div>
+  </header>
+
+  <div class="row">
+    <section class="card summary">
+      <h2><span class="icon" th:utext="${assets.ui('file-text')}"></span><span th:text="#{digest.summary}">Summary</span></h2>
+      <p th:text="${digest.summary}">Kurzfazit</p>
+    </section>
+    <section class="card keypoints">
+      <h2><span class="icon" th:utext="${assets.ui('list-checks')}"></span><span th:text="#{digest.keyPoints}">Key points</span></h2>
+      <ul>
+        <li th:each="point : ${digest.keyPoints}">
+          <span class="icon" th:utext="${assets.icon(point.iconKey)}"></span><span th:text="${point.text}">Kernpunkt</span>
+        </li>
+      </ul>
+    </section>
+  </div>
+
+  <div class="row">
+    <article th:each="section : ${digest.sections}" th:class="${'card topic ' + section.color}">
+      <div class="topic-head">
+        <span class="num" th:text="${section.number}">1</span>
+        <span class="icon" th:utext="${assets.icon(section.iconKey)}"></span>
+        <h3 th:text="${section.heading}">Thema</h3>
+      </div>
+      <p class="text" th:text="${section.text}">Text</p>
+      <div class="highlight" th:if="${section.highlightValue != null}">
+        <span class="value" th:text="${section.highlightValue}">42 %</span>
+        <span class="label" th:text="${section.highlightLabel}">Label</span>
+      </div>
+      <div class="flow" th:if="${!section.flowSteps.isEmpty()}">
+        <th:block th:each="step, it : ${section.flowSteps}">
+          <span class="step" th:text="${step}">Schritt</span><span class="arrow" th:unless="${it.last}">→</span>
+        </th:block>
+      </div>
+      <div class="topic-foot">
+        <span class="dots">
+          <span class="dot" th:each="badge : ${section.modelBadges}" th:style="${'background:' + badge.colorHex}" th:title="${badge.name}"></span>
+        </span>
+        <span th:text="${#strings.listJoin(section.models, ', ')}">Modell</span>
+        <span class="unconfirmed" th:if="${section.unconfirmed}" th:text="#{digest.unconfirmed}">unconfirmed</span>
+        <span class="sources-ref"><span th:each="source, it : ${section.sourceNumbers}" th:text="${'[' + source + ']' + (it.last ? '' : ' ')}">[1]</span></span>
+      </div>
+    </article>
   </div>
 
   <div class="closing">
     <div>
       <h2 th:text="#{digest.takeaways}">Key takeaways</h2>
       <ul>
-        <li th:each="takeaway : ${digest.takeaways}" th:text="${takeaway}">Takeaway</li>
+        <li th:each="takeaway : ${digest.takeaways}"><span class="icon" th:utext="${assets.ui('check')}"></span><span th:text="${takeaway}">Takeaway</span></li>
       </ul>
     </div>
-    <div th:if="${!#strings.isEmpty(digest.watchOut)}">
-      <h2 th:text="#{digest.watchOut}">What to watch</h2>
+    <div class="watch" th:if="${!#strings.isEmpty(digest.watchOut)}">
+      <h2><span class="icon" th:utext="${assets.ui('eye')}"></span><span th:text="#{digest.watchOut}">What to watch</span></h2>
       <p th:text="${digest.watchOut}">Ausblick</p>
     </div>
   </div>
 
-  <div class="footer">
-    <p>
-      <span th:text="#{digest.createdOn(${digest.createdOn})}">Created on</span> · <span th:text="#{digest.period(${digest.period})}">Period</span>
-      · <span th:text="#{digest.modelCount(${digest.modelCount})}">2 models</span> · <span th:text="#{digest.sourceCount(${digest.sources.size()})}">5 sources</span>
-    </p>
-    <p>
+  <footer class="footer">
+    <div class="line">
+      <span th:text="#{digest.createdOn(${digest.createdOn})}">Created on</span>
+      <span th:text="#{digest.period(${digest.period})}">Period</span>
+      <span th:text="#{digest.sourceCount(${digest.sources.size()})}">5 sources</span>
+      <span class="legend" th:each="badge : ${digest.models}"><span class="dot" th:style="${'background:' + badge.colorHex}"></span><span th:text="${badge.name}">Modell</span></span>
+    </div>
+    <div class="list">
+      <span th:text="${#messages.msg('digest.sources') + ':'}">Sources:</span>
       <span th:each="source : ${digest.sources}">[<span th:text="${source.number}">1</span>] <a th:href="${source.url}" th:text="${source.domain}">domain</a> </span>
-    </p>
-  </div>
+    </div>
+  </footer>
 </body>
 </html>

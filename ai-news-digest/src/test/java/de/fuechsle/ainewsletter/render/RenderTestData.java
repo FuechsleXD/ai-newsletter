@@ -1,6 +1,7 @@
 package de.fuechsle.ainewsletter.render;
 
 import de.fuechsle.ainewsletter.aggregate.DigestAggregate;
+import de.fuechsle.ainewsletter.aggregate.IconKeys;
 import de.fuechsle.ainewsletter.support.Fixtures;
 import de.fuechsle.ainewsletter.support.TestProperties;
 import java.time.LocalDate;
@@ -34,8 +35,12 @@ final class RenderTestData {
   }
 
   static DigestView view(DigestAggregate aggregate, DigestLanguage language) {
+    return view(aggregate, language, 1.0);
+  }
+
+  static DigestView view(DigestAggregate aggregate, DigestLanguage language, double lengthFactor) {
     return new DigestViewFactory(TestProperties.defaults(), language)
-        .create(aggregate, "Java", FROM, TO, CREATED);
+        .create(aggregate, "Java", FROM, TO, CREATED, lengthFactor);
   }
 
   /** Output language like newsdigest.output.language, with the real message files. */
@@ -46,7 +51,7 @@ final class RenderTestData {
   }
 
   static DigestRenderer renderer(String tag) {
-    return new DigestRenderer(templateEngine(), language(tag));
+    return new DigestRenderer(templateEngine(), language(tag), new DigestAssets(new IconKeys()));
   }
 
   /** Same resolver settings as the Spring Boot default (classpath:templates/, .html). */

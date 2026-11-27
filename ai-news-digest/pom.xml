@@ -34,8 +34,9 @@
     <springdoc.version>3.1.1</springdoc.version>
     <!-- AWS SDK v2 (ADR-015): Secrets Manager and S3, with the lightweight URL connection client -->
     <awssdk.version>2.57.13</awssdk.version>
-    <!-- Test only: HTML checks of the mail (jsoup) and page count of the PDF (PDFBox) -->
+    <!-- Test only: HTML checks of the mail (jsoup) -->
     <jsoup.version>1.24.1</jsoup.version>
+    <!-- Page count of the rendered PDF (step 17), also previews and text checks in tests -->
     <pdfbox.version>3.0.8</pdfbox.version>
 
     <!-- Build plugins -->
@@ -181,7 +182,6 @@
       <groupId>org.apache.pdfbox</groupId>
       <artifactId>pdfbox</artifactId>
       <version>${pdfbox.version}</version>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 

@@ -6,6 +6,11 @@ import de.fuechsle.ainewsletter.aggregate.DigestAggregate;
 import de.fuechsle.ainewsletter.aggregate.DigestAggregate.KeyPoint;
 import de.fuechsle.ainewsletter.aggregate.DigestAggregate.Section;
 import de.fuechsle.ainewsletter.aggregate.DigestAggregate.Source;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -28,10 +33,15 @@ class DigestRendererTest {
     assertThat(text)
         .contains("Java und KI im Überblick", "Summary", "Key points", "Key takeaways")
         .contains("What to watch", "PDF attached", "unconfirmed", "Sources: [1] [2]");
-    assertThat(text.indexOf("Summary")).isLessThan(text.indexOf("1. Thema 1"));
-    assertThat(text.indexOf("5. Thema 5")).isLessThan(text.indexOf("Key takeaways"));
+    assertThat(text.indexOf("Summary")).isLessThan(text.indexOf("1 Thema 1"));
+    assertThat(text.indexOf("5 Thema 5")).isLessThan(text.indexOf("Key takeaways"));
     assertThat(mail.select("html").attr("lang")).isEqualTo("en");
-    assertThat(text).contains("42 % schneller", "Ankündigung → Preview → Release");
+    assertThat(text).contains("42 % schneller", "Ankündigung→Preview→Release");
+    // Card colors as in the PDF: border and background of the first card are blue
+    Element firstCard = mail.selectFirst("td[style*=border-left:5px solid #3b82f6]");
+    assertThat(firstCard).isNotNull();
+    assertThat(firstCard.attr("style")).contains("background:#eff6ff");
+    writeMailPreview(renderer.mailHtml(view));
   }
 
   @Test
@@ -73,8 +83,23 @@ class DigestRendererTest {
 
     assertThat(pdf.select("script, link, img, iframe")).isEmpty();
     assertThat(pdf.select("style").html()).contains("@page { size: A4");
-    assertThat(html).doesNotContain("url(", "@import");
-    assertThat(pdf.select(".section")).hasSize(5);
+    // The only url() are the embedded fonts
+    assertThat(html.split("url\\(", -1)).hasSize(DigestAssets.FONT_WEIGHTS.size() + 1);
+    assertThat(html).doesNotContain("@import", "url(http", "url(//");
+    assertThat(pdf.select(".topic")).hasSize(5);
+  }
+
+  @Test
+  void pdfShowsTheIconOfEveryCardAndTheModelDots() {
+    Document pdf = Jsoup.parse(renderer.pdfHtml(RenderTestData.view("normal")));
+
+    // Banner badge, two card headings, four key points, five topic cards, takeaways, watch out
+    assertThat(pdf.select(".topic .topic-head svg")).hasSize(5);
+    assertThat(pdf.select(".keypoints li svg")).hasSize(4);
+    assertThat(pdf.select(".topic .dot").first().attr("style")).isEqualTo("background:#2563eb");
+    assertThat(pdf.select(".legend"))
+        .extracting(Element::text)
+        .containsExactly("Claude Test A", "Claude Test B");
   }
 
   @Test
@@ -133,6 +158,17 @@ class DigestRendererTest {
     assertThat(RenderTestData.language("de").text("digest.modelCount", 2)).isEqualTo("2 Modelle");
     // A language without its own file falls back to English, never to the server locale
     assertThat(RenderTestData.language("fr").text("digest.summary")).isEqualTo("Summary");
+  }
+
+  /** Mail preview next to the PDF previews of GotenbergRenderingTest. */
+  private static void writeMailPreview(String html) {
+    try {
+      Path preview = Path.of("target", "pdf-preview");
+      Files.createDirectories(preview);
+      Files.writeString(preview.resolve("normal-mail.html"), html, StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
   private static DigestAggregate attack() {
