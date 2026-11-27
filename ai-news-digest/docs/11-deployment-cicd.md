@@ -26,10 +26,10 @@
 
 ## Datenbank-Backups
 - Täglich `pg_dump` (beide Schemas) per Zeitplan auf der Instanz, verschlüsselt nach S3; Aufbewahrung 30 Tage über eine S3-Lifecycle-Regel
-- Zusätzlich tägliche EBS-Snapshots über den Data Lifecycle Manager, Aufbewahrung 7 Tage
+- Zusätzlich EBS-Snapshots über den Data Lifecycle Manager, 7 Stück: täglich, mit Zeitfenster (Schritt 16b) wöchentlich nach dem Stopp
 - Wiederherstellung ist als Runbook in `docs/betrieb/wiederherstellung.md` beschrieben und wird einmal nach dem ersten Deployment ausprobiert
-- Fehlgeschlagenes Backup löst einen CloudWatch-Alarm aus: `infra/server/backup.sh` meldet jeden Erfolg als Metrik `NewsDigest/BackupSucceeded`, fehlt sie 24 Stunden, alarmiert `newsdigest-prod-backup-missing`
-- Umsetzung: systemd-Timer `newsdigest-backup.timer` (03:00 UTC), eingerichtet von `deploy.sh`; Snapshots um 02:00 UTC
+- Fehlgeschlagenes Backup löst einen CloudWatch-Alarm aus: `infra/server/backup.sh` meldet jeden Erfolg als Metrik `NewsDigest/BackupSucceeded`, fehlt sie 24 Stunden (mit Zeitfenster 7 Tage), alarmiert `newsdigest-prod-backup-missing`
+- Umsetzung: systemd-Timer `newsdigest-backup.timer` (10 min nach dem Booten und 03:00 UTC) und `newsdigest-backup-on-stop.service` (vor dem Herunterfahren, solange Docker und Netz noch laufen), eingerichtet von `deploy.sh`; Snapshots um 02:00 UTC bzw. mit Zeitfenster montags 09:00 UTC
 
 ## Docker
 - `Dockerfile` im Projektordner, mehrstufig: Build mit `eclipse-temurin` JDK 21 (Alpine) und Maven-Wrapper ohne Tests (die laufen im CI-Job `backend`), Runtime mit `eclipse-temurin` JRE 21 (Alpine); beide Tags fest gepinnt und für amd64 und arm64 (Graviton) verfügbar
@@ -69,7 +69,7 @@ Stand nach Roadmap-Schritt 2: Job `backend` (Punkt 1 und 5, Formatierung über S
 4. Smoke-Test über HTTPS (öffentlicher Health-Check von Caddy bzw. Startseite) und intern per SSM gegen Actuator
 5. Bei Fehlschlag Rollback auf die vorherigen Image-Tags
 
-Stand nach Roadmap-Schritt 12: `cd.yml` startet nach grüner CI eines Pushes auf `main` (`workflow_run`) oder von Hand (`workflow_dispatch`, optional mit einem Image-Tag aus ECR für Redeploy und Rollback). Ein einziger Job in der Umgebung `prod` (Freigabe vor jedem Schritt mit AWS-Zugriff) auf einem nativen arm64-Runner: laufendes Tag per SSM vom Server lesen (gestoppte Instanz: Abbruch, kein automatischer Start), Image als kurzer Commit-SHA bauen und pushen (vorhandene Tags werden nicht neu gebaut, ECR-Tags sind unveränderlich), Deploy-Dateien nach `current/` und `releases/<tag>/`, `deploy.sh` per SSM, Smoke-Test über HTTPS (`infra/cd/smoke-test-prod.sh`), bei Fehlschlag Rollback auf das vorher laufende Tag mit dessen Deploy-Dateien. Die interne Prüfung gegen Actuator übernimmt `docker compose up --wait` über den Health-Check des App-Containers. Einstellungen als Repository-Variablen, Bedienung im Runbook `docs/betrieb/deployment.md`.
+Stand nach Roadmap-Schritt 12: `cd.yml` startet nach grüner CI eines Pushes auf `main` (`workflow_run`) oder von Hand (`workflow_dispatch`, optional mit einem Image-Tag aus ECR für Redeploy und Rollback). Ein einziger Job in der Umgebung `prod` (Freigabe vor jedem Schritt mit AWS-Zugriff) auf einem nativen arm64-Runner: gestoppte Instanz starten (`infra/cd/instance-power.sh`, seit Schritt 16b), laufendes Tag per SSM vom Server lesen, Image als kurzer Commit-SHA bauen und pushen (vorhandene Tags werden nicht neu gebaut, ECR-Tags sind unveränderlich), Deploy-Dateien nach `current/` und `releases/<tag>/`, `deploy.sh` per SSM, Smoke-Test über HTTPS (`infra/cd/smoke-test-prod.sh`), bei Fehlschlag Rollback auf das vorher laufende Tag mit dessen Deploy-Dateien; eine von CD gestartete Instanz wird am Ende wieder gestoppt, auch nach einem Fehlschlag. Die interne Prüfung gegen Actuator übernimmt `docker compose up --wait` über den Health-Check des App-Containers. Einstellungen als Repository-Variablen, Bedienung im Runbook `docs/betrieb/deployment.md`.
 
 ### Regeln
 - AWS-Anmeldung nur per OIDC (IAM-Rolle mit minimalen Rechten), keine AWS-Keys in GitHub
@@ -88,6 +88,7 @@ Stand nach Roadmap-Schritt 12: `cd.yml` startet nach grüner CI eines Pushes auf
 - Variablen ohne Secrets in `prod.tfvars` (eingecheckt), keine Zugangsdaten in Dateien
 - Workflow `infra.yml`: bei Pull Requests mit Änderungen unter `infra/` `terraform fmt -check`, `validate`, `tflint` (AWS-Ruleset) und `shellcheck` für die Server-Skripte; `plan` mit der Leserolle, sobald die Variable `AWS_PLAN_ROLE_ARN` gesetzt ist (Ergebnis nur im Job-Log, weil das Repo öffentlich ist; sensible Werte sind verborgen); `apply` nur manuell (`workflow_dispatch`) mit Freigabe über die Umgebung `prod`
 - Server (ADR-016): Amazon Linux 2023 arm64, IMDSv2 Pflicht, Datenvolume als `/var/lib/docker`, Docker und Compose-Plugin beim ersten Start (`templates/user-data.sh.tftpl`); Deploy-Dateien je Release im Deploy-Bucket (`infra/server/upload-deploy-files.sh`), `infra/server/deploy.sh <tag>` holt sie, liest die Start-Secrets nach `/run` und startet `docker-compose.prod.yml` mit dem Override `docker-compose.aws.yml` (Log-Treiber `awslogs`)
+- Zeitfenster (Schritt 16b, ADR-019, Runbook `docs/betrieb/zeitfenster.md`): EventBridge Scheduler startet die Instanz montags 06:30 und stoppt sie 08:00 (Europe/Berlin, `run_window` in `prod.tfvars`), Rolle nur mit `ec2:StartInstances`/`StopInstances` auf diese Instanz; ohne `run_window` Dauerbetrieb. Kosten etwa 12 statt 40 USD im Monat
 - AWS-Kosten: Budget 40 USD im Monat mit Meldung bei 80 % (tatsächlich) und 100 % (Prognose); Alarme und Budget-Meldungen an die Adresse aus `TF_VAR_alarm_email` bzw. dem GitHub-Secret `ALARM_EMAIL`, nie im Repo
 - Ressourcen mit Daten (EBS, S3-Buckets) sind gegen versehentliches Löschen geschützt (`prevent_destroy`)
 

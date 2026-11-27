@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Daily database backup (newsdigest-backup.timer; docs/11-deployment-cicd.md):
+# Database backup 10 minutes after boot, daily and before shutdown (newsdigest-backup.timer,
+# newsdigest-backup-on-stop.service; docs/11-deployment-cicd.md):
 # pg_dump of the whole database (schemas app and bpm) in the custom format, encrypted in S3.
 # Every success is reported as the metric NewsDigest/BackupSucceeded; the alarm
-# newsdigest-prod-backup-missing fires when it is missing for a day.
+# newsdigest-prod-backup-missing fires when it is missing for a day (7 days with the run window).
 set -euo pipefail
 
 # shellcheck source=/dev/null

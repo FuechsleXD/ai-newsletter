@@ -19,7 +19,7 @@ Die Umgebung `prod` mit "Required reviewers" gibt es seit Schritt 11c. Nur Jobs 
 1. Pull Request nach `main` mergen; die CI läuft auf `main`
 2. Nach grüner CI startet `CD` und wartet auf die Freigabe: Actions → CD → Review deployments → `prod` → Approve
 3. Der Job
-   - liest das gerade laufende Tag vom Server (Ziel für einen Rollback); ist die Instanz gestoppt, bricht er mit einer klaren Meldung ab und startet sie nicht
+   - liest das gerade laufende Tag vom Server (Ziel für einen Rollback); ist die Instanz gestoppt (außerhalb des Zeitfensters, `zeitfenster.md`), startet er sie vorher und stoppt sie am Ende wieder
    - baut das Image nativ auf einem arm64-Runner und pusht es als `<kurzer Commit-SHA>` nach ECR (gibt es das Tag schon, wird nicht neu gebaut)
    - lädt die Deploy-Dateien nach `current/` und `releases/<tag>/`
    - startet `deploy.sh <tag>` per SSM; `docker compose up --wait` gelingt erst, wenn der Health-Check der App (Actuator) grün ist
@@ -35,7 +35,8 @@ Die Umgebung `prod` mit "Required reviewers" gibt es seit Schritt 11c. Nur Jobs 
 | Meldung | Ursache und Abhilfe |
 |---|---|
 | `Repository variable for ... is missing` | Variable aus der Tabelle oben anlegen |
-| `not reachable via SSM. Is it stopped?` | Instanz starten (`aws ec2 start-instances --instance-ids <id>`), etwa 2 Minuten warten, Lauf neu starten |
+| `not reachable via SSM. Is it stopped?` | Instanz starten (`infra/cd/instance-power.sh start <id>`), Lauf neu starten |
+| `SSM does not reach it after 5 minutes` | Instanz läuft, der SSM-Agent ist noch nicht verbunden; Lauf neu starten |
 | `Could not assume role` | Lauf nicht in der Umgebung `prod`, oder der OIDC-Subject passt nicht zur Trust Policy: CloudTrail → Event `AssumeRoleWithWebIdentity` zeigt den gesendeten Subject (GitHub schreibt die IDs von Besitzer und Repo hinein, `repo:<owner>@<id>/<name>@<id>:...`); `github_repository` und `github_repository_ids` in `prod.tfvars` prüfen und lokal applyen (die Apply-Rolle in GitHub ist dann ebenfalls betroffen) |
 | `... is not in ECR` | Beim Rollback von Hand ein Tag gewählt, das es nicht gibt; Tag prüfen |
 | `deploy.sh` schlägt fehl, Rollback grün | Logs des fehlgeschlagenen Containers in CloudWatch (`/newsdigest/prod`); häufig ein Secret im falschen Format (`aws-bootstrap.md` §5) |

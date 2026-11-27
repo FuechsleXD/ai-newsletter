@@ -105,7 +105,9 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 | Budgetwarnungen (`budget_warning`) | wie Läufe, 2 Jahre |
 | Engine-Historie | `historyTimeToLive` (30 Tage); der Wartungsjob startet den History-Cleanup der Engine |
 | Container-Logs in CloudWatch | 30 Tage (`log_retention_days`) |
-| EBS-Snapshots des Datenvolumes | täglich 02:00 UTC, 7 Stück (`snapshot_retention_count`) |
+| EBS-Snapshots des Datenvolumes | täglich 02:00 UTC, mit Zeitfenster wöchentlich montags 09:00 UTC; 7 Stück (`snapshot_retention_count`) |
+| Zeitfenster der Instanz | montags 06:30-08:00 Europe/Berlin (`run_window` in `prod.tfvars`); ohne Wert Dauerbetrieb |
+| Datenbank-Backup | 10 min nach dem Booten, täglich 03:00 UTC und vor dem Herunterfahren; Alarm nach 1 Tag ohne Backup, mit Zeitfenster nach 7 Tagen |
 | AWS-Budget (Infrastruktur) | 40 USD im Monat (`monthly_budget_usd`), Meldung bei 80 % und Prognose 100 % |
 
 ## API

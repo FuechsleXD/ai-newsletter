@@ -52,6 +52,7 @@ Danach:
 - Mail "AWS Notification - Subscription Confirmation" bestätigen (SNS-Alarme)
 - `terraform output` notieren: Instanz, IP, ECR, Buckets, Rollen
 - Der Alarm `newsdigest-prod-backup-missing` steht bis zum ersten Backup auf ALARM; das ist erwartet
+- Mit `run_window` in `prod.tfvars` läuft die Instanz nur im Zeitfenster (Runbook `zeitfenster.md`); für den Aufbau außerhalb des Fensters die Instanz mit `infra/cd/instance-power.sh start` starten
 
 ## 5. Secret-Werte eintragen
 Terraform legt die Secrets leer an (`terraform output secret_names`). Passwörter nur aus Buchstaben und Ziffern, damit sie in der Env-Datei nicht maskiert werden müssen. Für die drei DB-Passwörter, je einmal mit `db/postgres`, `db/migration` und `db/app`:

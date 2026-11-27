@@ -5,7 +5,7 @@
 #    otherwise current/
 # 2. Reads the start secrets from AWS Secrets Manager into an env file in /run (memory only,
 #    never on disk) and starts docker-compose.prod.yml with the AWS override
-# 3. Installs the backup timer
+# 3. Installs the backup timer (after boot and daily) and the backup before shutdown
 # Non-secret settings come from /etc/newsdigest/deploy.env (written by the Terraform user data).
 set -euo pipefail
 
@@ -76,11 +76,11 @@ compose pull --quiet
 # Stops the old app container before the new one starts: never two schedulers (docs/11)
 compose up -d --wait --wait-timeout 300 --remove-orphans
 
-echo "Installing the backup timer"
+echo "Installing the backups"
 install -m 0644 infra/server/newsdigest-backup.service infra/server/newsdigest-backup.timer \
-  /etc/systemd/system/
+  infra/server/newsdigest-backup-on-stop.service /etc/systemd/system/
 systemctl daemon-reload
-systemctl enable --now newsdigest-backup.timer
+systemctl enable --now newsdigest-backup.timer newsdigest-backup-on-stop.service
 
 echo "$tag" >/etc/newsdigest/current-tag
 docker image prune -f >/dev/null

@@ -1,11 +1,13 @@
 [Unit]
-Description=AI News Digest: daily database backup
+Description=AI News Digest: database backup after boot and daily
 
 [Timer]
-# After the EBS snapshot (02:00 UTC) and outside the usual run times
+# After boot, once the containers are up: with the run window (roadmap step 16b) the instance
+# only runs for a short time; the backup before shutdown is newsdigest-backup-on-stop.service
+OnBootSec=10min
+# When the instance runs all the time: after the EBS snapshot (02:00 UTC), outside the run times
 OnCalendar=*-*-* 03:00:00 UTC
-RandomizedDelaySec=10min
-Persistent=true
+RandomizedDelaySec=2min
 
 [Install]
 WantedBy=timers.target
