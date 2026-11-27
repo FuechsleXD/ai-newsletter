@@ -88,7 +88,7 @@ variable "backup_retention_days" {
 }
 
 variable "snapshot_retention_count" {
-  description = "Number of daily EBS snapshots of the data volume that are kept."
+  description = "Number of EBS snapshots of the data volume that are kept (daily, weekly with the run window)."
   type        = number
   default     = 7
 }
@@ -103,4 +103,21 @@ variable "compose_sha256" {
   description = "SHA-256 of docker-compose-linux-aarch64 of compose_version (checksums.txt of the release)."
   type        = string
   default     = "15861535d14e26555736b49376c95e14bfd94285366c8446bfac7156a972e76f"
+}
+
+variable "run_window" {
+  description = <<-EOT
+    Weekly run window (roadmap step 16b, docs/betrieb/zeitfenster.md): the instance only runs from
+    start to stop. start and stop are EventBridge cron expressions (minute hour day-of-month month
+    day-of-week year) in timezone; the window must begin before the earliest topic schedule, at
+    most 6 hours after it (ADR-019). snapshot is the DLM cron expression (UTC) of the EBS snapshot,
+    best after the stop. Null: the instance runs all the time, daily snapshot and backup alarm.
+  EOT
+  type = object({
+    start    = string
+    stop     = string
+    timezone = string
+    snapshot = string
+  })
+  default = null
 }

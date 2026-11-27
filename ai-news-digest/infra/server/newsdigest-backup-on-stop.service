@@ -1,0 +1,16 @@
+[Unit]
+Description=AI News Digest: database backup before the instance shuts down
+# Stopped before Docker and the network on shutdown, so the database and S3 are still reachable
+After=docker.service network-online.target
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/true
+ExecStop=/opt/newsdigest/infra/server/backup.sh
+TimeoutStopSec=5min
+
+[Install]
+WantedBy=multi-user.target

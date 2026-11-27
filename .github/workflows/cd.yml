@@ -4,7 +4,8 @@
 #   (redeploy, rollback to an older release)
 # Every run waits for the approval in the environment "prod"; only there the OIDC role may be
 # assumed. A failed deployment or smoke test rolls back to the release that ran before.
-# Creates no infrastructure (infra.yml) and never starts a stopped instance.
+# Creates no infrastructure (infra.yml). Outside the run window (roadmap step 16b) it starts the
+# stopped instance for the deployment and stops it again afterwards, also after a failure.
 name: CD
 
 on:
@@ -36,7 +37,7 @@ jobs:
       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
     # Native arm64 like the Graviton instance: no emulation for the image build
     runs-on: ubuntu-24.04-arm
-    timeout-minutes: 45
+    timeout-minutes: 60
     environment:
       name: prod
       url: https://${{ vars.DOMAIN }}
@@ -86,7 +87,16 @@ jobs:
           role-to-assume: ${{ vars.AWS_CD_ROLE_ARN }}
           aws-region: eu-central-1
 
-      # Rollback target; fails if the instance is stopped
+      # Outside the run window the instance is stopped: start it for the deployment
+      - name: Start the instance if it is stopped
+        run: |
+          result="$(infra/cd/instance-power.sh start "$INSTANCE")"
+          if [[ "$result" == "started=true" ]]; then
+            echo "STARTED_BY_CD=true" >>"$GITHUB_ENV"
+            echo "Instance was stopped and has been started; it is stopped again at the end"
+          fi
+
+      # Rollback target
       - name: Release running now
         run: |
           previous="$(infra/cd/current-tag.sh "$INSTANCE")"
@@ -138,3 +148,8 @@ jobs:
             summary "Deployment of \`$TAG\` failed and the rollback to \`$PREVIOUS\` failed too"
           fi
           exit 1
+
+      # Also after a failed deployment, so the instance does not run until the next window ends
+      - name: Stop the instance again
+        if: always() && env.STARTED_BY_CD == 'true'
+        run: infra/cd/instance-power.sh stop "$INSTANCE" 15

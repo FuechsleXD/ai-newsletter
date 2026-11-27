@@ -53,15 +53,22 @@ resource "aws_cloudwatch_metric_alarm" "instance_check" {
   alarm_actions       = [aws_sns_topic.alarms.arn]
 }
 
-# backup.sh reports every successful dump; no report within a day is an alarm
+# backup.sh reports every successful dump; no report within a day is an alarm. With the run window
+# the instance only runs once a week: then the alarm fires after 7 days without a backup (the boot
+# backup of a window comes before the time of the shutdown backup a week earlier).
+locals {
+  backup_alarm_days = local.run_window_enabled ? 7 : 1
+}
+
 resource "aws_cloudwatch_metric_alarm" "backup_missing" {
   alarm_name          = "${var.name_prefix}-backup-missing"
-  alarm_description   = "No successful database backup within the last 24 hours (backup.sh)"
+  alarm_description   = "No successful database backup within the last ${local.backup_alarm_days * 24} hours (backup.sh)"
   namespace           = local.metric_namespace
   metric_name         = "BackupSucceeded"
   statistic           = "Sum"
   period              = 86400
-  evaluation_periods  = 1
+  evaluation_periods  = local.backup_alarm_days
+  datapoints_to_alarm = local.backup_alarm_days
   threshold           = 1
   comparison_operator = "LessThanThreshold"
   treat_missing_data  = "breaching"
@@ -91,8 +98,9 @@ resource "aws_iam_role_policy_attachment" "dlm" {
   policy_arn = "arn:${local.partition}:iam::aws:policy/service-role/AWSDataLifecycleManagerServiceRole"
 }
 
+# Daily snapshots; with the run window weekly after the stop (a stopped volume does not change)
 resource "aws_dlm_lifecycle_policy" "data_volume" {
-  description        = "Daily snapshots of the data volume"
+  description        = local.run_window_enabled ? "Weekly snapshots of the data volume" : "Daily snapshots of the data volume"
   execution_role_arn = aws_iam_role.dlm.arn
   state              = "ENABLED"
 
@@ -101,13 +109,14 @@ resource "aws_dlm_lifecycle_policy" "data_volume" {
     target_tags    = { Backup = "${var.name_prefix}-daily" }
 
     schedule {
-      name      = "daily"
+      name      = local.run_window_enabled ? "weekly" : "daily"
       copy_tags = true
 
       create_rule {
-        interval      = 24
-        interval_unit = "HOURS"
-        times         = ["02:00"]
+        interval        = local.run_window_enabled ? null : 24
+        interval_unit   = local.run_window_enabled ? null : "HOURS"
+        times           = local.run_window_enabled ? null : ["02:00"]
+        cron_expression = local.run_window_enabled ? var.run_window.snapshot : null
       }
 
       retain_rule {

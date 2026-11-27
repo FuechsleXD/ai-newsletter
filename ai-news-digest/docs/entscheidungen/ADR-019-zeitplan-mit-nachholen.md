@@ -23,3 +23,10 @@ Um Kosten zu sparen, soll die EC2-Instanz nur zum Lauf laufen (Roadmap-Schritt 1
 - Der Zeitraum eines nachgeholten Laufs ergibt sich wie immer aus `last_successful_run_at`, es fehlen keine Meldungen
 - Ein Lauf, der wirklich länger als 3 h braucht, wird abgebrochen; der Wert ist einstellbar (`newsdigest.run.max-duration`)
 - Angepasst: `02-architektur.md`, `03-datenmodell.md`, `04-prozess-bpmn.md`, `05-api.md`, `10-tests.md`, `11-deployment-cicd.md`, `12-defaults.md`
+
+## Nachtrag (Roadmap-Schritt 16b): festes Zeitfenster der Instanz
+- EventBridge Scheduler startet und stoppt die Instanz über das EC2-API (Universal Target, keine Lambda), montags 06:30-08:00 Europe/Berlin, einstellbar mit `run_window` in `prod.tfvars`
+- Verworfen: die App stoppt die Instanz selbst, wenn nichts mehr läuft (spart mehr, aber die Instanzrolle bräuchte das Recht, sich zu stoppen, und ein Fehler in der App ließe die Instanz laufen); als spätere Ergänzung möglich
+- Backups 10 min nach dem Start und vor dem Herunterfahren, Backup-Alarm nach 7 Tagen, EBS-Snapshot wöchentlich nach dem Stopp
+- CD startet eine gestoppte Instanz für das Deployment und stoppt sie danach wieder; vor dem Stopp wartet es auf laufende Läufe
+- Runbook: `docs/betrieb/zeitfenster.md`

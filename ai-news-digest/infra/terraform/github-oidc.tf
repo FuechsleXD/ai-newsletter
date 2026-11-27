@@ -155,6 +155,17 @@ data "aws_iam_policy_document" "cd" {
     actions   = ["ssm:GetCommandInvocation", "ssm:ListCommandInvocations"]
     resources = ["*"]
   }
+  # Outside the run window CD starts the stopped instance and stops it again (step 16b)
+  statement {
+    sid       = "StartStopForDeploy"
+    actions   = ["ec2:StartInstances", "ec2:StopInstances"]
+    resources = [aws_instance.server.arn]
+  }
+  statement {
+    sid       = "InstanceState"
+    actions   = ["ec2:DescribeInstances", "ssm:DescribeInstanceInformation"]
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_role_policy" "cd" {

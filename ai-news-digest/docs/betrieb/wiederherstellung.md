@@ -1,6 +1,6 @@
 # Runbook: Datenbank wiederherstellen
 
-Gesichert wird zweifach (docs/11-deployment-cicd.md): täglich ein `pg_dump` der ganzen Datenbank (Schemas `app` und `bpm`) im Backup-Bucket (30 Tage) und tägliche EBS-Snapshots des Datenvolumes (7 Stück). Befehle in **Git Bash** im Ordner `ai-news-digest`, Variablen wie in `aws-bootstrap.md` §8, zusätzlich:
+Gesichert wird zweifach (docs/11-deployment-cicd.md): täglich ein `pg_dump` der ganzen Datenbank (Schemas `app` und `bpm`) im Backup-Bucket (30 Tage) und EBS-Snapshots des Datenvolumes (7 Stück, mit Zeitfenster wöchentlich, `zeitfenster.md`). Mit Zeitfenster entsteht der `pg_dump` 10 min nach dem Start und vor dem Stopp der Instanz. Befehle in **Git Bash** im Ordner `ai-news-digest`, Variablen wie in `aws-bootstrap.md` §8, zusätzlich:
 
 ```bash
 BACKUP_BUCKET=$(terraform -chdir=infra/terraform output -json buckets | python -c "import json,sys; print(json.load(sys.stdin)['backups'])")
