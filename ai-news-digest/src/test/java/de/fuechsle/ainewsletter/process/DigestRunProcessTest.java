@@ -320,7 +320,8 @@ class DigestRunProcessTest extends ProcessTestSupport {
     jdbc.update("UPDATE topic_model SET model_id = ? WHERE topic_id = ?", fast, topic);
     String next = starter.start(topic);
     awaitEnd(next);
-    assertThat(runStatus(next)).isEqualTo("COMPLETED");
+    // The fake models report the same URLs: all are duplicates of the first run (step 14)
+    assertThat(runStatus(next)).isEqualTo("NO_NEWS");
   }
 
   @Test

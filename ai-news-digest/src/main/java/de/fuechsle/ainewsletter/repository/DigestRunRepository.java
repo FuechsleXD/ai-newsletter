@@ -16,4 +16,8 @@ public interface DigestRunRepository extends JpaRepository<DigestRun, Long> {
   /** Run with topic and schedule in one query. */
   @Query("select r from DigestRun r join fetch r.topic t join fetch t.schedule where r.id = :id")
   Optional<DigestRun> findWithTopic(@Param("id") Long id);
+
+  /** Latest run of the topic with the given status, without the given run. */
+  Optional<DigestRun> findFirstByTopicIdAndStatusAndIdNotOrderByStartedAtDesc(
+      Long topicId, RunStatus status, Long id);
 }

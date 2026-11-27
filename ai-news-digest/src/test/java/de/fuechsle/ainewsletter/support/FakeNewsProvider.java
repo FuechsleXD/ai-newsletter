@@ -29,6 +29,8 @@ import java.util.stream.Collectors;
  *   <li>{@code ok-}: two valid news items (dated today in Berlin and without date); every {@code
  *       ok-} model reports the same URLs
  *   <li>{@code old-}: one item outside every run period and one valid item
+ *   <li>{@code gone-}: one item whose source the {@link FakeUrlChecker} reports as unreachable and
+ *       one valid item
  *   <li>{@code empty-}: an empty list
  *   <li>{@code fail-}: provider error
  *   <li>{@code slow-}: waits until {@link #release()} is called, then two valid items
@@ -56,6 +58,7 @@ public class FakeNewsProvider implements NewsProvider {
   private final Map<String, AtomicInteger> aggregationCalls = new ConcurrentHashMap<>();
   private volatile CountDownLatch slowEntered = new CountDownLatch(1);
   private volatile CountDownLatch slowRelease = new CountDownLatch(1);
+  private volatile String lastAggregationPrompt;
   private final AtomicInteger parallelActive = new AtomicInteger();
   private final AtomicInteger parallelMax = new AtomicInteger();
   private volatile CountDownLatch parallelGate = new CountDownLatch(1);
@@ -74,6 +77,7 @@ public class FakeNewsProvider implements NewsProvider {
     }
     if (isAggregation(invocation) || model.startsWith("garbage-")) {
       count(aggregationCalls, model);
+      lastAggregationPrompt = invocation.prompt();
       return aggregate(model, invocation.prompt());
     }
     count(researchCalls, model);
@@ -100,6 +104,11 @@ public class FakeNewsProvider implements NewsProvider {
     slowRelease.countDown();
     slowEntered = new CountDownLatch(1);
     slowRelease = new CountDownLatch(1);
+  }
+
+  /** Prompt of the last aggregation call, {@code null} before the first one. */
+  public String lastAggregationPrompt() {
+    return lastAggregationPrompt;
   }
 
   /** Closes the gate of the {@code parallel-} models and forgets the maximum. */
@@ -156,8 +165,12 @@ public class FakeNewsProvider implements NewsProvider {
     String first =
         model.startsWith("old-")
             ? item("Alte Meldung", "https://old.example.test/archive/2000", "\"2000-01-01\"")
-            : item(
-                "Spring Boot veröffentlicht", "https://spring.example.test/blog/release", q(today));
+            : model.startsWith("gone-")
+                ? item("Verschwunden", "https://unreachable.example.test/gone", q(today))
+                : item(
+                    "Spring Boot veröffentlicht",
+                    "https://spring.example.test/blog/release",
+                    q(today));
     String second = item("Neue Java-Preview", "https://jdk.example.test/ea/", "null");
     return response("Hier sind die Meldungen:\n{\"items\": [" + first + "," + second + "]}", 1);
   }

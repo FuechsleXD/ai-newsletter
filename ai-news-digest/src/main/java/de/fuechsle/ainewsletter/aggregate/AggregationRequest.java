@@ -10,6 +10,8 @@ import java.util.Objects;
  *
  * @param topicDescription optional focus of the topic, may be {@code null}
  * @param items checked news items with status {@code VALID}
+ * @param previousHeadlines section headings of the last completed run of the topic, so the
+ *     aggregator does not repeat them; empty if there is none
  */
 public record AggregationRequest(
     String topicName,
@@ -17,7 +19,18 @@ public record AggregationRequest(
     LocalDate periodFrom,
     LocalDate periodTo,
     ModelSnapshot model,
-    List<AggregationItem> items) {
+    List<AggregationItem> items,
+    List<String> previousHeadlines) {
+
+  public AggregationRequest(
+      String topicName,
+      String topicDescription,
+      LocalDate periodFrom,
+      LocalDate periodTo,
+      ModelSnapshot model,
+      List<AggregationItem> items) {
+    this(topicName, topicDescription, periodFrom, periodTo, model, items, List.of());
+  }
 
   public AggregationRequest {
     Objects.requireNonNull(topicName, "topicName");
@@ -25,5 +38,6 @@ public record AggregationRequest(
     Objects.requireNonNull(periodTo, "periodTo");
     Objects.requireNonNull(model, "model");
     items = List.copyOf(items);
+    previousHeadlines = previousHeadlines == null ? List.of() : List.copyOf(previousHeadlines);
   }
 }

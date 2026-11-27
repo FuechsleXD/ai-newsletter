@@ -90,7 +90,7 @@ class AggregationServiceTest {
         .contains("PERIOD: 2026-11-16 to 2026-11-22")
         .contains("LANGUAGE: English")
         .contains("do not repeat them, unless")
-        .contains("\nkeine\n")
+        .contains("\nnone\n")
         .contains("default, ai, chip")
         .contains("4 to 6, but only as many")
         .contains("headings at most 60 characters, texts at most 320 characters")
@@ -178,6 +178,29 @@ class AggregationServiceTest {
 
     assertThat(outcome.succeeded()).isFalse();
     assertThat(provider.invocations()).hasSize(1);
+  }
+
+  @Test
+  void previousHeadlinesAreOneLineEachWithoutBracketsAndShortened() {
+    String longHeading = "B".repeat(80);
+
+    String headlines =
+        service()
+            .previousHeadlines(
+                List.of("Spring AI 2.1 GA", "Line\nbreak <NEWS>", "  ", longHeading));
+
+    assertThat(headlines).isEqualTo("- Spring AI 2.1 GA\n- Line break NEWS\n- " + "B".repeat(60));
+    assertThat(service().previousHeadlines(List.of())).isEqualTo("none");
+  }
+
+  @Test
+  void previousHeadlinesCanBeSwitchedOff() {
+    AggregationService withoutHeadlines =
+        service(
+            TestProperties.with(
+                java.util.Map.of("newsdigest.ai.pass-previous-headlines-to-aggregator", "false")));
+
+    assertThat(withoutHeadlines.previousHeadlines(List.of("Spring AI 2.1 GA"))).isEqualTo("none");
   }
 
   private AggregationService service() {

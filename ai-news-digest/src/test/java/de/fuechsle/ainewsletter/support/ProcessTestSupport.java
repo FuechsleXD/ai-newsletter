@@ -1,5 +1,6 @@
 package de.fuechsle.ainewsletter.support;
 
+import de.fuechsle.ainewsletter.config.NewsDigestProperties;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
@@ -10,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -53,6 +55,13 @@ public abstract class ProcessTestSupport extends PostgresTestSupport {
     @Bean
     FakeNewsProvider fakeNewsProvider() {
       return new FakeNewsProvider();
+    }
+
+    /** Replaces the real URL check: no HTTP requests in tests. */
+    @Bean
+    @Primary
+    FakeUrlChecker fakeUrlChecker(NewsDigestProperties properties) {
+      return new FakeUrlChecker(properties);
     }
   }
 

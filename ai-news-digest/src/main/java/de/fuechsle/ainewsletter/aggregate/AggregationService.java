@@ -39,8 +39,7 @@ import tools.jackson.databind.ObjectMapper;
 public class AggregationService {
 
   private static final String NO_DESCRIPTION = "keiner";
-  // Previous headlines are passed from roadmap step 14 on
-  private static final String NO_PREVIOUS_HEADLINES = "keine";
+  private static final String NO_PREVIOUS_HEADLINES = "none";
 
   private final NewsProviderRegistry providers;
   private final PromptTemplates templates;
@@ -135,6 +134,26 @@ public class AggregationService {
     return objectMapper.writeValueAsString(items).replace("<", "\\u003c").replace(">", "\\u003e");
   }
 
+  /**
+   * One heading per line. The headings are earlier model output and stand outside the data block of
+   * the prompt: line breaks and angle brackets are removed and each heading is shortened, so they
+   * cannot open a block or carry long instructions.
+   */
+  String previousHeadlines(List<String> headlines) {
+    if (!ai.passPreviousHeadlinesToAggregator() || headlines.isEmpty()) {
+      return NO_PREVIOUS_HEADLINES;
+    }
+    return headlines.stream()
+        .map(heading -> heading.replaceAll("[<>]", " ").replaceAll("\\s+", " ").strip())
+        .filter(heading -> !heading.isEmpty())
+        .map(heading ->
+            heading.length() > output.maxHeadingChars()
+                ? heading.substring(0, output.maxHeadingChars())
+                : heading)
+        .map(heading -> "- " + heading)
+        .collect(Collectors.joining("\n"));
+  }
+
   private Map<String, String> values(AggregationRequest request) {
     String description =
         request.topicDescription() == null || request.topicDescription().isBlank()
@@ -146,7 +165,7 @@ public class AggregationService {
         Map.entry("periodFrom", DateTimeFormatter.ISO_LOCAL_DATE.format(request.periodFrom())),
         Map.entry("periodTo", DateTimeFormatter.ISO_LOCAL_DATE.format(request.periodTo())),
         Map.entry("language", output.language().getDisplayLanguage(Locale.ENGLISH)),
-        Map.entry("previousHeadlines", NO_PREVIOUS_HEADLINES),
+        Map.entry("previousHeadlines", previousHeadlines(request.previousHeadlines())),
         Map.entry("allowedIconKeys", String.join(", ", iconKeys.keys())),
         Map.entry("newsItemsJson", newsItemsJson(request.items())),
         Map.entry("minSections", Integer.toString(output.minTopicCards())),
