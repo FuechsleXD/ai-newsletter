@@ -66,6 +66,11 @@ camunda:
     deployment-resource-pattern: classpath*:processes/*.bpmn
     metrics:
       enabled: false
+    # Threads: at least the parallel calls of all providers (max-concurrent-calls-per-provider,
+    # one provider so far) plus 2 for the other jobs of the process (docs/12-defaults.md)
+    job-execution:
+      core-pool-size: 4
+      max-pool-size: 10
 
 management:
   endpoints:

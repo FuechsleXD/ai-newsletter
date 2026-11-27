@@ -13,7 +13,9 @@ class NewsProviderRegistryTest {
     NewsProvider anthropic = provider("ANTHROPIC");
     NewsProviderRegistry registry = new NewsProviderRegistry(List.of(anthropic, provider("OTHER")));
 
-    assertThat(registry.get("ANTHROPIC")).isSameAs(anthropic);
+    // The registry wraps the implementation with the call limit, so the code is compared
+    assertThat(registry.get("ANTHROPIC").code()).isEqualTo("ANTHROPIC");
+    assertThat(registry.get("OTHER").code()).isEqualTo("OTHER");
   }
 
   @Test

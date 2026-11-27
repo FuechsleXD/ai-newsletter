@@ -21,3 +21,11 @@ Außerdem setzt Spring AI 2.0.3 einen von der API pausierten Such-Turn (`pause_t
 ## Konsequenzen
 - Kosten abgelehnter Aufrufe sind Schätzwerte und im Fehlertext des Ergebnisses als solche erkennbar
 - Bei jedem Spring-AI-Update prüfen, ob Antworten ohne Inhalt und `pause_turn` behoben sind; dann entfällt die Schätzung bzw. der Abbruch
+
+## Nachtrag (Roadmap-Schritt 13a): keine Wiederholungen im SDK
+Spring AI 2.0.3 konfiguriert das Anthropic-SDK mit 2 automatischen Wiederholungen (`AnthropicSetup.DEFAULT_MAX_RETRIES`), z. B. nach einem Timeout oder bei Überlastung. Im Eval-Lauf 10 brach Claude Sonnet 5.5 mit 15 Websuchen nach 3 × 120 s ab ("Request failed", 0 Token gebucht); in Lauf 9 gelang erst der zweite Versuch nach 203 s, gebucht wurde nur dieser. Der Anbieter rechnet abgebrochene Versuche trotzdem ab, ohne dass die App die Token erfährt, und drei Versuche überschreiten die Annahme der Startprüfung gegen die Sperrzeit.
+
+Entscheidung:
+- `AnthropicNewsProvider` setzt `maxRetries(0)`; Wiederholungen macht nur die Engine, sichtbar und mit Kostenerfassung
+- Timeout pro Aufruf 300 s statt 120 s, Sperrzeit eines Jobs 20 statt 10 min (Startprüfung: 5 min Wartezeit + 2 × 300 s = 15 min)
+- Ein Aufruf, der dennoch in den Timeout läuft, ist `FAILED` mit 0 gebuchten Kosten, obwohl der Anbieter ihn vermutlich abrechnet: offener Punkt 7

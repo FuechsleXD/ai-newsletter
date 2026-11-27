@@ -25,7 +25,7 @@
 
 ## Pflichtfälle Prozess
 1. Happy Path: alle Modelle ok, PDF und HTML-Mail, Mail an alle aktiven Empfänger, `last_successful_run_at` gesetzt
-2. Parallelität: Recherche-Instanzen laufen gleichzeitig (Jobs nicht exklusiv); der Aggregator startet erst, wenn ALLE Instanzen beendet sind
+2. Parallelität: Recherche-Instanzen laufen gleichzeitig (Jobs nicht exklusiv); der Aggregator startet erst, wenn ALLE Instanzen beendet sind. Umgesetzt in `ParallelResearchProcessTest` (zwei Modelle sind nachweislich gleichzeitig im Aufruf, jedes genau einmal; drei Modelle bei zwei Plätzen: höchstens zwei gleichzeitig, alle drei Ergebnisse) und `ProviderCallLimiterTest` (Plätze, Zeitüberschreitung, Prüfung gegen die Sperrzeit)
 3. Ein Modell fällt aus: übrige Instanzen laufen weiter, Aggregat aus den übrigen
 4. Gleichzeitiges Beenden mehrerer Instanzen: `OptimisticLockingException` beim Join wird durch Job-Wiederholung aufgelöst, kein Incident, Lauf korrekt
 5. Alle Modelle fallen aus bzw. keine gültige Meldung: Betreiber-Mail, `last_successful_run_at` unverändert

@@ -20,7 +20,7 @@ Hosting ohne Load Balancer, Details in `11-deployment-cicd.md`.
 | `web` | Controller, Request/Response-Records, Mapper, `GlobalExceptionHandler` |
 | `security` | Security-Konfiguration, Entry Point, Access-Denied-Handler |
 | `service` | Fachlogik, fachliche Exceptions |
-| `provider` | `NewsProvider`, Implementierungen je Anbieter, Registry, `ModelSnapshot` (Modell und Preise für einen Aufruf), `SearchTrace` (Suchbegriffe und Treffer eines Aufrufs zur Diagnose; bei Anthropic aus der vollständigen Antwort in den Spring-AI-Metadaten), `ModelCalls` (Token und Kosten über Aufruf und Reparaturversuche), `JsonModelCall` (Aufruf mit JSON-Vertrag und Reparaturversuch), Parallelitätsbegrenzung |
+| `provider` | `NewsProvider`, Implementierungen je Anbieter, Registry, `ModelSnapshot` (Modell und Preise für einen Aufruf), `SearchTrace` (Suchbegriffe und Treffer eines Aufrufs zur Diagnose; bei Anthropic aus der vollständigen Antwort in den Spring-AI-Metadaten), `ModelCalls` (Token und Kosten über Aufruf und Reparaturversuche), `JsonModelCall` (Aufruf mit JSON-Vertrag und Reparaturversuch), `ProviderCallLimiter` (Parallelitätsbegrenzung pro Anbieter; die Registry gibt nur begrenzte Provider heraus) |
 | `aggregate` | Aggregator-Aufruf, `DigestAggregate`, Parsing und Validierung der Aggregator-Antwort, Icon-Schlüssel, Speichern des Ergebnisses |
 | `research` | Parsing der Recherche-Antworten, URL-Normalisierung, Prüfung der Meldungen (Zeitraum, URL, Duplikate) |
 | `cost` | Kostenberechnung, Budgetprüfung |

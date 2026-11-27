@@ -262,6 +262,21 @@ class AnthropicNewsProviderTest {
   }
 
   @Test
+  void retryableErrorIsNotRetriedBySdk() {
+    // 529 overloaded would be retried twice by the SDK default; every attempt can be billed
+    status = 529;
+    answer =
+        """
+        {"type": "error", "error": {"type": "overloaded_error", "message": "Overloaded"}}
+        """;
+
+    assertThatThrownBy(() -> provider().call(invocation(null, true)))
+        .isInstanceOf(ProviderException.class);
+    assertThat(requests).hasSize(1);
+    assertThat(provider().options(invocation(null, true), API_KEY).getMaxRetries()).isZero();
+  }
+
+  @Test
   void missingKeyFailsBeforeAnyRequest() {
     SecretProvider noSecrets =
         name -> {

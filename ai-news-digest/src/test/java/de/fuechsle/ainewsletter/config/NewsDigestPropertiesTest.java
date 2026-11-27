@@ -34,7 +34,7 @@ class NewsDigestPropertiesTest {
       assertThat(p.run().configReloadInterval()).isEqualTo(Duration.ofSeconds(60));
       assertThat(p.run().maxManualRunsPerTopicPerHour()).isEqualTo(3);
 
-      assertThat(p.ai().callTimeout()).isEqualTo(Duration.ofSeconds(120));
+      assertThat(p.ai().callTimeout()).isEqualTo(Duration.ofSeconds(300));
       assertThat(p.prompts().research()).isEqualTo("v7");
       assertThat(p.prompts().aggregate()).isEqualTo("v4");
       assertThat(p.prompts().repairJson()).isEqualTo("v2");
@@ -57,7 +57,7 @@ class NewsDigestPropertiesTest {
 
       assertThat(p.process().externalTaskRetryCycle()).isEqualTo("R3/PT5M");
       assertThat(p.process().historyTimeToLive()).isEqualTo(Duration.ofDays(30));
-      assertThat(p.process().jobLockTime()).isEqualTo(Duration.ofMinutes(10));
+      assertThat(p.process().jobLockTime()).isEqualTo(Duration.ofMinutes(20));
       assertThat(p.process().shutdownTimeout()).isEqualTo(Duration.ofMinutes(3));
 
       assertThat(p.render().gotenbergTimeout()).isEqualTo(Duration.ofSeconds(30));

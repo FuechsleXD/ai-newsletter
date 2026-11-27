@@ -104,7 +104,7 @@ class EngineStartupTest extends PostgresTestSupport {
     assertThat(engineConfiguration.getHistoryTimeToLive()).isEqualTo("P30D");
     assertThat(engineConfiguration.getFailedJobRetryTimeCycle()).isEqualTo("R3/PT5M");
     assertThat(engineConfiguration.getJobExecutor().getLockTimeInMillis())
-        .isEqualTo((int) Duration.ofMinutes(10).toMillis());
+        .isEqualTo((int) Duration.ofMinutes(20).toMillis());
   }
 
   @Test

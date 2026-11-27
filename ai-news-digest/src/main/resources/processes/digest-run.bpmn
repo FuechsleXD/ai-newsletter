@@ -52,14 +52,22 @@
       <bpmn:outgoing>toResearch</bpmn:outgoing>
     </bpmn:parallelGateway>
 
-    <!-- One parallel instance per research model; non-exclusive jobs so instances really run at the
-         same time; asyncAfter on the body so the join runs in its own transaction. -->
+    <!-- One parallel instance per research model. Async attributes on the activity apply to the
+         multi-instance body, those on multiInstanceLoopCharacteristics to every inner instance:
+         - inner instances: asyncBefore and non-exclusive, one job each, so they really run at the
+           same time (exclusive jobs of one process instance would run one after another)
+         - inner instances: asyncAfter, so the model call and its result are committed before the
+           instance completes; instances completing together then only conflict in the small
+           completion job (OptimisticLockingException, retried by the engine) and the model is
+           never called twice
+         - body: asyncAfter, so the join runs in its own transaction after all instances ended -->
     <bpmn:serviceTask id="research" name="Recherche"
                       camunda:delegateExpression="${researchDelegate}"
-                      camunda:asyncBefore="true" camunda:exclusive="false">
+                      camunda:asyncAfter="true">
       <bpmn:incoming>toResearch</bpmn:incoming>
       <bpmn:outgoing>toResearchJoin</bpmn:outgoing>
-      <bpmn:multiInstanceLoopCharacteristics camunda:asyncAfter="true"
+      <bpmn:multiInstanceLoopCharacteristics camunda:asyncBefore="true"
+          camunda:asyncAfter="true" camunda:exclusive="false"
           camunda:collection="${digestRunVariables.modelIds(models)}"
           camunda:elementVariable="model"/>
     </bpmn:serviceTask>
