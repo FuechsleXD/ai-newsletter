@@ -5,6 +5,7 @@ import de.fuechsle.ainewsletter.domain.AiModel;
 import de.fuechsle.ainewsletter.domain.DigestRun;
 import de.fuechsle.ainewsletter.domain.NewsItem;
 import de.fuechsle.ainewsletter.domain.NewsItemStatus;
+import de.fuechsle.ainewsletter.domain.RunStatus;
 import de.fuechsle.ainewsletter.provider.ModelSnapshot;
 import de.fuechsle.ainewsletter.repository.AggregationResultRepository;
 import de.fuechsle.ainewsletter.repository.AiModelRepository;
@@ -13,12 +14,16 @@ import de.fuechsle.ainewsletter.repository.NewsItemRepository;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -31,6 +36,8 @@ import tools.jackson.databind.ObjectMapper;
  */
 @Service
 public class RunAggregationService {
+
+  private static final Logger log = LoggerFactory.getLogger(RunAggregationService.class);
 
   private final DigestRunRepository runs;
   private final AiModelRepository models;
@@ -78,7 +85,30 @@ public class RunAggregationService {
         run.getPeriodFrom(),
         run.getPeriodTo(),
         ModelSnapshot.of(aggregator),
-        items(newsItems.findByRun(runId)));
+        items(newsItems.findByRun(runId)),
+        previousHeadlines(run));
+  }
+
+  /** Section headings of the last completed run of the topic, empty if there is none. */
+  private List<String> previousHeadlines(DigestRun run) {
+    return runs.findFirstByTopicIdAndStatusAndIdNotOrderByStartedAtDesc(
+            run.getTopic().getId(), RunStatus.COMPLETED, run.getId())
+        .map(DigestRun::getAggregateJson)
+        .map(this::headings)
+        .orElse(List.of());
+  }
+
+  private List<String> headings(String aggregateJson) {
+    try {
+      return objectMapper.readValue(aggregateJson, DigestAggregate.class).sections().stream()
+          .map(DigestAggregate.Section::heading)
+          .filter(Objects::nonNull)
+          .toList();
+    } catch (JacksonException e) {
+      // The headlines only help to avoid repetitions; a broken old aggregate does not stop the run
+      log.warn("Aggregate of an earlier run could not be read: {}", e.getMessage());
+      return List.of();
+    }
   }
 
   /**

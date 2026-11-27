@@ -35,7 +35,7 @@ Leitidee: erst ein schmaler Durchstich von Anfang bis Ende, dann früh deployen,
 - [~] 13. Weitere Anbieter/Modelle, echte Parallelität (nicht-exklusive Jobs, Semaphore pro Anbieter), Parallelitäts-Tests
   - [x] 13a. Echte Parallelität mit einem zweiten Anthropic-Modell (Claude Haiku 5.5): Semaphore pro Anbieter (`ProviderCallLimiter`), Job-Executor passend konfiguriert, Parallelitäts-Tests. Gefunden und behoben: die Async-Attribute standen am Task statt an der Multi-Instance, die Recherche lief deshalb bisher nacheinander; ohne `asyncAfter` der Instanzen wurde bei der Kollision am Join das Modell doppelt aufgerufen; Eval-Lauf 10 (Sonnet und Haiku gleichzeitig) zeigte versteckte SDK-Wiederholungen nach dem Timeout: jetzt `maxRetries` 0, Timeout 300 s, Sperrzeit 20 min (ADR-014, Nachtrag)
   - [ ] 13b. Zweiter Anbieter (Auswahl offen, offener Punkt 4)
-- [ ] 14. URL-Prüfung mit SSRF-Schutz, Duplikate gegen frühere Läufe, letzte Überschriften an den Aggregator
+- [x] 14. URL-Prüfung mit SSRF-Schutz, Duplikate gegen frühere Läufe, letzte Überschriften an den Aggregator (`UrlChecker`, `UrlCheckPolicy`, `DUPLICATE_PREVIOUS` über 90 Tage, `{{previousHeadlines}}`; keine neue Migration)
 - [ ] 15. Budget-Gateway, Kostenauswertung
 - [ ] 16. Scheduler aus der DB mit Reload; Abbrechen hängender Läufe; nächtlicher Aufräumjob (Aufbewahrungsfristen); Instanz nur zum Lauf hochfahren (EventBridge-Schedule in Terraform startet die EC2-Instanz vor dem frühesten Topic-Zeitplan und stoppt sie nach dem Lauf, Backup beim Start, Alarm `backup-missing` ohne Fehlalarm bei gestoppter Instanz, Runbook; Ziel etwa 12 statt 40 USD im Monat)
 - [ ] 17. PDF im finalen Infografik-Design (Gotenberg, Icon-Satz und Schrift festlegen), HTML-Mail im gleichen Stil

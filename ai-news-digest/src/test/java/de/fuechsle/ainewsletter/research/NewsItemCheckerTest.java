@@ -7,6 +7,7 @@ import de.fuechsle.ainewsletter.domain.NewsItemStatus;
 import de.fuechsle.ainewsletter.research.NewsItemChecker.NewsCheckSummary;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class NewsItemCheckerTest {
@@ -22,8 +23,9 @@ class NewsItemCheckerTest {
     NewsItem after = item("https://a.test/4", TO.plusDays(1));
     NewsItem unknown = item("https://a.test/5", null);
 
-    NewsCheckSummary summary =
-        NewsItemChecker.apply(List.of(before, first, last, after, unknown), FROM, TO);
+    List<NewsItem> items = List.of(before, first, last, after, unknown);
+    NewsItemChecker.classify(items, FROM, TO, Set.of());
+    NewsCheckSummary summary = NewsCheckSummary.of(items);
 
     assertThat(List.of(before, first, last, after, unknown))
         .extracting(NewsItem::getStatus)
@@ -33,7 +35,7 @@ class NewsItemCheckerTest {
             NewsItemStatus.VALID,
             NewsItemStatus.OUT_OF_PERIOD,
             NewsItemStatus.VALID);
-    assertThat(summary).isEqualTo(new NewsCheckSummary(3, 2, 0));
+    assertThat(summary).isEqualTo(new NewsCheckSummary(3, 2, 0, 0, 0));
   }
 
   @Test
@@ -42,11 +44,13 @@ class NewsItemCheckerTest {
     NewsItem other = item("https://a.test/y", null);
     NewsItem copy = item("https://a.test/x", TO);
 
-    NewsCheckSummary summary = NewsItemChecker.apply(List.of(first, other, copy), FROM, TO);
+    List<NewsItem> items = List.of(first, other, copy);
+    NewsItemChecker.classify(items, FROM, TO, Set.of());
+    NewsCheckSummary summary = NewsCheckSummary.of(items);
 
     assertThat(copy.getStatus()).isEqualTo(NewsItemStatus.DUPLICATE_RUN);
     assertThat(first.getStatus()).isEqualTo(NewsItemStatus.VALID);
-    assertThat(summary).isEqualTo(new NewsCheckSummary(2, 0, 1));
+    assertThat(summary).isEqualTo(new NewsCheckSummary(2, 0, 0, 1, 0));
   }
 
   @Test
@@ -54,7 +58,7 @@ class NewsItemCheckerTest {
     NewsItem old = item("https://a.test/x", FROM.minusYears(1));
     NewsItem current = item("https://a.test/x", TO);
 
-    NewsItemChecker.apply(List.of(old, current), FROM, TO);
+    NewsItemChecker.classify(List.of(old, current), FROM, TO, Set.of());
 
     assertThat(old.getStatus()).isEqualTo(NewsItemStatus.OUT_OF_PERIOD);
     assertThat(current.getStatus()).isEqualTo(NewsItemStatus.VALID);
@@ -65,9 +69,34 @@ class NewsItemCheckerTest {
     NewsItem item = item("https://a.test/x", TO);
     item.setStatus(NewsItemStatus.DUPLICATE_RUN);
 
-    NewsItemChecker.apply(List.of(item), FROM, TO);
+    NewsItemChecker.classify(List.of(item), FROM, TO, Set.of());
 
     assertThat(item.getStatus()).isEqualTo(NewsItemStatus.VALID);
+  }
+
+  @Test
+  void earlierRunsComeBeforeDuplicatesInTheRunAndUnreachableComesLast() {
+    NewsItem old = item("https://a.test/old", FROM.minusDays(3));
+    NewsItem reported = item("https://a.test/reported", TO);
+    NewsItem first = item("https://a.test/gone", null);
+    NewsItem copy = item("https://a.test/gone", TO);
+    NewsItem fine = item("https://a.test/fine", TO);
+    List<NewsItem> items = List.of(old, reported, first, copy, fine);
+
+    // An out-of-period item is not a duplicate of an earlier run, even if the URL was reported
+    NewsItemChecker.classify(
+        items, FROM, TO, Set.of("https://a.test/reported", "https://a.test/old"));
+    NewsItemChecker.markUnreachable(items, Set.of("https://a.test/gone"));
+
+    assertThat(items)
+        .extracting(NewsItem::getStatus)
+        .containsExactly(
+            NewsItemStatus.OUT_OF_PERIOD,
+            NewsItemStatus.DUPLICATE_PREVIOUS,
+            NewsItemStatus.UNREACHABLE,
+            NewsItemStatus.DUPLICATE_RUN,
+            NewsItemStatus.VALID);
+    assertThat(NewsCheckSummary.of(items)).isEqualTo(new NewsCheckSummary(1, 1, 1, 1, 1));
   }
 
   private static NewsItem item(String normalizedUrl, LocalDate publishedAt) {

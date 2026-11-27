@@ -45,6 +45,8 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 | Timeout | 5 s |
 | Max. Weiterleitungen | 3 |
 | Gleichzeitige Prüfungen | 5 |
+| Als nicht erreichbar gilt | DNS-Fehler, keine Verbindung, Timeout, gesperrtes Ziel (SSRF), zu viele Weiterleitungen, HTTP 404/410; alle anderen Status (auch 401/403/429/5xx) gelten als erreichbar |
+| User-Agent | `ai-news-digest-urlcheck/1.0` |
 
 ## Kosten
 | Einstellung | Default | Überschreibbar in |

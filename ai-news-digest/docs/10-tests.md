@@ -63,3 +63,5 @@ Stand nach Roadmap-Schritt 8: Prozesstests laufen mit echtem Gotenberg und Mailp
 - Berichte als CI-Artefakt und in der Job-Zusammenfassung
 - Schwellen werden nicht ohne Rückfrage gesenkt
 - Kein externer Dienst (Codecov, SonarCloud); Auswertung nur über die CI-Berichte. Nachrüsten später möglich
+
+Schritt 14 (Prüfung der Meldungen): `NewsItemCheckerTest` (Reihenfolge der Status), `UrlCheckPolicyTest` (gesperrte und erlaubte Adressen nur als IP-Literale, keine DNS-Anfrage), `UrlCheckerTest` (lokaler Stub auf Loopback mit Test-Resolver: HEAD, GET mit Range, 404/410, 403 und 5xx erreichbar, Weiterleitungen bis zum Limit, Weiterleitung auf interne Adressen und Metadaten gesperrt, Timeout, geschlossener Port, Parallelität), `NewsCheckProcessTest` (nicht erreichbare Quelle und Meldung eines früheren Laufs erreichen den Aggregator nicht, Überschriften des vorigen Laufs im Prompt, Lauf nur mit alten Meldungen endet `NO_NEWS`). In allen Prozesstests ersetzt `FakeUrlChecker` die echte Prüfung (Host `unreachable.*` antwortet 404).

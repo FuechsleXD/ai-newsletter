@@ -86,6 +86,8 @@ Die Prüfung der Quellen ruft URLs auf, die ein LLM geliefert hat. Daher:
 - Höchstens 3 Weiterleitungen, kurzer Timeout, nur Header bzw. erste Bytes lesen, keine Cookies, eigener User-Agent
 - Der Inhalt der Seite wird nicht weiterverarbeitet
 
+Umsetzung (Schritt 14): `UrlChecker` mit `UrlCheckPolicy.PUBLIC_ONLY` und dem JDK-`HttpClient` (Weiterleitungen aus, von Hand gefolgt). Gesperrt sind neben den genannten Bereichen auch `0.0.0.0/8`, `100.64.0.0/10` (CGNAT), `192.0.0.0/24`, `198.18.0.0/15`, `240.0.0.0/4`, Multicast, IPv6 `::`, `::1`, `fc00::/7`, `fe80::/10`, `fec0::/10` sowie in IPv6 eingebettete IPv4-Adressen (`::a.b.c.d`, `::ffff:a.b.c.d`, NAT64 `64:ff9b::/96`); hat ein Host mehrere Adressen, muss jede öffentlich sein. Anfragen: `HEAD`, bei 405/501 `GET` mit `Range: bytes=0-0`, Body wird ohne Lesen geschlossen, User-Agent `ai-news-digest-urlcheck/1.0`, keine Cookies. Restrisiko: Der HTTP-Client löst den Host beim Verbinden erneut auf (DNS-Rebinding zwischen Prüfung und Anfrage). Gelesen wird nur der Status, der Inhalt nie verwendet, und die Metadaten der Instanz verlangen ein Token (IMDSv2, `http_tokens = required`), das eine einfache Anfrage nicht bekommt. Tests laufen nur gegen einen lokalen Stub mit einer Richtlinie, die zusätzlich Loopback erlaubt; Prozesstests nutzen einen Fake ohne HTTP
+
 ## Gotenberg
 - Nur im internen Docker-Netz erreichbar, nie über Caddy veröffentlicht
 - Chromium darf keine externen URLs laden; alle Ressourcen kommen im Request mit

@@ -55,6 +55,14 @@ docker compose exec postgres psql -U postgres -d newsdigest -c "SELECT r.id, r.s
 ```
 
 ## Prompt-Eval (Profil `eval`)
+
+Seit Schritt 14 sortiert die Prüfung Meldungen aus, die frühere abgeschlossene Läufe desselben Topics schon gemeldet haben (`DUPLICATE_PREVIOUS`, 90 Tage), auch frühere Eval-Läufe. Für einen sauberen Vergleich zweier Prompt-Versionen ein eigenes Eval-Topic anlegen oder die Läufe des Topics vorher als abgebrochen markieren:
+
+```sql
+UPDATE app.digest_run SET status = 'CANCELLED' WHERE topic_id = 1 AND status = 'COMPLETED';
+DELETE FROM app.topic_state WHERE topic_id = 1;
+```
+
 Für den Vergleich von Prompt-Versionen. Läuft durch den normalen Prozess (Kosten und Budget wie bei jedem Lauf), wartet auf das Ende und schreibt alles nach `data/eval/<prompt-version>/<zeit>-<topic>/`:
 
 | Datei | Inhalt |
