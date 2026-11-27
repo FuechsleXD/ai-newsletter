@@ -67,6 +67,34 @@ class ModelCallsTest {
   }
 
   @Test
+  void callThatBrokeOffIsCostedWithItsEstimate() {
+    ModelResponse estimate =
+        new ModelResponse("", 500_000, 0, 3, "ABORTED", Duration.ofMinutes(5), true);
+    NewsProvider aborting =
+        new NewsProvider() {
+          @Override
+          public String code() {
+            return "TEST";
+          }
+
+          @Override
+          public ModelResponse call(ModelInvocation invocation) {
+            throw new ProviderException("Request failed", null, estimate);
+          }
+        };
+    ModelCalls aborted =
+        new ModelCalls(new NewsProviderRegistry(List.of(aborting)), new CostCalculator(), MODEL);
+
+    assertThat(aborted.call(null)).isNull();
+
+    assertThat(aborted.lastError()).startsWith("Request failed").contains("geschätzt (Abbruch)");
+    assertThat(aborted.lastText()).isNull();
+    assertThat(aborted.usageEstimated()).isTrue();
+    // 0.5 MTok at 1 USD plus 3 searches at 1 USD
+    assertThat(aborted.cost()).isEqualByComparingTo("3.5");
+  }
+
+  @Test
   void noSlotForARepairAttemptFailsLikeAProviderErrorAndKeepsTheBilledCall() {
     assertThat(calls.call(null)).isNotNull();
 

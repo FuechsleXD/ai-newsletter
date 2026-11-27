@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,7 @@ public class BudgetService {
   private final JdbcTemplate jdbc;
   private final BudgetRepository budgets;
   private final BigDecimal defaultLimit;
+  private final int defaultWarnPercent;
   private final Clock clock;
 
   public BudgetService(
@@ -34,6 +36,7 @@ public class BudgetService {
     this.jdbc = jdbc;
     this.budgets = budgets;
     this.defaultLimit = properties.budget().monthlyLimitUsd();
+    this.defaultWarnPercent = properties.budget().warnPercent();
     this.clock = clock;
   }
 
@@ -44,8 +47,10 @@ public class BudgetService {
         jdbc.queryForList(
             "SELECT cost_usd FROM monthly_cost WHERE month = ?", BigDecimal.class, month);
     BigDecimal spentUsd = spent.isEmpty() ? BigDecimal.ZERO : spent.getFirst();
-    BigDecimal limitUsd =
-        budgets.findByActiveTrue().map(Budget::getMonthLimitUsd).orElse(defaultLimit);
-    return new BudgetStatus(spentUsd, limitUsd, spentUsd.compareTo(limitUsd) >= 0);
+    Optional<Budget> active = budgets.findByActiveTrue();
+    BigDecimal limitUsd = active.map(Budget::getMonthLimitUsd).orElse(defaultLimit);
+    int warnPercent = active.map(Budget::getWarnPercent).orElse(defaultWarnPercent);
+    return new BudgetStatus(
+        month, spentUsd, limitUsd, warnPercent, spentUsd.compareTo(limitUsd) >= 0);
   }
 }

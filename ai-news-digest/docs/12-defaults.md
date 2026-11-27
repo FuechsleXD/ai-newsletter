@@ -54,6 +54,9 @@ Alle Werte stehen im Code an EINER Stelle (`@ConfigurationProperties`-Record `Ne
 | Monatsbudget | 10 USD (Startwert, nach den ersten Läufen anhand der echten Kosten anpassen) | `budget` |
 | Warnschwelle | 80 % (`warn-percent`, ganze Prozent wie `budget.warn_percent`) | `budget` |
 | Verhalten bei erreichtem Budget | Geplante und manuelle Läufe werden nicht gestartet | – |
+| Verhalten bei erreichter Warnschwelle | Einmal pro Kalendermonat eine Mail an den Betreiber mit Ausgaben, Grenze und den drei teuersten Topics; geprüft nach jedem Lauf | – |
+| Preisstufe für lange Prompts | keine; pro Modell pflegbar (Schwelle in Input-Token eines Aufrufs, darüber höhere Preise für den ganzen Aufruf), z. B. Claude Haiku 5.5: 0,10/0,50 USD bis 100.000 Token, darüber 0,50/2,50 | `ai_model.long_context_*` |
+| Kosten abgebrochener Aufrufe | geschätzt: Input-Token des Prompts plus höchstmögliche Websuchen, markiert als `cost_estimated`; Suchinhalte unbekannt, echte Kosten können höher sein | – |
 
 ## Prozess
 | Einstellung | Default |

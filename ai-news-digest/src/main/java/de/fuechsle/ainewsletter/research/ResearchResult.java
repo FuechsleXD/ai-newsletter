@@ -29,7 +29,8 @@ public record ResearchResult(
     BigDecimal costUsd,
     Duration duration,
     String errorMessage,
-    SearchTrace searchTrace) {
+    SearchTrace searchTrace,
+    boolean costEstimated) {
 
   public ResearchResult {
     items = List.copyOf(items);

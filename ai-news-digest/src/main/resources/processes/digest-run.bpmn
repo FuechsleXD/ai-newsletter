@@ -20,6 +20,11 @@
   <bpmn:error id="noRecipientsError" name="Keine aktiven Empfänger" errorCode="NO_RECIPIENTS"/>
 
   <bpmn:process id="digestRun" name="News-Digest-Lauf" isExecutable="true">
+    <!-- After every end of a run its costs are recorded: check the warn threshold of the budget
+         (once per month, never fails the run). -->
+    <bpmn:extensionElements>
+      <camunda:executionListener event="end" delegateExpression="${budgetWarningListener}"/>
+    </bpmn:extensionElements>
 
     <bpmn:startEvent id="startEvent" name="Lauf angefordert">
       <bpmn:outgoing>toPrepareRun</bpmn:outgoing>

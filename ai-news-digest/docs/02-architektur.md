@@ -23,7 +23,7 @@ Hosting ohne Load Balancer, Details in `11-deployment-cicd.md`.
 | `provider` | `NewsProvider`, Implementierungen je Anbieter, Registry, `ModelSnapshot` (Modell und Preise für einen Aufruf), `SearchTrace` (Suchbegriffe und Treffer eines Aufrufs zur Diagnose; bei Anthropic aus der vollständigen Antwort in den Spring-AI-Metadaten), `ModelCalls` (Token und Kosten über Aufruf und Reparaturversuche), `JsonModelCall` (Aufruf mit JSON-Vertrag und Reparaturversuch), `ProviderCallLimiter` (Parallelitätsbegrenzung pro Anbieter; die Registry gibt nur begrenzte Provider heraus) |
 | `aggregate` | Aggregator-Aufruf, `DigestAggregate`, Parsing und Validierung der Aggregator-Antwort, Icon-Schlüssel, Speichern des Ergebnisses |
 | `research` | Parsing der Recherche-Antworten, URL-Normalisierung, Prüfung der Meldungen (Zeitraum, URL, Duplikate) |
-| `cost` | Kostenberechnung, Budgetprüfung |
+| `cost` | Kostenberechnung (`CostCalculator`, je Aufruf mit Preisstufe nach Prompt-Länge), Budgetprüfung (`BudgetService`), Budgetwarnung (`BudgetWarningService`), Kostenauswertung nach Topic, Modell und Monat (`CostReportService`) |
 | `process` | BPMN-Delegates, `DigestProcessStarter` |
 | `scheduling` | Laden der Zeitpläne, Reload, Start der Läufe |
 | `render` | HTML-Mail- und PDF-Erzeugung aus demselben Aggregat (`DigestView`, Thymeleaf-Templates in `templates/pdf/` und `templates/mail/`, Klartext-Teil), Längenbegrenzung (`TextShortener`), Ausgabesprache mit festen Texten und Datumsformat (`DigestLanguage`, `messages/digest*.properties`), Gotenberg-Client |

@@ -56,6 +56,10 @@ public class ProviderResult {
   @Column(name = "cost_usd", precision = 12, scale = 6)
   private BigDecimal costUsd;
 
+  /** The cost is an estimate, not usage reported by the provider (ADR-014). */
+  @Column(name = "cost_estimated", nullable = false)
+  private boolean costEstimated;
+
   @Column(name = "error_message", columnDefinition = "text")
   private String errorMessage;
 
@@ -140,6 +144,14 @@ public class ProviderResult {
 
   public void setCostUsd(BigDecimal costUsd) {
     this.costUsd = costUsd;
+  }
+
+  public boolean isCostEstimated() {
+    return costEstimated;
+  }
+
+  public void setCostEstimated(boolean costEstimated) {
+    this.costEstimated = costEstimated;
   }
 
   public String getErrorMessage() {

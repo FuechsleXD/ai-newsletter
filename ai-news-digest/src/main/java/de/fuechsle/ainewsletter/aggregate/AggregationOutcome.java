@@ -15,7 +15,8 @@ public record AggregationOutcome(
     long outputTokens,
     BigDecimal costUsd,
     Duration duration,
-    String errorMessage) {
+    String errorMessage,
+    boolean costEstimated) {
 
   public boolean succeeded() {
     return aggregate != null;
